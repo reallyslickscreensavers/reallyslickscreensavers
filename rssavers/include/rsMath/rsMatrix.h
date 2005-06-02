@@ -23,6 +23,10 @@
 
 
 
+#include <ostream>
+
+
+
 class rsVec;
 class rsQuat;
 
@@ -41,26 +45,42 @@ public:
 	void identity();
 	void set(float* mat);
 	void get(float* mat);
+	float* get();
 	void copy(const rsMatrix &mat);
 	void preMult(const rsMatrix &postMat);
 	void postMult(const rsMatrix &preMat);
-	void makeTrans(float x, float y, float z);
-	void makeTrans(float* p);
-	void makeTrans(const rsVec &vec);
+	void makeTranslate(float x, float y, float z);
+	void makeTranslate(float* p);
+	void makeTranslate(const rsVec &vec);
 	void makeScale(float s);
 	void makeScale(float x, float y, float z);
 	void makeScale(float* s);
 	void makeScale(const rsVec &vec);
-	void makeRot(float a, float x, float y, float z);	// angle, axis
-	void makeRot(float a, const rsVec &v);	// angle, axis
-	void makeRot(rsQuat &q);
-	float determinant();
-	int invert(const rsMatrix &mat);  // general matrix inversion
+	void makeRotate(float a, float x, float y, float z);	// angle, axis
+	void makeRotate(float a, const rsVec &v);	// angle, axis
+	void makeRotate(rsQuat &q);
+	void translate(float x, float y, float z);
+	void translate(float* p);
+	void translate(const rsVec &vec);
+	void scale(float s);
+	void scale(float x, float y, float z);
+	void scale(float* s);
+	void scale(const rsVec &vec);
+	void rotate(float a, float x, float y, float z);	// angle, axis
+	void rotate(float a, const rsVec &v);	// angle, axis
+	void rotate(rsQuat &q);
+	float determinant3(const float a1, const float a2, const float a3,
+		const float b1, const float b2, const float b3,
+		const float c1, const float c2, const float c3);
+	bool invert();  // general matrix inversion
+	bool invert(const rsMatrix &mat);  // general matrix inversion
 	void rotationInvert(const rsMatrix &mat);  // rotation matrix inversion
 	void fromQuat(const rsQuat &q);
 
 	const float & operator [] (int i) const {return m[i];}
 	rsMatrix & operator = (const rsMatrix &mat);
+	std::ostream & operator << (std::ostream &os);
+//	friend std::ostream & operator << (std::ostream& os, const rsMatrix& mat);
 };
 
 

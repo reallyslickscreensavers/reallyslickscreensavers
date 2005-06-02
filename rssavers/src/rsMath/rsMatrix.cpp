@@ -19,6 +19,7 @@
 
 
 #include <rsMath/rsMath.h>
+#include <math.h>
 
 
 
@@ -61,6 +62,11 @@ void rsMatrix::get(float* mat){
 	int i;
 	for(i=0; i<16; i++)
 		mat[i] = m[i];
+}
+
+
+float* rsMatrix::get(){
+	return m;
 }
 
 
@@ -149,19 +155,7 @@ void rsMatrix::postMult(const rsMatrix &preMat){
 }
 
 
-float rsMatrix::determinant(){
-	return(m[0] * m[5] * m[10] * m[15]
-		+ m[4] * m[9] * m[14] * m[3]
-		+ m[8] * m[13] * m[2] * m[7]
-		+ m[12] * m[1] * m[6] * m[11]
-		- m[3] * m[6] * m[9] * m[12]
-		- m[7] * m[10] * m[13] * m[0]
-		- m[11] * m[14] * m[1] * m[4]
-		- m[15] * m[2] * m[5] * m[8]);
-}
-
-
-void rsMatrix::makeTrans(float x, float y, float z){
+void rsMatrix::makeTranslate(float x, float y, float z){
 	m[0] = 1.0f;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -180,7 +174,7 @@ void rsMatrix::makeTrans(float x, float y, float z){
 	m[15] = 1.0f;
 }
 
-void rsMatrix::makeTrans(float *p){
+void rsMatrix::makeTranslate(float *p){
 	m[0] = 1.0f;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -199,7 +193,7 @@ void rsMatrix::makeTrans(float *p){
 	m[15] = 1.0f;
 }
 
-void rsMatrix::makeTrans(const rsVec &vec){
+void rsMatrix::makeTranslate(const rsVec &vec){
 	m[0] = 1.0f;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -296,100 +290,199 @@ void rsMatrix::makeScale(const rsVec &vec){
 }
 
 
-void rsMatrix::makeRot(float a, float x, float y, float z){
+void rsMatrix::makeRotate(float a, float x, float y, float z){
 	rsQuat q;
 	q.make(a, x, y, z);
 	q.toMat(m);
 }
 
-void rsMatrix::makeRot(float a, const rsVec &v){
+void rsMatrix::makeRotate(float a, const rsVec &v){
 	rsQuat q;
 	q.make(a, v);
 	q.toMat(m);
 }
 
-void rsMatrix::makeRot(rsQuat &q){
+void rsMatrix::makeRotate(rsQuat &q){
 	q.toMat(m);
 }
 
 
-int rsMatrix::invert(const rsMatrix &mat){
-	float rmat[4][8];
-	float a, b;
-	int i, j, k;
+void rsMatrix::translate(float x, float y, float z){
+	rsMatrix mat;
+	mat.makeTranslate(x, y, z);
+	this->postMult(mat);
+}
 
-	// initialize reduction matrix
-	rmat[0][0] = mat[0];
-	rmat[1][0] = mat[1];
-	rmat[2][0] = mat[2];
-	rmat[3][0] = mat[3];
-	rmat[0][1] = mat[4];
-	rmat[1][1] = mat[5];
-	rmat[2][1] = mat[6];
-	rmat[3][1] = mat[7];
-	rmat[0][2] = mat[8];
-	rmat[1][2] = mat[9];
-	rmat[2][2] = mat[10];
-	rmat[3][2] = mat[11];
-	rmat[0][3] = mat[12];
-	rmat[1][3] = mat[13];
-	rmat[2][3] = mat[14];
-	rmat[3][3] = mat[15];
-	rmat[0][4] = 1.0f;
-	rmat[1][4] = 0.0f;
-	rmat[2][4] = 0.0f;
-	rmat[3][4] = 0.0f;
-	rmat[0][5] = 0.0f;
-	rmat[1][5] = 1.0f;
-	rmat[2][5] = 0.0f;
-	rmat[3][5] = 0.0f;
-	rmat[0][6] = 0.0f;
-	rmat[1][6] = 0.0f;
-	rmat[2][6] = 1.0f;
-	rmat[3][6] = 0.0f;
-	rmat[0][7] = 0.0f;
-	rmat[1][7] = 0.0f;
-	rmat[2][7] = 0.0f;
-	rmat[3][7] = 1.0f;
+void rsMatrix::translate(float *p){
+	rsMatrix mat;
+	mat.makeTranslate(p);
+	this->postMult(mat);
+}
 
-	// perform reductions
-	for(i=0; i<4; i++){
-		a = rmat[i][i];
-		if(a == 0.0f)  // matrix is singular, can't be reduced
-			return 0;
-		else{
-			a = 1.0f / a;
-			for(j=0; j<8; j++)
-				rmat[i][j] = rmat[i][j] * a;
-			for(k=0; k<4; k++){
-				if((k-i) != 0){
-					b = rmat[k][i];
-					for(j=0; j<8; j++)
-						rmat[k][j] = rmat[k][j] - b * rmat[i][j];
-				}
-			}
-		}
-	}
+void rsMatrix::translate(const rsVec &vec){
+	rsMatrix mat;
+	mat.makeTranslate(vec);
+	this->postMult(mat);
+}
 
-	// extract the inverted matrix
-	m[0] = rmat[0][4];
-	m[1] = rmat[1][4];
-	m[2] = rmat[2][4];
-	m[3] = rmat[3][4];
-	m[4] = rmat[0][5];
-	m[5] = rmat[1][5];
-	m[6] = rmat[2][5];
-	m[7] = rmat[3][5];
-	m[8] = rmat[0][6];
-	m[9] = rmat[1][6];
-	m[10] = rmat[2][6];
-	m[11] = rmat[3][6];
-	m[12] = rmat[0][7];
-	m[13] = rmat[1][7];
-	m[14] = rmat[2][7];
-	m[15] = rmat[3][7];
 
-	return 1;
+void rsMatrix::scale(float s){
+	rsMatrix mat;
+	mat.makeScale(s);
+	this->postMult(mat);
+}
+
+void rsMatrix::scale(float x, float y, float z){
+	rsMatrix mat;
+	mat.makeScale(x, y, z);
+	this->postMult(mat);
+}
+
+void rsMatrix::scale(float* s){
+	rsMatrix mat;
+	mat.makeScale(s);
+	this->postMult(mat);
+}
+
+void rsMatrix::scale(const rsVec &vec){
+	rsMatrix mat;
+	mat.makeScale(vec);
+	this->postMult(mat);
+}
+
+
+void rsMatrix::rotate(float a, float x, float y, float z){
+	rsMatrix mat;
+	mat.makeRotate(a, x, y, z);
+	this->postMult(mat);
+}
+
+
+void rsMatrix::rotate(float a, const rsVec &v){
+	rsMatrix mat;
+	mat.makeRotate(a, v);
+	this->postMult(mat);
+}
+
+
+void rsMatrix::rotate(rsQuat &q){
+	rsMatrix mat;
+	mat.makeRotate(q);
+	this->postMult(mat);
+}
+
+
+float rsMatrix::determinant3(const float a1, const float a2, const float a3,
+	const float b1, const float b2, const float b3,
+	const float c1, const float c2, const float c3){
+	return (a1 * b2 * c3) + (a2 * b3 * c1) + (a3 * b1 * c2)
+		- (a1 * b3 * c2) - (a2 * b1 * c3) - (a3 * b2 * c1); 
+}
+
+
+bool rsMatrix::invert(){
+	const float a1(m[0]);
+	const float b1(m[1]);
+	const float c1(m[2]);
+	const float d1(m[3]);
+	const float a2(m[4]);
+	const float b2(m[5]);
+	const float c2(m[6]);
+	const float d2(m[7]);
+	const float a3(m[8]);
+	const float b3(m[9]);
+	const float c3(m[10]);
+	const float d3(m[11]);
+	const float a4(m[12]);
+	const float b4(m[13]);
+	const float c4(m[14]);
+	const float d4(m[15]);
+
+	// calculate determinant
+	const float d3_1(determinant3(b2, b3, b4, c2, c3, c4, d2, d3, d4));
+	const float d3_2(-determinant3(a2, a3, a4, c2, c3, c4, d2, d3, d4));
+	const float d3_3(determinant3(a2, a3, a4, b2, b3, b4, d2, d3, d4));
+	const float d3_4(-determinant3(a2, a3, a4, b2, b3, b4, c2, c3, c4));
+    const float det(a1 * d3_1 + b1 * d3_2 + c1 * d3_3 + d1 * d3_4);
+
+	if(fabs(det) < RS_EPSILON)
+		return false;  // matrix is singular, cannot be inverted
+
+	// reciprocal of determinant
+    const float rec_det(1.0f / det);
+
+	// calculate inverted matrix
+	m[0]  =   d3_1 * rec_det;
+	m[4]  =   d3_2 * rec_det;
+	m[8]  =   d3_3 * rec_det;
+	m[12] =   d3_4 * rec_det;
+	m[1]  = - determinant3(b1, b3, b4, c1, c3, c4, d1, d3, d4) * rec_det;
+	m[5]  =   determinant3(a1, a3, a4, c1, c3, c4, d1, d3, d4) * rec_det;
+	m[9]  = - determinant3(a1, a3, a4, b1, b3, b4, d1, d3, d4) * rec_det;
+	m[13] =   determinant3(a1, a3, a4, b1, b3, b4, c1, c3, c4) * rec_det;
+	m[2]  =   determinant3(b1, b2, b4, c1, c2, c4, d1, d2, d4) * rec_det;
+	m[6]  = - determinant3(a1, a2, a4, c1, c2, c4, d1, d2, d4) * rec_det;
+	m[10] =   determinant3(a1, a2, a4, b1, b2, b4, d1, d2, d4) * rec_det;
+	m[14] = - determinant3(a1, a2, a4, b1, b2, b4, c1, c2, c4) * rec_det;
+	m[3]  = - determinant3(b1, b2, b3, c1, c2, c3, d1, d2, d3) * rec_det;
+	m[7]  =   determinant3(a1, a2, a3, c1, c2, c3, d1, d2, d3) * rec_det;
+	m[11] = - determinant3(a1, a2, a3, b1, b2, b3, d1, d2, d3) * rec_det;
+	m[15] =   determinant3(a1, a2, a3, b1, b2, b3, c1, c2, c3) * rec_det;
+
+	return true; 
+}
+
+
+bool rsMatrix::invert(const rsMatrix &mat){
+	const float a1(mat[0]);
+	const float b1(mat[1]);
+	const float c1(mat[2]);
+	const float d1(mat[3]);
+	const float a2(mat[4]);
+	const float b2(mat[5]);
+	const float c2(mat[6]);
+	const float d2(mat[7]);
+	const float a3(mat[8]);
+	const float b3(mat[9]);
+	const float c3(mat[10]);
+	const float d3(mat[11]);
+	const float a4(mat[12]);
+	const float b4(mat[13]);
+	const float c4(mat[14]);
+	const float d4(mat[15]);
+
+	// calculate determinant
+	const float d3_1(determinant3(b2, b3, b4, c2, c3, c4, d2, d3, d4));
+	const float d3_2(-determinant3(a2, a3, a4, c2, c3, c4, d2, d3, d4));
+	const float d3_3(determinant3(a2, a3, a4, b2, b3, b4, d2, d3, d4));
+	const float d3_4(-determinant3(a2, a3, a4, b2, b3, b4, c2, c3, c4));
+    const float det(a1 * d3_1 + b1 * d3_2 + c1 * d3_3 + d1 * d3_4);
+
+	if(fabs(det) < RS_EPSILON)
+		return false;  // matrix is singular, cannot be inverted
+
+	// reciprocal of determinant
+    const float rec_det(1.0f / det);
+
+	// calculate inverted matrix
+	m[0]  =   d3_1 * rec_det;
+	m[4]  =   d3_2 * rec_det;
+	m[8]  =   d3_3 * rec_det;
+	m[12] =   d3_4 * rec_det;
+	m[1]  = - determinant3(b1, b3, b4, c1, c3, c4, d1, d3, d4) * rec_det;
+	m[5]  =   determinant3(a1, a3, a4, c1, c3, c4, d1, d3, d4) * rec_det;
+	m[9]  = - determinant3(a1, a3, a4, b1, b3, b4, d1, d3, d4) * rec_det;
+	m[13] =   determinant3(a1, a3, a4, b1, b3, b4, c1, c3, c4) * rec_det;
+	m[2]  =   determinant3(b1, b2, b4, c1, c2, c4, d1, d2, d4) * rec_det;
+	m[6]  = - determinant3(a1, a2, a4, c1, c2, c4, d1, d2, d4) * rec_det;
+	m[10] =   determinant3(a1, a2, a4, b1, b2, b4, d1, d2, d4) * rec_det;
+	m[14] = - determinant3(a1, a2, a4, b1, b2, b4, c1, c2, c4) * rec_det;
+	m[3]  = - determinant3(b1, b2, b3, c1, c2, c3, d1, d2, d3) * rec_det;
+	m[7]  =   determinant3(a1, a2, a3, c1, c2, c3, d1, d2, d3) * rec_det;
+	m[11] = - determinant3(a1, a2, a3, b1, b2, b3, d1, d2, d3) * rec_det;
+	m[15] =   determinant3(a1, a2, a3, b1, b2, b3, c1, c2, c3) * rec_det;
+
+	return true; 
 }
 
 
@@ -457,7 +550,6 @@ void rsMatrix::fromQuat(const rsQuat &q){
 }
 
 
-
 rsMatrix & rsMatrix::operator = (const rsMatrix &mat){
 	m[0]=mat[0]; m[1]=mat[1]; m[2]=mat[2]; m[3]=mat[3];
 	m[4]=mat[4]; m[5]=mat[5]; m[6]=mat[6]; m[7]=mat[7];
@@ -465,3 +557,19 @@ rsMatrix & rsMatrix::operator = (const rsMatrix &mat){
 	m[12]=mat[12]; m[13]=mat[13]; m[14]=mat[14]; m[15]=mat[15];
 	return *this;
 }
+
+
+std::ostream & rsMatrix::operator << (std::ostream &os){
+	return os 
+		<< "| " << m[0] << " " << m[4] << " " << m[8] << " " << m[12] << " |" << std::endl
+		<< "| " << m[1] << " " << m[5] << " " << m[9] << " " << m[13] << " |" << std::endl
+		<< "| " << m[2] << " " << m[6] << " " << m[10] << " " << m[14] << " |" << std::endl
+		<< "| " << m[3] << " " << m[7] << " " << m[11] << " " << m[15] << " |" << std::endl;
+}
+/*std::ostream & operator << (std::ostream& os, const rsMatrix& mat){
+	return os 
+		<< "| " << mat[0] << " " << mat[4] << " " << mat[8] << " " << mat[12] << " |" << std::endl
+		<< "| " << mat[1] << " " << mat[5] << " " << mat[9] << " " << mat[13] << " |" << std::endl
+		<< "| " << mat[2] << " " << mat[6] << " " << mat[10] << " " << mat[14] << " |" << std::endl
+		<< "| " << mat[3] << " " << mat[7] << " " << mat[11] << " " << mat[15] << " |" << std::endl;
+}*/

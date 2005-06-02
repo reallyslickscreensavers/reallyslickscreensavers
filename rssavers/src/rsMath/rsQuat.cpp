@@ -62,7 +62,7 @@ void rsQuat::copy(rsQuat copyquat){
 
 
 void rsQuat::make(float a, float x, float y, float z){
-	if(a < RSEPSILON && a > -RSEPSILON){
+	if(a < RS_EPSILON && a > -RS_EPSILON){
 		q[0] = 0.0f;
 		q[1] = 0.0f;
 		q[2] = 0.0f;
@@ -80,7 +80,7 @@ void rsQuat::make(float a, float x, float y, float z){
 
 
 void rsQuat::make(float a, const rsVec &v){
-	if(a < RSEPSILON && a > -RSEPSILON){
+	if(a < RS_EPSILON && a > -RS_EPSILON){
 		q[0] = 0.0f;
 		q[1] = 0.0f;
 		q[2] = 0.0f;
@@ -277,8 +277,8 @@ void rsQuat::slerp(rsQuat a, rsQuat b, float t){
 	float n, cn, sn, scalea, scaleb;
 
 	cn = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
-	if((1.0f + cn) > RSEPSILON){
-		if((1.0f - cn) > RSEPSILON){
+	if((1.0f + cn) > RS_EPSILON){
+		if((1.0f - cn) > RS_EPSILON){
 			n = acosf(cn);
 			sn = sinf(n);
 			scalea = sinf((1.0f - t) * n) / sn;

@@ -31,7 +31,7 @@
 
 
 
-#define RSEPSILON 0.000001f
+#define RS_EPSILON 0.000001f
 #define RS_PIo2 1.5707963268f
 #define RS_PI 3.14159265359f
 #define RS_PIx2 6.28318530718f
