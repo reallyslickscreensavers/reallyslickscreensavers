@@ -162,25 +162,25 @@ void display(){
 	mat1.makeScale(0.25f + 0.12f * cosf(move[7] * 4.0f),
 		0.25f + 0.12f * cosf(move[7] * 4.0f),
 		0.3f + 0.15f * cosf(move[7] * 4.0f + 1.5707f));
-	mat2.makeRot(move[2], 1.0f, 0.0f, 0.0f);
+	mat2.makeRotate(move[2], 1.0f, 0.0f, 0.0f);
 	mat1.postMult(mat2);
-	mat2.makeRot(move[4], 0.0f, 1.0f, 0.0f);
+	mat2.makeRotate(move[4], 0.0f, 1.0f, 0.0f);
 	mat1.postMult(mat2);
-	mat2.makeTrans(cosf(move[5]), cosf(move[6]), sinf(move[3]));
+	mat2.makeTranslate(cosf(move[5]), cosf(move[6]), sinf(move[3]));
 	mat1.postMult(mat2);
 	mat1.get(matrix);
 	ellipsoid.setMatrix(matrix);
 
-	mat1.makeRot(move[0], 1.0f, 0.0f, 0.0f);
-	mat2.makeRot(move[1], 0.0f, 1.0f, 0.0f);
+	mat1.makeRotate(move[0], 1.0f, 0.0f, 0.0f);
+	mat2.makeRotate(move[1], 0.0f, 1.0f, 0.0f);
 	mat1.preMult(mat2);
 	mat1.get(matrix);
 	torus1.setMatrix(matrix);
 	torus1.setRadius(1.1f);
 	torus1.setThickness(0.17f);
 
-	mat1.makeRot(move[2], 0.0f, 1.0f, 0.0f);
-	mat2.makeRot(move[3], 1.0f, 0.0f, 0.0f);
+	mat1.makeRotate(move[2], 0.0f, 1.0f, 0.0f);
+	mat2.makeRotate(move[3], 1.0f, 0.0f, 0.0f);
 	mat1.postMult(mat2);
 	mat1.get(matrix);
 	torus2.setMatrix(matrix);
@@ -188,17 +188,17 @@ void display(){
 	torus2.setThickness(0.17f);
 
 	mat1.makeScale(0.25f, 0.25f, 0.25f + 0.15 * cosf(move[0]));
-	mat2.makeRot(move[3], 1.0f, 0.0f, 0.0f);
+	mat2.makeRotate(move[3], 1.0f, 0.0f, 0.0f);
 	mat1.postMult(mat2);
-	mat2.makeRot(move[5], 0.0f, 1.0f, 0.0f);
+	mat2.makeRotate(move[5], 0.0f, 1.0f, 0.0f);
 	mat1.postMult(mat2);
-	mat2.makeTrans(sinf(move[2]), cosf(move[5]), cosf(move[6]));
+	mat2.makeTranslate(sinf(move[2]), cosf(move[5]), cosf(move[6]));
 	mat1.postMult(mat2);
 	mat1.get(matrix);
 	hexa.setMatrix(matrix);
 
-	mat1.makeRot(move[1], 1.0f, 0.0f, 0.0f);
-	mat2.makeRot(move[2], 0.0f, 1.0f, 0.0f);
+	mat1.makeRotate(move[1], 1.0f, 0.0f, 0.0f);
+	mat2.makeRotate(move[2], 0.0f, 1.0f, 0.0f);
 	mat1.preMult(mat2);
 	mat1.get(matrix);
 	knot.setMatrix(matrix);
