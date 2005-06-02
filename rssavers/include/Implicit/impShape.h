@@ -47,7 +47,10 @@ public:
 	void setPosition(float x, float y, float z);
 	void setPosition(float* position);
 	void setMatrix(float* m);
-	void invertMatrix();
+	float determinant3(const float a1, const float a2, const float a3,
+		const float b1, const float b2, const float b3,
+		const float c1, const float c2, const float c3);
+	bool invertMatrix();
 	void setThickness(float t){
 		thickness = t;
 		thicknessSquared = thickness * thickness;
