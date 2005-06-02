@@ -56,8 +56,8 @@ public:
 	void makeScale(float x, float y, float z);
 	void makeScale(float* s);
 	void makeScale(const rsVec &vec);
-	void makeRotate(float a, float x, float y, float z);	// angle, axis
-	void makeRotate(float a, const rsVec &v);	// angle, axis
+	void makeRotate(float a, float x, float y, float z);  // normalized angle, axis
+	void makeRotate(float a, const rsVec &v);  // normalized angle, axis
 	void makeRotate(rsQuat &q);
 	void translate(float x, float y, float z);
 	void translate(float* p);
@@ -66,8 +66,8 @@ public:
 	void scale(float x, float y, float z);
 	void scale(float* s);
 	void scale(const rsVec &vec);
-	void rotate(float a, float x, float y, float z);	// angle, axis
-	void rotate(float a, const rsVec &v);	// angle, axis
+	void rotate(float a, float x, float y, float z);  // normalized angle, axis
+	void rotate(float a, const rsVec &v);  // normalized angle, axis
 	void rotate(rsQuat &q);
 	float determinant3(const float a1, const float a2, const float a3,
 		const float b1, const float b2, const float b3,

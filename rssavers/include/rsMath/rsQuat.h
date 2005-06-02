@@ -36,8 +36,8 @@ public:
 	~rsQuat();
 	void set(float x, float y, float z, float w);	// x, y, z, w
 	void copy(rsQuat);						// Copy another quaternion
-	void make(float a, float x, float y, float z);	// angle, axis
-	void make(float a, const rsVec &v);
+	void make(float a, float x, float y, float z);	// angle, normalized axis
+	void make(float a, const rsVec &v);  	// angle, normalized axis
 	void normalize();
 	void preMult(rsQuat &postQuat);			// Multiply this quaternion by
 											// the passed quaternion

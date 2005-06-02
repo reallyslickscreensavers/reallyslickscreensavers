@@ -78,80 +78,76 @@ void rsMatrix::copy(const rsMatrix &mat){
 
 
 void rsMatrix::preMult(const rsMatrix &postMat){
-	float preMat[16];
+	const float preMat0(m[0]);
+	const float preMat1(m[1]);
+	const float preMat2(m[2]);
+	const float preMat3(m[3]);
+	const float preMat4(m[4]);
+	const float preMat5(m[5]);
+	const float preMat6(m[6]);
+	const float preMat7(m[7]);
+	const float preMat8(m[8]);
+	const float preMat9(m[9]);
+	const float preMat10(m[10]);
+	const float preMat11(m[11]);
+	const float preMat12(m[12]);
+	const float preMat13(m[13]);
+	const float preMat14(m[14]);
+	const float preMat15(m[15]);
 
-	preMat[0] = m[0];
-	preMat[1] = m[1];
-	preMat[2] = m[2];
-	preMat[3] = m[3];
-	preMat[4] = m[4];
-	preMat[5] = m[5];
-	preMat[6] = m[6];
-	preMat[7] = m[7];
-	preMat[8] = m[8];
-	preMat[9] = m[9];
-	preMat[10] = m[10];
-	preMat[11] = m[11];
-	preMat[12] = m[12];
-	preMat[13] = m[13];
-	preMat[14] = m[14];
-	preMat[15] = m[15];
-
-	m[0] = preMat[0]*postMat[0] + preMat[4]*postMat[1] + preMat[8]*postMat[2] + preMat[12]*postMat[3];
-	m[1] = preMat[1]*postMat[0] + preMat[5]*postMat[1] + preMat[9]*postMat[2] + preMat[13]*postMat[3];
-	m[2] = preMat[2]*postMat[0] + preMat[6]*postMat[1] + preMat[10]*postMat[2] + preMat[14]*postMat[3];
-	m[3] = preMat[3]*postMat[0] + preMat[7]*postMat[1] + preMat[11]*postMat[2] + preMat[15]*postMat[3];
-	m[4] = preMat[0]*postMat[4] + preMat[4]*postMat[5] + preMat[8]*postMat[6] + preMat[12]*postMat[7];
-	m[5] = preMat[1]*postMat[4] + preMat[5]*postMat[5] + preMat[9]*postMat[6] + preMat[13]*postMat[7];
-	m[6] = preMat[2]*postMat[4] + preMat[6]*postMat[5] + preMat[10]*postMat[6] + preMat[14]*postMat[7];
-	m[7] = preMat[3]*postMat[4] + preMat[7]*postMat[5] + preMat[11]*postMat[6] + preMat[15]*postMat[7];
-	m[8] = preMat[0]*postMat[8] + preMat[4]*postMat[9] + preMat[8]*postMat[10] + preMat[12]*postMat[11];
-	m[9] = preMat[1]*postMat[8] + preMat[5]*postMat[9] + preMat[9]*postMat[10] + preMat[13]*postMat[11];
-	m[10] = preMat[2]*postMat[8] + preMat[6]*postMat[9] + preMat[10]*postMat[10] + preMat[14]*postMat[11];
-	m[11] = preMat[3]*postMat[8] + preMat[7]*postMat[9] + preMat[11]*postMat[10] + preMat[15]*postMat[11];
-	m[12] = preMat[0]*postMat[12] + preMat[4]*postMat[13] + preMat[8]*postMat[14] + preMat[12]*postMat[15];
-	m[13] = preMat[1]*postMat[12] + preMat[5]*postMat[13] + preMat[9]*postMat[14] + preMat[13]*postMat[15];
-	m[14] = preMat[2]*postMat[12] + preMat[6]*postMat[13] + preMat[10]*postMat[14] + preMat[14]*postMat[15];
-	m[15] = preMat[3]*postMat[12] + preMat[7]*postMat[13] + preMat[11]*postMat[14] + preMat[15]*postMat[15];
+	m[0]  = preMat0 * postMat[0]  + preMat4 * postMat[1]  + preMat8  * postMat[2]  + preMat12 * postMat[3];
+	m[1]  = preMat1 * postMat[0]  + preMat5 * postMat[1]  + preMat9  * postMat[2]  + preMat13 * postMat[3];
+	m[2]  = preMat2 * postMat[0]  + preMat6 * postMat[1]  + preMat10 * postMat[2]  + preMat14 * postMat[3];
+	m[3]  = preMat3 * postMat[0]  + preMat7 * postMat[1]  + preMat11 * postMat[2]  + preMat15 * postMat[3];
+	m[4]  = preMat0 * postMat[4]  + preMat4 * postMat[5]  + preMat8  * postMat[6]  + preMat12 * postMat[7];
+	m[5]  = preMat1 * postMat[4]  + preMat5 * postMat[5]  + preMat9  * postMat[6]  + preMat13 * postMat[7];
+	m[6]  = preMat2 * postMat[4]  + preMat6 * postMat[5]  + preMat10 * postMat[6]  + preMat14 * postMat[7];
+	m[7]  = preMat3 * postMat[4]  + preMat7 * postMat[5]  + preMat11 * postMat[6]  + preMat15 * postMat[7];
+	m[8]  = preMat0 * postMat[8]  + preMat4 * postMat[9]  + preMat8  * postMat[10] + preMat12 * postMat[11];
+	m[9]  = preMat1 * postMat[8]  + preMat5 * postMat[9]  + preMat9  * postMat[10] + preMat13 * postMat[11];
+	m[10] = preMat2 * postMat[8]  + preMat6 * postMat[9]  + preMat10 * postMat[10] + preMat14 * postMat[11];
+	m[11] = preMat3 * postMat[8]  + preMat7 * postMat[9]  + preMat11 * postMat[10] + preMat15 * postMat[11];
+	m[12] = preMat0 * postMat[12] + preMat4 * postMat[13] + preMat8  * postMat[14] + preMat12 * postMat[15];
+	m[13] = preMat1 * postMat[12] + preMat5 * postMat[13] + preMat9  * postMat[14] + preMat13 * postMat[15];
+	m[14] = preMat2 * postMat[12] + preMat6 * postMat[13] + preMat10 * postMat[14] + preMat14 * postMat[15];
+	m[15] = preMat3 * postMat[12] + preMat7 * postMat[13] + preMat11 * postMat[14] + preMat15 * postMat[15];
 }
 
 
 void rsMatrix::postMult(const rsMatrix &preMat){
-	float postMat[16];
+	const float postMat0(m[0]);
+	const float postMat1(m[1]);
+	const float postMat2(m[2]);
+	const float postMat3(m[3]);
+	const float postMat4(m[4]);
+	const float postMat5(m[5]);
+	const float postMat6(m[6]);
+	const float postMat7(m[7]);
+	const float postMat8(m[8]);
+	const float postMat9(m[9]);
+	const float postMat10(m[10]);
+	const float postMat11(m[11]);
+	const float postMat12(m[12]);
+	const float postMat13(m[13]);
+	const float postMat14(m[14]);
+	const float postMat15(m[15]);
 
-	postMat[0] = m[0];
-	postMat[1] = m[1];
-	postMat[2] = m[2];
-	postMat[3] = m[3];
-	postMat[4] = m[4];
-	postMat[5] = m[5];
-	postMat[6] = m[6];
-	postMat[7] = m[7];
-	postMat[8] = m[8];
-	postMat[9] = m[9];
-	postMat[10] = m[10];
-	postMat[11] = m[11];
-	postMat[12] = m[12];
-	postMat[13] = m[13];
-	postMat[14] = m[14];
-	postMat[15] = m[15];
-
-	m[0] = preMat[0]*postMat[0] + preMat[4]*postMat[1] + preMat[8]*postMat[2] + preMat[12]*postMat[3];
-	m[1] = preMat[1]*postMat[0] + preMat[5]*postMat[1] + preMat[9]*postMat[2] + preMat[13]*postMat[3];
-	m[2] = preMat[2]*postMat[0] + preMat[6]*postMat[1] + preMat[10]*postMat[2] + preMat[14]*postMat[3];
-	m[3] = preMat[3]*postMat[0] + preMat[7]*postMat[1] + preMat[11]*postMat[2] + preMat[15]*postMat[3];
-	m[4] = preMat[0]*postMat[4] + preMat[4]*postMat[5] + preMat[8]*postMat[6] + preMat[12]*postMat[7];
-	m[5] = preMat[1]*postMat[4] + preMat[5]*postMat[5] + preMat[9]*postMat[6] + preMat[13]*postMat[7];
-	m[6] = preMat[2]*postMat[4] + preMat[6]*postMat[5] + preMat[10]*postMat[6] + preMat[14]*postMat[7];
-	m[7] = preMat[3]*postMat[4] + preMat[7]*postMat[5] + preMat[11]*postMat[6] + preMat[15]*postMat[7];
-	m[8] = preMat[0]*postMat[8] + preMat[4]*postMat[9] + preMat[8]*postMat[10] + preMat[12]*postMat[11];
-	m[9] = preMat[1]*postMat[8] + preMat[5]*postMat[9] + preMat[9]*postMat[10] + preMat[13]*postMat[11];
-	m[10] = preMat[2]*postMat[8] + preMat[6]*postMat[9] + preMat[10]*postMat[10] + preMat[14]*postMat[11];
-	m[11] = preMat[3]*postMat[8] + preMat[7]*postMat[9] + preMat[11]*postMat[10] + preMat[15]*postMat[11];
-	m[12] = preMat[0]*postMat[12] + preMat[4]*postMat[13] + preMat[8]*postMat[14] + preMat[12]*postMat[15];
-	m[13] = preMat[1]*postMat[12] + preMat[5]*postMat[13] + preMat[9]*postMat[14] + preMat[13]*postMat[15];
-	m[14] = preMat[2]*postMat[12] + preMat[6]*postMat[13] + preMat[10]*postMat[14] + preMat[14]*postMat[15];
-	m[15] = preMat[3]*postMat[12] + preMat[7]*postMat[13] + preMat[11]*postMat[14] + preMat[15]*postMat[15];
+	m[0]  = preMat[0] * postMat0  + preMat[4] * postMat1  + preMat[8]  * postMat2  + preMat[12] * postMat3;
+	m[1]  = preMat[1] * postMat0  + preMat[5] * postMat1  + preMat[9]  * postMat2  + preMat[13] * postMat3;
+	m[2]  = preMat[2] * postMat0  + preMat[6] * postMat1  + preMat[10] * postMat2  + preMat[14] * postMat3;
+	m[3]  = preMat[3] * postMat0  + preMat[7] * postMat1  + preMat[11] * postMat2  + preMat[15] * postMat3;
+	m[4]  = preMat[0] * postMat4  + preMat[4] * postMat5  + preMat[8]  * postMat6  + preMat[12] * postMat7;
+	m[5]  = preMat[1] * postMat4  + preMat[5] * postMat5  + preMat[9]  * postMat6  + preMat[13] * postMat7;
+	m[6]  = preMat[2] * postMat4  + preMat[6] * postMat5  + preMat[10] * postMat6  + preMat[14] * postMat7;
+	m[7]  = preMat[3] * postMat4  + preMat[7] * postMat5  + preMat[11] * postMat6  + preMat[15] * postMat7;
+	m[8]  = preMat[0] * postMat8  + preMat[4] * postMat9  + preMat[8]  * postMat10 + preMat[12] * postMat11;
+	m[9]  = preMat[1] * postMat8  + preMat[5] * postMat9  + preMat[9]  * postMat10 + preMat[13] * postMat11;
+	m[10] = preMat[2] * postMat8  + preMat[6] * postMat9  + preMat[10] * postMat10 + preMat[14] * postMat11;
+	m[11] = preMat[3] * postMat8  + preMat[7] * postMat9  + preMat[11] * postMat10 + preMat[15] * postMat11;
+	m[12] = preMat[0] * postMat12 + preMat[4] * postMat13 + preMat[8]  * postMat14 + preMat[12] * postMat15;
+	m[13] = preMat[1] * postMat12 + preMat[5] * postMat13 + preMat[9]  * postMat14 + preMat[13] * postMat15;
+	m[14] = preMat[2] * postMat12 + preMat[6] * postMat13 + preMat[10] * postMat14 + preMat[14] * postMat15;
+	m[15] = preMat[3] * postMat12 + preMat[7] * postMat13 + preMat[11] * postMat14 + preMat[15] * postMat15;
 }
 
 
