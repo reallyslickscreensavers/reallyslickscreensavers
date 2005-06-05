@@ -368,38 +368,38 @@ void rsMatrix::rotate(rsQuat &q){
 }
 
 
-float rsMatrix::determinant3(const float a1, const float a2, const float a3,
-	const float b1, const float b2, const float b3,
-	const float c1, const float c2, const float c3){
-	return (a1 * b2 * c3) + (a2 * b3 * c1) + (a3 * b1 * c2)
-		- (a1 * b3 * c2) - (a2 * b1 * c3) - (a3 * b2 * c1); 
+float rsMatrix::determinant3(const float aa, const float ab, const float ac,
+	const float ba, const float bb, const float bc,
+	const float ca, const float cb, const float cc){
+	return (aa * bb * cc) + (ab * bc * ca) + (ac * ba * cb)
+		- (aa * bc * cb) - (ab * ba * cc) - (ac * bb * ca); 
 }
 
 
 bool rsMatrix::invert(){
-	const float a1(m[0]);
-	const float b1(m[1]);
-	const float c1(m[2]);
-	const float d1(m[3]);
-	const float a2(m[4]);
-	const float b2(m[5]);
-	const float c2(m[6]);
-	const float d2(m[7]);
-	const float a3(m[8]);
-	const float b3(m[9]);
-	const float c3(m[10]);
-	const float d3(m[11]);
-	const float a4(m[12]);
-	const float b4(m[13]);
-	const float c4(m[14]);
-	const float d4(m[15]);
+	const float aa(m[0]);
+	const float ba(m[1]);
+	const float ca(m[2]);
+	const float da(m[3]);
+	const float ab(m[4]);
+	const float bb(m[5]);
+	const float cb(m[6]);
+	const float db(m[7]);
+	const float ac(m[8]);
+	const float bc(m[9]);
+	const float cc(m[10]);
+	const float dc(m[11]);
+	const float ad(m[12]);
+	const float bd(m[13]);
+	const float cd(m[14]);
+	const float dd(m[15]);
 
 	// calculate determinant
-	const float d3_1(determinant3(b2, b3, b4, c2, c3, c4, d2, d3, d4));
-	const float d3_2(-determinant3(a2, a3, a4, c2, c3, c4, d2, d3, d4));
-	const float d3_3(determinant3(a2, a3, a4, b2, b3, b4, d2, d3, d4));
-	const float d3_4(-determinant3(a2, a3, a4, b2, b3, b4, c2, c3, c4));
-    const float det(a1 * d3_1 + b1 * d3_2 + c1 * d3_3 + d1 * d3_4);
+	const float det3_1(determinant3(bb, bc, bd, cb, cc, cd, db, dc, dd));
+	const float det3_2(-determinant3(ab, ac, ad, cb, cc, cd, db, dc, dd));
+	const float det3_3(determinant3(ab, ac, ad, bb, bc, bd, db, dc, dd));
+	const float det3_4(-determinant3(ab, ac, ad, bb, bc, bd, cb, cc, cd));
+    const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
 
 	if(fabs(det) < RS_EPSILON)
 		return false;  // matrix is singular, cannot be inverted
@@ -408,51 +408,51 @@ bool rsMatrix::invert(){
     const float rec_det(1.0f / det);
 
 	// calculate inverted matrix
-	m[0]  =   d3_1 * rec_det;
-	m[4]  =   d3_2 * rec_det;
-	m[8]  =   d3_3 * rec_det;
-	m[12] =   d3_4 * rec_det;
-	m[1]  = - determinant3(b1, b3, b4, c1, c3, c4, d1, d3, d4) * rec_det;
-	m[5]  =   determinant3(a1, a3, a4, c1, c3, c4, d1, d3, d4) * rec_det;
-	m[9]  = - determinant3(a1, a3, a4, b1, b3, b4, d1, d3, d4) * rec_det;
-	m[13] =   determinant3(a1, a3, a4, b1, b3, b4, c1, c3, c4) * rec_det;
-	m[2]  =   determinant3(b1, b2, b4, c1, c2, c4, d1, d2, d4) * rec_det;
-	m[6]  = - determinant3(a1, a2, a4, c1, c2, c4, d1, d2, d4) * rec_det;
-	m[10] =   determinant3(a1, a2, a4, b1, b2, b4, d1, d2, d4) * rec_det;
-	m[14] = - determinant3(a1, a2, a4, b1, b2, b4, c1, c2, c4) * rec_det;
-	m[3]  = - determinant3(b1, b2, b3, c1, c2, c3, d1, d2, d3) * rec_det;
-	m[7]  =   determinant3(a1, a2, a3, c1, c2, c3, d1, d2, d3) * rec_det;
-	m[11] = - determinant3(a1, a2, a3, b1, b2, b3, d1, d2, d3) * rec_det;
-	m[15] =   determinant3(a1, a2, a3, b1, b2, b3, c1, c2, c3) * rec_det;
+	m[0]  =   det3_1 * rec_det;
+	m[4]  =   det3_2 * rec_det;
+	m[8]  =   det3_3 * rec_det;
+	m[12] =   det3_4 * rec_det;
+	m[1]  = - determinant3(ba, bc, bd, ca, cc, cd, da, dc, dd) * rec_det;
+	m[5]  =   determinant3(aa, ac, ad, ca, cc, cd, da, dc, dd) * rec_det;
+	m[9]  = - determinant3(aa, ac, ad, ba, bc, bd, da, dc, dd) * rec_det;
+	m[13] =   determinant3(aa, ac, ad, ba, bc, bd, ca, cc, cd) * rec_det;
+	m[2]  =   determinant3(ba, bb, bd, ca, cb, cd, da, db, dd) * rec_det;
+	m[6]  = - determinant3(aa, ab, ad, ca, cb, cd, da, db, dd) * rec_det;
+	m[10] =   determinant3(aa, ab, ad, ba, bb, bd, da, db, dd) * rec_det;
+	m[14] = - determinant3(aa, ab, ad, ba, bb, bd, ca, cb, cd) * rec_det;
+	m[3]  = - determinant3(ba, bb, bc, ca, cb, cc, da, db, dc) * rec_det;
+	m[7]  =   determinant3(aa, ab, ac, ca, cb, cc, da, db, dc) * rec_det;
+	m[11] = - determinant3(aa, ab, ac, ba, bb, bc, da, db, dc) * rec_det;
+	m[15] =   determinant3(aa, ab, ac, ba, bb, bc, ca, cb, cc) * rec_det;
 
 	return true; 
 }
 
 
 bool rsMatrix::invert(const rsMatrix &mat){
-	const float a1(mat[0]);
-	const float b1(mat[1]);
-	const float c1(mat[2]);
-	const float d1(mat[3]);
-	const float a2(mat[4]);
-	const float b2(mat[5]);
-	const float c2(mat[6]);
-	const float d2(mat[7]);
-	const float a3(mat[8]);
-	const float b3(mat[9]);
-	const float c3(mat[10]);
-	const float d3(mat[11]);
-	const float a4(mat[12]);
-	const float b4(mat[13]);
-	const float c4(mat[14]);
-	const float d4(mat[15]);
+	const float aa(mat[0]);
+	const float ba(mat[1]);
+	const float ca(mat[2]);
+	const float da(mat[3]);
+	const float ab(mat[4]);
+	const float bb(mat[5]);
+	const float cb(mat[6]);
+	const float db(mat[7]);
+	const float ac(mat[8]);
+	const float bc(mat[9]);
+	const float cc(mat[10]);
+	const float dc(mat[11]);
+	const float ad(mat[12]);
+	const float bd(mat[13]);
+	const float cd(mat[14]);
+	const float dd(mat[15]);
 
 	// calculate determinant
-	const float d3_1(determinant3(b2, b3, b4, c2, c3, c4, d2, d3, d4));
-	const float d3_2(-determinant3(a2, a3, a4, c2, c3, c4, d2, d3, d4));
-	const float d3_3(determinant3(a2, a3, a4, b2, b3, b4, d2, d3, d4));
-	const float d3_4(-determinant3(a2, a3, a4, b2, b3, b4, c2, c3, c4));
-    const float det(a1 * d3_1 + b1 * d3_2 + c1 * d3_3 + d1 * d3_4);
+	const float det3_1(determinant3(bb, bc, bd, cb, cc, cd, db, dc, dd));
+	const float det3_2(-determinant3(ab, ac, ad, cb, cc, cd, db, dc, dd));
+	const float det3_3(determinant3(ab, ac, ad, bb, bc, bd, db, dc, dd));
+	const float det3_4(-determinant3(ab, ac, ad, bb, bc, bd, cb, cc, cd));
+    const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
 
 	if(fabs(det) < RS_EPSILON)
 		return false;  // matrix is singular, cannot be inverted
@@ -461,22 +461,22 @@ bool rsMatrix::invert(const rsMatrix &mat){
     const float rec_det(1.0f / det);
 
 	// calculate inverted matrix
-	m[0]  =   d3_1 * rec_det;
-	m[4]  =   d3_2 * rec_det;
-	m[8]  =   d3_3 * rec_det;
-	m[12] =   d3_4 * rec_det;
-	m[1]  = - determinant3(b1, b3, b4, c1, c3, c4, d1, d3, d4) * rec_det;
-	m[5]  =   determinant3(a1, a3, a4, c1, c3, c4, d1, d3, d4) * rec_det;
-	m[9]  = - determinant3(a1, a3, a4, b1, b3, b4, d1, d3, d4) * rec_det;
-	m[13] =   determinant3(a1, a3, a4, b1, b3, b4, c1, c3, c4) * rec_det;
-	m[2]  =   determinant3(b1, b2, b4, c1, c2, c4, d1, d2, d4) * rec_det;
-	m[6]  = - determinant3(a1, a2, a4, c1, c2, c4, d1, d2, d4) * rec_det;
-	m[10] =   determinant3(a1, a2, a4, b1, b2, b4, d1, d2, d4) * rec_det;
-	m[14] = - determinant3(a1, a2, a4, b1, b2, b4, c1, c2, c4) * rec_det;
-	m[3]  = - determinant3(b1, b2, b3, c1, c2, c3, d1, d2, d3) * rec_det;
-	m[7]  =   determinant3(a1, a2, a3, c1, c2, c3, d1, d2, d3) * rec_det;
-	m[11] = - determinant3(a1, a2, a3, b1, b2, b3, d1, d2, d3) * rec_det;
-	m[15] =   determinant3(a1, a2, a3, b1, b2, b3, c1, c2, c3) * rec_det;
+	m[0]  =   det3_1 * rec_det;
+	m[4]  =   det3_2 * rec_det;
+	m[8]  =   det3_3 * rec_det;
+	m[12] =   det3_4 * rec_det;
+	m[1]  = - determinant3(ba, bc, bd, ca, cc, cd, da, dc, dd) * rec_det;
+	m[5]  =   determinant3(aa, ac, ad, ca, cc, cd, da, dc, dd) * rec_det;
+	m[9]  = - determinant3(aa, ac, ad, ba, bc, bd, da, dc, dd) * rec_det;
+	m[13] =   determinant3(aa, ac, ad, ba, bc, bd, ca, cc, cd) * rec_det;
+	m[2]  =   determinant3(ba, bb, bd, ca, cb, cd, da, db, dd) * rec_det;
+	m[6]  = - determinant3(aa, ab, ad, ca, cb, cd, da, db, dd) * rec_det;
+	m[10] =   determinant3(aa, ab, ad, ba, bb, bd, da, db, dd) * rec_det;
+	m[14] = - determinant3(aa, ab, ad, ba, bb, bd, ca, cb, cd) * rec_det;
+	m[3]  = - determinant3(ba, bb, bc, ca, cb, cc, da, db, dc) * rec_det;
+	m[7]  =   determinant3(aa, ab, ac, ca, cb, cc, da, db, dc) * rec_det;
+	m[11] = - determinant3(aa, ab, ac, ba, bb, bc, da, db, dc) * rec_det;
+	m[15] =   determinant3(aa, ab, ac, ba, bb, bc, ca, cb, cc) * rec_det;
 
 	return true; 
 }

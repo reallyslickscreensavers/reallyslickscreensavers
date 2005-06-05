@@ -67,38 +67,38 @@ void impShape::setMatrix(float* m){
 }
 
 
-float impShape::determinant3(const float a1, const float a2, const float a3,
-	const float b1, const float b2, const float b3,
-	const float c1, const float c2, const float c3){
-	return (a1 * b2 * c3) + (a2 * b3 * c1) + (a3 * b1 * c2)
-		- (a1 * b3 * c2) - (a2 * b1 * c3) - (a3 * b2 * c1); 
+float impShape::determinant3(const float aa, const float ab, const float ac,
+	const float ba, const float bb, const float bc,
+	const float ca, const float cb, const float cc){
+	return (aa * bb * cc) + (ab * bc * ca) + (ac * ba * cb)
+		- (aa * bc * cb) - (ab * ba * cc) - (ac * bb * ca); 
 }
 
 
 bool impShape::invertMatrix(){
-	const float a1(mat[0]);
-	const float b1(mat[1]);
-	const float c1(mat[2]);
-	const float d1(mat[3]);
-	const float a2(mat[4]);
-	const float b2(mat[5]);
-	const float c2(mat[6]);
-	const float d2(mat[7]);
-	const float a3(mat[8]);
-	const float b3(mat[9]);
-	const float c3(mat[10]);
-	const float d3(mat[11]);
-	const float a4(mat[12]);
-	const float b4(mat[13]);
-	const float c4(mat[14]);
-	const float d4(mat[15]);
+	const float aa(mat[0]);
+	const float ba(mat[1]);
+	const float ca(mat[2]);
+	const float da(mat[3]);
+	const float ab(mat[4]);
+	const float bb(mat[5]);
+	const float cb(mat[6]);
+	const float db(mat[7]);
+	const float ac(mat[8]);
+	const float bc(mat[9]);
+	const float cc(mat[10]);
+	const float dc(mat[11]);
+	const float ad(mat[12]);
+	const float bd(mat[13]);
+	const float cd(mat[14]);
+	const float dd(mat[15]);
 
 	// calculate determinant
-	const float d3_1(determinant3(b2, b3, b4, c2, c3, c4, d2, d3, d4));
-	const float d3_2(-determinant3(a2, a3, a4, c2, c3, c4, d2, d3, d4));
-	const float d3_3(determinant3(a2, a3, a4, b2, b3, b4, d2, d3, d4));
-	const float d3_4(-determinant3(a2, a3, a4, b2, b3, b4, c2, c3, c4));
-    const float det(a1 * d3_1 + b1 * d3_2 + c1 * d3_3 + d1 * d3_4);
+	const float det3_1(determinant3(bb, bc, bd, cb, cc, cd, db, dc, dd));
+	const float det3_2(-determinant3(ab, ac, ad, cb, cc, cd, db, dc, dd));
+	const float det3_3(determinant3(ab, ac, ad, bb, bc, bd, db, dc, dd));
+	const float det3_4(-determinant3(ab, ac, ad, bb, bc, bd, cb, cc, cd));
+    const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
 
 	if(fabs(det) < 0.000001f)
 		return false;  // matrix is singular, cannot be inverted
@@ -107,22 +107,22 @@ bool impShape::invertMatrix(){
     const float rec_det(1.0f / det);
 
 	// calculate inverted matrix
-	invmat[0]  =   d3_1 * rec_det;
-	invmat[4]  =   d3_2 * rec_det;
-	invmat[8]  =   d3_3 * rec_det;
-	invmat[12] =   d3_4 * rec_det;
-	invmat[1]  = - determinant3(b1, b3, b4, c1, c3, c4, d1, d3, d4) * rec_det;
-	invmat[5]  =   determinant3(a1, a3, a4, c1, c3, c4, d1, d3, d4) * rec_det;
-	invmat[9]  = - determinant3(a1, a3, a4, b1, b3, b4, d1, d3, d4) * rec_det;
-	invmat[13] =   determinant3(a1, a3, a4, b1, b3, b4, c1, c3, c4) * rec_det;
-	invmat[2]  =   determinant3(b1, b2, b4, c1, c2, c4, d1, d2, d4) * rec_det;
-	invmat[6]  = - determinant3(a1, a2, a4, c1, c2, c4, d1, d2, d4) * rec_det;
-	invmat[10] =   determinant3(a1, a2, a4, b1, b2, b4, d1, d2, d4) * rec_det;
-	invmat[14] = - determinant3(a1, a2, a4, b1, b2, b4, c1, c2, c4) * rec_det;
-	invmat[3]  = - determinant3(b1, b2, b3, c1, c2, c3, d1, d2, d3) * rec_det;
-	invmat[7]  =   determinant3(a1, a2, a3, c1, c2, c3, d1, d2, d3) * rec_det;
-	invmat[11] = - determinant3(a1, a2, a3, b1, b2, b3, d1, d2, d3) * rec_det;
-	invmat[15] =   determinant3(a1, a2, a3, b1, b2, b3, c1, c2, c3) * rec_det;
+	invmat[0]  =   det3_1 * rec_det;
+	invmat[4]  =   det3_2 * rec_det;
+	invmat[8]  =   det3_3 * rec_det;
+	invmat[12] =   det3_4 * rec_det;
+	invmat[1]  = - determinant3(ba, bc, bd, ca, cc, cd, da, dc, dd) * rec_det;
+	invmat[5]  =   determinant3(aa, ac, ad, ca, cc, cd, da, dc, dd) * rec_det;
+	invmat[9]  = - determinant3(aa, ac, ad, ba, bc, bd, da, dc, dd) * rec_det;
+	invmat[13] =   determinant3(aa, ac, ad, ba, bc, bd, ca, cc, cd) * rec_det;
+	invmat[2]  =   determinant3(ba, bb, bd, ca, cb, cd, da, db, dd) * rec_det;
+	invmat[6]  = - determinant3(aa, ab, ad, ca, cb, cd, da, db, dd) * rec_det;
+	invmat[10] =   determinant3(aa, ab, ad, ba, bb, bd, da, db, dd) * rec_det;
+	invmat[14] = - determinant3(aa, ab, ad, ba, bb, bd, ca, cb, cd) * rec_det;
+	invmat[3]  = - determinant3(ba, bb, bc, ca, cb, cc, da, db, dc) * rec_det;
+	invmat[7]  =   determinant3(aa, ab, ac, ca, cb, cc, da, db, dc) * rec_det;
+	invmat[11] = - determinant3(aa, ab, ac, ba, bb, bc, da, db, dc) * rec_det;
+	invmat[15] =   determinant3(aa, ab, ac, ba, bb, bc, ca, cb, cc) * rec_det;
 
 	return true; 
 }
