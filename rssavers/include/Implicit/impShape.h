@@ -56,7 +56,7 @@ public:
 		thicknessSquared = thickness * thickness;
 	}
 	float getThickness(){return thickness;}
-	// returns the value of this element at a given position
+	// returns the value of this shape at a given position
 	// "position" is an array of 3 floats
 	virtual float value(float* position);
 	// assigns a center of the element's volume to "position"
