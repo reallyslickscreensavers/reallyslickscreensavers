@@ -37,9 +37,8 @@ private:
 
 public:
 	impKnot(){
-		radius1 = 1.0f; radius2 = 0.5f; thickness = 0.1f;
+		radius1 = 1.0f; radius2 = 0.5f;
 		coils = 3; coilsf = float(coils); twists = 2; twistsf = float(twists);
-		thicknessSquared = thickness * thickness;
 		twistsOverCoils = twistsf / coilsf;
 		lat_offset = 6.28318530718f / coilsf;
 	}

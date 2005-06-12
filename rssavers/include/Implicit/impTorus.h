@@ -33,7 +33,7 @@ private:
 
 public:
 	impTorus(){
-		radius = 1.0f; thickness = 0.1f; thicknessSquared = thickness * thickness;
+		radius = 1.0f;
 	}
 	~impTorus(){};
 	void setRadius(float r){radius = r;}
