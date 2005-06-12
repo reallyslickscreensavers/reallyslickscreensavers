@@ -32,7 +32,7 @@ impShape::impShape(){
 		= invmat[6] = invmat[7] = invmat[8] = invmat[9]
 		= invmat[11] = invmat[12] = invmat[13] = invmat[14] = 0.0f;
 
-	thickness = 1.0f;
+	thickness = 0.1f;
 	thicknessSquared = thickness * thickness;
 }
 

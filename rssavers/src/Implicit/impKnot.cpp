@@ -23,23 +23,18 @@
 
 
 float impKnot::value(float* position){
-	const float tx(position[0] * invmat[0]
-		+ position[1] * invmat[4]
-		+ position[2] * invmat[8]
-		+ invmat[12]);
-	const float ty(position[0] * invmat[1]
-		+ position[1] * invmat[5]
-		+ position[2] * invmat[9]
-		+ invmat[13]);
-	const float tz(position[0] * invmat[2]
-		+ position[1] * invmat[6]
-		+ position[2] * invmat[10]
-		+ invmat[14]);
+	const float x(position[0]);
+	const float y(position[1]);
+	const float z(position[2]);
+
+	const float tx(x * invmat[0] + y * invmat[4] + z * invmat[8] + invmat[12]);
+	const float ty(x * invmat[1] + y * invmat[5] + z * invmat[9] + invmat[13]);
+	const float tz(x * invmat[2] + y * invmat[6] + z * invmat[10] + invmat[14]);
 
 	const float temp(sqrtf(tx*tx + ty*ty) - radius1);
 	const float lat(atan2f(ty, tx) * twistsOverCoils);
 	float retval(0.0f);
-	for(int i=0; i<coils; i++){
+	for(int i=0; i<coils; ++i){
 		const float lon(lat + lat_offset * float(i));
 		const float hor(temp - cosf(lon) * radius2);
 		const float ver(tz - sinf(lon) * radius2);

@@ -23,11 +23,11 @@
 
 
 float impSphere::value(float* position){
-	const float x(invmat[12] + position[0]);
-	const float y(invmat[13] + position[1]);
-	const float z(invmat[14] + position[2]);
+	const float tx(invmat[12] + position[0]);
+	const float ty(invmat[13] + position[1]);
+	const float tz(invmat[14] + position[2]);
 	// Use thickness instead of relying on scale to be in the matrix
 	// because the value computation for a sphere is simplified by
 	// using an incomplete matrix.
-	return(thicknessSquared / (x*x + y*y + z*z));
+	return(thicknessSquared / (tx*tx + ty*ty + tz*tz));
 }
