@@ -54,7 +54,12 @@ void impKnot::center(float* position){
 
 
 void impKnot::addCrawlPoint(impCrawlPointVector &cpv){
-	cpv.push_back(impCrawlPoint(mat[0] * (radius1 + radius2) + mat[12],
-		mat[1] * (radius1 + radius2) + mat[13],
-		mat[2] * (radius1 + radius2) + mat[14]));
+	const float step(6.28318530718f / float(coils));
+	for(int i=0; i<coils; ++i){
+		const float x(radius1 + cosf(float(i) * step) * radius2);
+		const float z(sinf(float(i) * step) * radius2);
+		cpv.push_back(impCrawlPoint(mat[0] * x + mat[8] * z + mat[12],
+			mat[1] * x + mat[9] * z + mat[13],
+			mat[2] * x + mat[10] * z + mat[14]));
+	}
 }
