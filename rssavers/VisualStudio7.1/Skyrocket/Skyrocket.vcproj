@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;../../include"
+				AdditionalIncludeDirectories=".;../../include;&quot;$(OPENAL_BASE_DIR)/include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -36,7 +36,7 @@
 				AdditionalDependencies="comctl32.lib winmm.lib Opengl32.lib glu32.lib OpenAL32.lib rsWin32SaverD.lib rsMathD.lib rsTextD.lib"
 				OutputFile="$(OutDir)/SkyrocketD.scr"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="../../lib"
+				AdditionalLibraryDirectories="../../lib;&quot;$(OPENAL_BASE_DIR)/libs/win32&quot;"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/Skyrocket.pdb"
 				SubSystem="2"
