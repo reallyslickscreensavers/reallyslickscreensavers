@@ -23,13 +23,16 @@
 
 
 extern float frameTime, simulationTime;
-extern float shiftx, shiftz;
-extern float dFov;
 
 
 
-goo::goo(int res, float rad, float (*func)(float* position)){
+goo::goo(int res, float rad){
 	int i, j;
+
+	for(i=0; i<4; ++i){
+		cp[i] = float(i);
+		cs[i] = 0.1f + rsRandf(0.4f);
+	}
 
 	volumeSize = 2.0f;
 	if(res < 5)
@@ -42,7 +45,7 @@ goo::goo(int res, float rad, float (*func)(float* position)){
 	// Init implicit surfaces
 	volume = new impCubeVolume;
 	volume->init(resolution, resolution, resolution, unitSize);
-	volume->function = func;
+	volume->function = function;
 	volume->setSurfaceValue(0.4f);
 	surface = new impSurface**[arraySize];
 	useSurface = new bool*[arraySize];
@@ -67,8 +70,18 @@ goo::~goo(){
 void goo::update(float x, float z, float heading, float fov){
 	int i, j;
 
+	// update goo function constants
+	for(i=0; i<4; i++){
+		cp[i] += cs[i] * frameTime;
+		if(cp[i] >= RS_PIx2)
+			cp[i] -= RS_PIx2;
+		c[i] = 0.25f * cosf(cp[i]);
+	}
+
 	float halfFov = 0.5f * fov;
 
+	camx = x;
+	camz = z;
 	centerx = unitSize * float(int(0.5f + x / unitSize));
 	centerz = unitSize * float(int(0.5f + z / unitSize));
 
@@ -99,7 +112,33 @@ void goo::update(float x, float z, float heading, float fov){
 	}
 }
 
-	
+
+float goo::c[4];
+float goo::shiftx;
+float goo::shiftz;
+float goo::camx;
+float goo::camz;
+
+float goo::function(float* position){
+	const float px(position[0] + shiftx);
+	const float pz(position[2] + shiftz);
+	const float x(px - camx);
+	const float z(pz - camz);
+
+	return
+		// This first term defines upper and lower surfaces.
+		position[1] * position[1] * 1.25f
+		// These terms make the surfaces wavy.
+		+ c[0] * rsCosf(px - 2.71f * position[1])
+		+ c[1] * rsCosf(4.21f * position[1] + pz)
+		+ c[2] * rsCosf(1.91f * px - 1.67f * pz)
+		+ c[3] * rsCosf(1.53f * px + 1.11f * position[1] + 2.11f * pz)
+		// The last term creates a bubble around the eyepoint so it doesn't
+		// punch through the surface.
+		- 0.1f / (x * x + position[1] * position[1] + z * z);
+}
+
+
 void goo::draw(){
 	int i, j;
 

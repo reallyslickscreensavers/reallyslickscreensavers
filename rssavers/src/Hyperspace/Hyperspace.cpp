@@ -89,7 +89,6 @@ int whichTexture = 0;
 splinePath* thePath;
 tunnel* theTunnel;
 goo* theGoo;
-float shiftx, shiftz;
 unsigned int speckletex, spheretex, nebulatex;
 unsigned int goo_vp, goo_fp, tunnel_vp, tunnel_fp;
 
@@ -97,29 +96,6 @@ stretchedParticle** stars;
 stretchedParticle* sunStar;
 starBurst* theStarBurst;
 
-
-
-float goo_c[4];  // goo constants
-float goo_cp[4] = {0.0f, 1.0f, 2.0f, 3.0f};  // goo constants phase
-float goo_cs[4];  // goo constants speed
-float gooFunction(float* position){
-	const float px(position[0] + shiftx);
-	const float pz(position[2] + shiftz);
-	const float camx(px - camPos[0]);
-	const float camz(pz - camPos[2]);
-
-	return
-		// This first term defines upper and lower surfaces.
-		position[1] * position[1] * 1.25f
-		// These terms make the surfaces wavy.
-		+ goo_c[0] * rsCosf(px - 2.71f * position[1])
-		+ goo_c[1] * rsCosf(4.21f * position[1] + pz)
-		+ goo_c[2] * rsCosf(1.91f * px - 1.67f * pz)
-		+ goo_c[3] * rsCosf(1.53f * px + 1.11f * position[1] + 2.11f * pz)
-		// The last term creates a bubble around the eyepoint so it doesn't
-		// punch through the surface.
-		- 0.1f / (camx * camx + position[1] * position[1] + camz * camz);
-}
 
 
 // read in vertex/fragment program and store into a string.
@@ -319,7 +295,6 @@ void draw(){
 		goo_rgb_phase[i] += goo_rgb_speed[i] * frameTime;
 		if(goo_rgb_phase[i] >= RS_PIx2)
 			goo_rgb_phase[i] -= RS_PIx2;
-		//goo_rgb[i] = (sinf(goo_rgb_phase[i]) + 1.0f) * 0.5f;
 		goo_rgb[i] = sinf(goo_rgb_phase[i]);
 		if(goo_rgb[i] < 0.0f)
 			goo_rgb[i] = 0.0f;
@@ -350,13 +325,6 @@ void draw(){
 		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
 		glEnable(GL_TEXTURE_GEN_S);
 		glEnable(GL_TEXTURE_GEN_T);
-	}
-	// update goo function constants
-	for(i=0; i<4; i++){
-		goo_cp[i] += goo_cs[i] * frameTime;
-		if(goo_cp[i] >= RS_PIx2)
-			goo_cp[i] -= RS_PIx2;
-		goo_c[i] = 0.25f * cosf(goo_cp[i]);
 	}
 	// draw it
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -533,9 +501,7 @@ void initSaver(HWND hwnd){
 	// dDepth * goo grid size - size of one goo cubelet
 	depth = float(dDepth) * 2.0f - 2.0f / float(dResolution);
 
-	theGoo = new goo(dResolution, depth, gooFunction);
-	for(i=0; i<4; i++)
-		goo_cs[i] = 0.1f + rsRandf(0.4f);
+	theGoo = new goo(dResolution, depth);
 
 	stars = new stretchedParticle*[dStars];
 	for(i=0; i<dStars; i++){

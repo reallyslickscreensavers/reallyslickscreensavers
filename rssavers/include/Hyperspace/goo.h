@@ -43,9 +43,13 @@ public:
 	float unitSize;
 	float volumeSize;
 
-	float waveOffset[4];
+	static float c[4];  // constants
+	float cp[4];  // constants phase
+	float cs[4];  // constants speed
 
+	static float camx, camz;
 	float centerx, centerz;
+	static float shiftx, shiftz;
 	int arraySize;
 	impCubeVolume* volume;
 	impSurface*** surface;
@@ -54,9 +58,10 @@ public:
 	// normals of planes for culling impSurfaces
 	float clip[3][2];
 
-	goo(int res, float rad, float (*func)(float* position));
+	goo(int res, float rad);
 	~goo();
 	void update(float x, float z, float heading, float fov);
+	static float function(float* position);
 	void draw();
 };
 
