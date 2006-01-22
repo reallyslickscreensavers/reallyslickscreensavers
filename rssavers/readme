@@ -5,6 +5,7 @@ http://www.reallyslick.com
 All the savers in this distribution are licensed under the Gnu GPL version 2.
 The supporting libraries are licensed under the Gnu LGPL version 2.1.  Any
 copying, modifying, or redistribution must follow the terms of these licenses.
+
 Contact information is available on my website.
 
 
@@ -17,4 +18,5 @@ GLUT - Required for ImplicitDemo
 Compiling:
 
 Windows - The project files were built using Visual Studio .NET 2003.  You
-are on your own if you want to compile using version of Visual Studio.
+are on your own if you want to compile using a different version of Visual
+Studio.
