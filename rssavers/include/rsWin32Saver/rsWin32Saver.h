@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2005  Terence M. Welsh
+ * Copyright (C) 1999-2006  Terence M. Welsh
  *
  * This file is part of rsWin32Saver.
  *
@@ -55,14 +55,15 @@
 #define ID_APP 7002
 
 
-// The following globals are defined in Scrnsave.cpp
+// The following globals are defined in rsWin32Saver.cpp
 extern HINSTANCE mainInstance;
 extern HWND mainWindow;
 extern int checkingPassword;  // A saver should check this and stop drawing if true
 extern int isSuspended;  // power save mode
 extern int doingPreview;  // Previews take extra long to initialize because Windows
 // has lots of screwy resource hogging problems.  It's good to check this so that you
-// can simplify your preview.
+// can simplify your preview initialization.  For example, if you need to initialize
+// data structures, keep them as small as possible.
 extern LPCTSTR registryPath;  // Saver must define and use this registry path
 // if you want all your video mode info in the same registry folder as
 // all your other parameters.  If you don't redefine this path, it will
@@ -75,7 +76,7 @@ extern int pfd_swap_copy;  // Is this bit set in the PIXELFORMATDESCRIPTOR?
 // used to limit frame rate of saver (0 = no limit)
 extern unsigned int dFrameRateLimit;
 // Keyboard toggle for displaying statistics, such as frames per second.
-// User must implement the displaying of statistics if kStatistics is true.
+// Application must implement the displaying of statistics if kStatistics is true.
 extern int kStatistics;
 
 
