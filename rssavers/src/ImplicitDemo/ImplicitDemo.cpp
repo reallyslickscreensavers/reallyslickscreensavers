@@ -35,6 +35,11 @@
 
 #include <ImplicitDemo/texture.h>
 
+#ifdef WIN32
+#include <rsWin32Saver/rsTimer.h>
+#else
+#include <rsX11Saver/rsTimer.h>
+#endif
 
 
 impCubeVolume* volume;
@@ -115,37 +120,13 @@ void display(){
 	static float totalTime = 0.0f;
 	static float computeTime = 0.0f;
 	static float drawTime = 0.0f;
-#ifdef WIN32
-	static DWORD thisTime, lastTime;
-#else
-	static struct timeval thisTime, lastTime;
-	struct timezone tz;
-#endif
 
-	static int first = 1;
-	if(first){
-#ifdef WIN32
-		thisTime = timeGetTime();
-#else
-		gettimeofday(&lastTime, &tz);
-#endif
-		first = 0;
-	}
+	static rsTimer computeTimer, drawTimer;
+	// start compute time timer
+	computeTimer.tick();
 
-	// calculate elapsed time since last frame
-#ifdef WIN32
-	lastTime = thisTime;
-    thisTime = timeGetTime();
-    if(thisTime >= lastTime)
-		frameTime = float(thisTime - lastTime) * 0.001f;
-#else
-	gettimeofday(&thisTime, &tz);
-	frameTime = float(thisTime.tv_sec - lastTime.tv_sec)
-		+ 0.000001f * float (thisTime.tv_usec - lastTime.tv_usec);
-	lastTime = thisTime;
-#endif
-
-	DWORD tempTime = timeGetTime();
+	static rsTimer timer;
+	frameTime = timer.tick();
 
 	move[0] += frameTime * 0.3;
 	move[1] += frameTime * 0.5;
@@ -159,9 +140,9 @@ void display(){
 	sphere.setPosition(cosf(move[4]), sinf(move[5]), cosf(move[6]));
 	sphere.setThickness(0.3 + 0.15 * cosf(move[7]));
 
-	mat1.makeScale(0.25f + 0.12f * cosf(move[7] * 4.0f),
-		0.25f + 0.12f * cosf(move[7] * 4.0f),
-		0.3f + 0.15f * cosf(move[7] * 4.0f + 1.5707f));
+	mat1.makeScale(3.0f + 1.5f * cosf(move[7] * 4.0f),
+		3.0f + 1.5f * cosf(move[7] * 4.0f),
+		3.0f + 1.5f * cosf(move[7] * 4.0f + 1.5707f));
 	mat2.makeRotate(move[2], 1.0f, 0.0f, 0.0f);
 	mat1.postMult(mat2);
 	mat2.makeRotate(move[4], 0.0f, 1.0f, 0.0f);
@@ -205,19 +186,6 @@ void display(){
 	//knot.setNumCoils(3);
 	//knot.setNumTwists(4);
 
-	/*std::list<impCrawlPoint> crawlpointlist;
-	sphere.center(center);
-	crawlpointlist.push_back(impCrawlPoint(center));
-	ellipsoid.center(center);
-	crawlpointlist.push_back(impCrawlPoint(center));
-	torus1.center(center);
-	crawlpointlist.push_back(impCrawlPoint(center));
-	torus2.center(center);
-	crawlpointlist.push_back(impCrawlPoint(center));
-	hexa.center(center);
-	crawlpointlist.push_back(impCrawlPoint(center));
-	knot.center(center);
-	crawlpointlist.push_back(impCrawlPoint(center));*/
 	impCrawlPointVector cpv;
 	sphere.addCrawlPoint(cpv);
 	ellipsoid.addCrawlPoint(cpv);
@@ -233,8 +201,10 @@ void display(){
 	volume->makeSurface(cpv);
 	//volume->makeSurface(0,0,0,cpv);
 
-	computeTime += 0.001f * float(timeGetTime() - tempTime);
-	tempTime = timeGetTime();
+	// measure compute time
+	computeTime += computeTimer.tick();
+	// start draw time timer
+	drawTimer.tick();
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -251,14 +221,16 @@ void display(){
 	glutSwapBuffers();
 	glutPostRedisplay();
 
+	// measure draw time
+	drawTime += drawTimer.tick();
+
 	// print timing info
-	drawTime += 0.001f * float(timeGetTime() - tempTime);
 	totalTime += frameTime;
 	++printFPS;
-	if(printFPS == 200){
-		std::cout << "FPS = " << 200.0f / totalTime << std::endl;
-		std::cout << "  compute = " << computeTime / 200.0f << std::endl;
-		std::cout << "     draw = " << drawTime / 200.0f << std::endl;
+	if(printFPS == 50){
+		std::cout << "FPS = " << 50.0f / totalTime << std::endl;
+		std::cout << "  compute = " << computeTime / 50.0f << std::endl;
+		std::cout << "     draw = " << drawTime / 50.0f << std::endl;
 		printFPS = 0;
 		totalTime = 0.0f;
 		computeTime = 0.0f;
