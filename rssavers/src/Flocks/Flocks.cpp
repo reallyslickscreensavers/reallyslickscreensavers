@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2005  Terence M. Welsh
+ * Copyright (C) 1999-2006  Terence M. Welsh
  *
  * This file is part of Flocks.
  *
@@ -290,7 +290,7 @@ void bug::update(bug *bugs){
 	}
 	else{  // Draw dots
 		if(dStretch){
-			glLineWidth(float(dSize) * float(700 - z) * 0.0002f);
+			glLineWidth(float(dSize) * float(700 - z) * 0.001f);
 			scale[0] *= float(dStretch);
 			scale[1] *= float(dStretch);
 			scale[2] *= float(dStretch);
@@ -582,7 +582,7 @@ BOOL CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 		if((HWND(lpm) == GetDlgItem(hdlg, WEBPAGE)) || (HWND(lpm) == GetDlgItem(hdlg, CHROMATEKWEBPAGE))){
 			SetTextColor(HDC(wpm), RGB(0,0,255));
 			SetBkColor(HDC(wpm), COLORREF(GetSysColor(COLOR_3DFACE)));
-			return(int(GetSysColorBrush(COLOR_3DFACE)));
+			return int(GetSysColorBrush(COLOR_3DFACE));
 		}
 		break;
     case WM_COMMAND:
