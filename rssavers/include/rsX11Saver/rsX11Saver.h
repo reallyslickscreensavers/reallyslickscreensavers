@@ -24,17 +24,6 @@
  * Library for handling standard OpenGL screensaver functionality, such
  * as opening windows, choosing pixel formats, setting video modes,
  * handling user input, etc...
- *
- * This library is functionally similar to Microsoft's scrnsave.lib.  The
- * most important extras are a routine for choosing an OpenGL video format
- * and routines for choosing a video mode.  So if you've ever written a saver
- * using scrnsave.lib and want to try writing an OpenGL saver, this library
- * should be simple for you to use.
- *
- * The best resources I've found for learning this Windows screensaver stuff are:
- * http://www.wischik.com/scr, which explains all the code in plain English, and
- * the scrnsave.lib example code found in the MSDN Library.
- * For the OpenGL part of this code, I can't name any good examples.
  */
 
 
@@ -43,14 +32,10 @@
 #define RSX11SAVER_H
 
 
+#include <GL/glx.h>
 
 #include "rsTimer.h"
 
-
-#define HACK_INIT	hack_init
-#define HACK_DRAW	hack_draw
-#define HACK_RESHAPE	hack_reshape
-#include <hacks/xlockmore.h>
 
 
 extern int checkingPassword;  // A saver should check this and stop drawing if true
@@ -69,10 +54,17 @@ extern unsigned int dFrameRateLimit;
 extern int kStatistics;
 
 
+extern Display* xdisplay;
+extern Window xwindow;
+
+
 
 //----------------------------------------------------------------------------
 
 
+// All idle processing is done here.  Typically, you would just draw 
+// frames during this routine.
+//void idleProc();
 
 
 
