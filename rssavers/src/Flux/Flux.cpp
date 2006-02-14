@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2005  Terence M. Welsh
+ * Copyright (C) 1999-2006  Terence M. Welsh
  *
  * This file is part of Flux.
  *
@@ -20,19 +20,24 @@
 
 // Flux screen saver
 
-
+#ifdef WIN32
 #include <windows.h>
-#include <stdio.h>
 #include <rsWin32Saver/rsWin32Saver.h>
-#include <rsText/rsText.h>
-#include <math.h>
-#include <time.h>
-#include <gl/gl.h>
-#include <gl/glu.h>
 #include <regstr.h>
 #include <commctrl.h>
-#include <Rgbhsl/Rgbhsl.h>
+#include <time.h>
 #include <resource.h>
+#endif
+#ifdef FOR_XSCREENSAVER
+#include <rsX11Saver/rsX11Saver.h>
+#endif
+
+#include <stdio.h>
+#include <rsText/rsText.h>
+#include <math.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <Rgbhsl/Rgbhsl.h>
 
 #define NUMCONSTS 8
 #define PIx2 6.28318530718f
@@ -45,9 +50,11 @@ class particle;
 
 
 // Global variables
+#ifdef WIN32
 LPCTSTR registryPath = ("Software\\Really Slick\\Flux");
 HGLRC hglrc;
 HDC hdc;
+#endif
 int readyToDraw = 0;
 unsigned int tex;
 flux *fluxes;
@@ -74,6 +81,15 @@ int dRotation;
 int dWind;
 int dInstability;
 int dBlur;
+#ifdef FOR_XSCREENSAVER
+void setDefaults(int which);
+#define DEFAULTS1 1
+#define DEFAULTS2 2
+#define DEFAULTS3 3
+#define DEFAULTS4 4
+#define DEFAULTS5 5
+#define DEFAULTS6 6
+#endif
 
 
 // Useful random number macros
@@ -465,11 +481,16 @@ void draw(){
 		glPopMatrix();
 	}
 
+#ifdef WIN32
 	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+#endif
+#ifdef FOR_XSCREENSAVER
+	glXSwapBuffers(xdisplay, xwindow);
+#endif
 }
 
 
-void IdleProc(){
+void idleProc(){
 	// update time
 	static rsTimer timer;
 	frameTime = timer.tick();
@@ -479,13 +500,23 @@ void IdleProc(){
 }
 
 
+#ifdef FOR_XSCREENSAVER
+/*void reshape(){
+	glViewport(0, 0, width, height);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	aspectRatio = float(width) / float(height);
+	gluPerspective(100.0, aspectRatio, 0.01, 200.0);
+	glMatrixMode(GL_MODELVIEW);
+}*/
+#endif
+
+
+#ifdef WIN32
 void initSaver(HWND hwnd){
-	int i, j;
-	float x, y, temp;
 	RECT rect;
-
-	srand((unsigned)time(NULL));
-
+	
 	// Window initialization
 	hdc = GetDC(hwnd);
 	SetBestPixelFormat(hdc);
@@ -498,6 +529,23 @@ void initSaver(HWND hwnd){
 	glLoadIdentity();
 	aspectRatio = float(rect.right) / float(rect.bottom);
 	gluPerspective(100.0, aspectRatio, 0.01, 200.0);
+	glMatrixMode(GL_MODELVIEW);
+#endif
+#ifdef FOR_XSCREENSAVER
+void initSaver(){
+	setDefaults(DEFAULTS1);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	aspectRatio = 1.0f;
+	gluPerspective(100.0, aspectRatio, 0.01, 200.0);
+	glMatrixMode(GL_MODELVIEW);
+#endif
+	int i, j;
+	float x, y, temp;
+
+	srand((unsigned)time(NULL));
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslatef(0.0, 0.0, -2.5);
@@ -543,7 +591,7 @@ void initSaver(HWND hwnd){
 					temp = 1.0f;
 				if(temp < 0.0f)
 					temp = 0.0f;
-				lightTexture[i][j] = unsigned char(255.0f * temp * temp);
+				lightTexture[i][j] = static_cast<unsigned char>(255.0f * temp * temp);
 			}
 		}
 		glGenTextures(1, &tex);
@@ -581,8 +629,12 @@ void initSaver(HWND hwnd){
 
 	// Initialize text
 	textwriter = new rsText;
+	
+	readyToDraw = 1;
 }
 
+
+#ifdef WIN32
 void cleanUp(HWND hwnd){
 	// Free memory
 	delete[] fluxes;
@@ -592,6 +644,15 @@ void cleanUp(HWND hwnd){
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
 }
+#endif
+
+
+#ifdef FOR_XSCREENSAVER
+void cleanUp(){
+	// Free memory
+	delete[] fluxes;
+}
+#endif
 
 
 void setDefaults(int which){
@@ -683,6 +744,8 @@ void setDefaults(int which){
 	}
 }
 
+
+#ifdef WIN32
 
 // Initialize all user-defined stuff
 void readRegistry(){
@@ -890,7 +953,7 @@ void initControls(HWND hdlg){
 }
 
 
-BOOL ScreenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
+BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	int ival;
 	char cval[16];
 
@@ -1004,7 +1067,7 @@ BOOL ScreenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 }
 
 
-LRESULT ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
+LRESULT screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
@@ -1018,3 +1081,5 @@ LRESULT ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	}
 	return DefScreenSaverProc(hwnd, msg, wpm, lpm);
 }
+
+#endif // WIN32
