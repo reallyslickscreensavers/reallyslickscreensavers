@@ -32,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib winmm.lib Opengl32.lib glu32.lib rsWin32SaverD.lib RgbhslD.lib"
+				AdditionalDependencies="comctl32.lib winmm.lib Opengl32.lib glu32.lib rsWin32SaverD.lib RgbhslD.lib rsTextD.lib"
 				OutputFile="$(OutDir)/FlocksD.scr"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib"
@@ -80,7 +80,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib winmm.lib Opengl32.lib glu32.lib rsWin32Saver.lib Rgbhsl.lib"
+				AdditionalDependencies="comctl32.lib winmm.lib Opengl32.lib glu32.lib rsWin32Saver.lib Rgbhsl.lib rsText.lib"
 				OutputFile="$(OutDir)/Flocks.scr"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib"
