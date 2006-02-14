@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005  Terence M. Welsh
+ * Copyright (C) 2005-2006  Terence M. Welsh
  *
  * This file is part of rsText.
  *
@@ -29,8 +29,8 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include <gl/gl.h>
-#include <gl/glu.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 
 

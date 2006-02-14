@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005  Terence M. Welsh
+ * Copyright (C) 2005-2006  Terence M. Welsh
  *
  * This file is part of rsText.
  *
@@ -90,9 +90,10 @@ void rsText::draw(std::vector<std::string> &strvec){
 		glDisable(GL_LIGHTING);
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		for(unsigned int j=0; j<strvec.size(); j++){
+		for(unsigned int j=0; j<strvec.size(); ++j){
 			str = &(strvec[j]);
-			for(unsigned int i=0; i<str->length(); ++i){
+			unsigned int i;
+			for(i=0; i<str->length(); ++i){
 				// Character set only includes 128 characters starting
 				// with ASCII number 32
 				character = int((str->c_str())[i]) - 32;
