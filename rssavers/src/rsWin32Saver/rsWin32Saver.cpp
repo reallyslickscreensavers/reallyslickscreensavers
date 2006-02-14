@@ -25,6 +25,8 @@
 
 
 //#define WINVER 0x0500
+//#include <fstream>
+//std::ofstream outfile;
 
 
 // These variables are externed in rsWin32Saver.h so you can use them in your saver
@@ -109,7 +111,7 @@ void changePassword(HWND hwnd){
 //----------------------------------------------------------------------------
 
 
-LRESULT DefScreenSaverProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam){
+LRESULT defScreenSaverProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam){
 	static int firstMouseMove = 0;  // Used for 3dfx driver fix
 
 	if(!childPreview && !closing){
@@ -188,7 +190,7 @@ LRESULT DefScreenSaverProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam){
 }
 
 
-LRESULT WINAPI RealScreenSaverProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam){
+LRESULT WINAPI realScreenSaverProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam){
 	switch(msg){
 	case WM_CREATE:
 		// get the mouse position at startup
@@ -227,7 +229,7 @@ LRESULT WINAPI RealScreenSaverProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 		break;
 	}
 
-	return ScreenSaverProc(hwnd, msg, wparam, lparam);
+	return screenSaverProc(hwnd, msg, wparam, lparam);
 }
 
 
@@ -235,7 +237,7 @@ LRESULT WINAPI RealScreenSaverProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 // Choose the best pixel format possible, giving preference to harware
 // accelerated modes.
-void SetBestPixelFormat(HDC hdc){
+void setBestPixelFormat(HDC hdc){
 	int moreFormats, score = 0, nPixelFormat = 1, bestPixelFormat = 0, temp;
 	PIXELFORMATDESCRIPTOR pfd;
 
@@ -331,7 +333,7 @@ static int startScreenSaver(HWND parent){
 	int left, top, width, height;
 
 	wclass.style          = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
-	wclass.lpfnWndProc    = RealScreenSaverProc;
+	wclass.lpfnWndProc    = realScreenSaverProc;
 	wclass.cbClsExtra     = 0;
 	wclass.cbWndExtra     = 0;
 	wclass.hInstance      = mainInstance;
@@ -358,6 +360,12 @@ static int startScreenSaver(HWND parent){
 		top = GetSystemMetrics(SM_YVIRTUALSCREEN);
 		width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
 		height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+/*outfile.open("screen_metrics");
+outfile << "left = " << left << std::endl;
+outfile << "top = " << top << std::endl;
+outfile << "width = " << width << std::endl;
+outfile << "height = " << height << std::endl;
+outfile.close();*/
 		style = WS_POPUP | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 		exStyle = WS_EX_TOPMOST;
 
@@ -402,12 +410,12 @@ static int startScreenSaver(HWND parent){
 							Sleep(1);
 					}
 					else{
-						IdleProc();  // do idle processing (i.e. draw frames)
+						idleProc();  // do idle processing (i.e. draw frames)
 						timeRemaining += desiredTimeStep;
 					}
 				}
 				else{  // frame rate is unbound (draw as fast as possible)
-					IdleProc();  // do idle processing (i.e. draw frames)
+					idleProc();  // do idle processing (i.e. draw frames)
 					Sleep(0);
 				}
 			}
@@ -456,7 +464,7 @@ static int startWindowedSaver(){
 
 	wclass.style          = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
 	//wclass.style          = 0;
-	wclass.lpfnWndProc    = RealScreenSaverProc;
+	wclass.lpfnWndProc    = realScreenSaverProc;
 	wclass.cbClsExtra     = 0;
 	wclass.cbWndExtra     = 0;
 	wclass.hInstance      = mainInstance;
@@ -481,7 +489,7 @@ static int startWindowedSaver(){
 			// Message loop
 			while(!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)){
 				// do idle processing (i.e. draw frames)
-				IdleProc();
+				idleProc();
 				Sleep(0);
 			}
 			// drop down to here once a message is found in the queue
@@ -500,7 +508,7 @@ static int startWindowedSaver(){
 
 static int openConfigBox(HWND parent){
 	return DialogBox(mainInstance, MAKEINTRESOURCE(DLG_SCRNSAVECONFIGURE),
-		parent, (DLGPROC)ScreenSaverConfigureDialog);
+		parent, (DLGPROC)screenSaverConfigureDialog);
 }
 
 

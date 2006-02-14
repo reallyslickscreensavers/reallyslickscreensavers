@@ -513,7 +513,7 @@ void draw(){
 }
 
 
-void IdleProc(){
+void idleProc(){
 	// update time
 	static rsTimer timer;
 	frameTime = timer.tick();
@@ -531,7 +531,7 @@ void initSaver(HWND hwnd){
 
 	// Window initialization
 	hdc = GetDC(hwnd);
-	SetBestPixelFormat(hdc);
+	setBestPixelFormat(hdc);
 	hglrc = wglCreateContext(hdc);
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
@@ -696,7 +696,7 @@ BOOL aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 		if(HWND(lpm) == GetDlgItem(hdlg, WEBPAGE)){
 			SetTextColor(HDC(wpm), RGB(0,0,255));
 			SetBkColor(HDC(wpm), COLORREF(GetSysColor(COLOR_3DFACE)));
-			return(int(GetSysColorBrush(COLOR_3DFACE)));
+			return int(GetSysColorBrush(COLOR_3DFACE));
 		}
 		break;
     case WM_COMMAND:
@@ -751,7 +751,7 @@ void initControls(HWND hdlg){
 }
 
 
-BOOL ScreenSaverConfigureDialog(HWND hdlg, UINT msg,
+BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 										 WPARAM wpm, LPARAM lpm){
 	int ival;
 	char cval[16];
@@ -810,7 +810,7 @@ BOOL ScreenSaverConfigureDialog(HWND hdlg, UINT msg,
 }
 
 
-LONG ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
+LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
@@ -822,5 +822,5 @@ LONG ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 		cleanUp(hwnd);
 		break;
 	}
-	return DefScreenSaverProc(hwnd, msg, wpm, lpm);
+	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }

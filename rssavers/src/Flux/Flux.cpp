@@ -519,7 +519,7 @@ void initSaver(HWND hwnd){
 	
 	// Window initialization
 	hdc = GetDC(hwnd);
-	SetBestPixelFormat(hdc);
+	setBestPixelFormat(hdc);
 	hglrc = wglCreateContext(hdc);
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
@@ -1079,7 +1079,7 @@ LRESULT screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 		cleanUp(hwnd);
 		break;
 	}
-	return DefScreenSaverProc(hwnd, msg, wpm, lpm);
+	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }
 
 #endif // WIN32

@@ -436,7 +436,7 @@ void draw(){
 }
 
 
-void IdleProc(){
+void idleProc(){
 	// update time
 	static rsTimer timer;
 	frameTime = timer.tick();
@@ -462,7 +462,7 @@ void initSaver(HWND hwnd){
 
 	// Window initialization
 	hdc = GetDC(hwnd);
-	SetBestPixelFormat(hdc);
+	setBestPixelFormat(hdc);
 	hglrc = wglCreateContext(hdc);
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
@@ -774,7 +774,7 @@ void initControls(HWND hdlg){
 }
 
 
-BOOL ScreenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
+BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	int ival;
 	char cval[16];
 
@@ -848,7 +848,7 @@ BOOL ScreenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 }
 
 
-LONG ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
+LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
@@ -860,5 +860,5 @@ LONG ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 		cleanUp(hwnd);
 		break;
 	}
-	return DefScreenSaverProc(hwnd, msg, wpm, lpm);
+	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }

@@ -90,19 +90,19 @@ extern int kStatistics;
 // The following functions must be defined by the saver that uses this library.
 
 // This should handle all messages to the saver
-LRESULT ScreenSaverProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT screenSaverProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 // All idle processing is done here.  Typically, you would just draw 
 // frames during this routine.
-void IdleProc();
+void idleProc();
 // Use this function to set up the "settings" dialog box.
-BOOL ScreenSaverConfigureDialog (HWND dlg, UINT msg, WPARAM wParam, LPARAM lParam);
+BOOL screenSaverConfigureDialog (HWND dlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 //----------------------------------------------------------------------------
 
 
 // The ScreenSaverProc function should call this function with any unhandled messages
-LRESULT DefScreenSaverProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT defScreenSaverProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 //----------------------------------------------------------------------------
@@ -110,7 +110,7 @@ LRESULT DefScreenSaverProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // Chooses the best pixel format available in the current graphics mode.
 // It gives preference to modes that use OpenGL harware acceleration.
-void SetBestPixelFormat(HDC hdc);
+void setBestPixelFormat(HDC hdc);
 
 
 //----------------------------------------------------------------------------
