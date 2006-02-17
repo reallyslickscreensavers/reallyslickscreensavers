@@ -19,6 +19,7 @@
 
 #include <rsX11Saver/rsX11Saver.h>
 #include <iostream>
+#include <X11/keysym.h>
 
 
 int checkingPassword = 0;
@@ -29,12 +30,37 @@ int kStatistics = 1;
 Display* xdisplay;
 Window xwindow;
 
+bool quit = false;
+
 
 extern void initSaver();
 extern void idleProc();
+extern void reshape(int, int);
 
 	
-	
+
+void handleEvents(){
+	XEvent event; 
+	KeySym key; 
+ 
+	while(XPending(xdisplay)){ 
+		XNextEvent(xdisplay, &event); 
+		switch(event.type){ 
+		case KeyPress: 
+			XLookupString((XKeyEvent *)&event, NULL, 0, &key, NULL); 
+			switch(key) { 
+			case XK_Escape: 
+				quit = true;
+				break; 
+			} 
+			break; 
+		case ConfigureNotify: 
+			reshape(event.xconfigure.width, event.xconfigure.height); 
+			break; 
+		}
+	}
+}
+
 // This goes with GLX window initialization boilerplate, from man GLXIntro
 static int waitForNotify(Display *dsp, XEvent *event, char *arg) {
             return (event->type == MapNotify) && (event->xmap.window == (Window)arg);
@@ -45,7 +71,6 @@ int main(){
 	GLXFBConfig *fbc;
 	XVisualInfo *vis_info;
 	Colormap cmap;
-	XSetWindowAttributes swa;
 	GLXContext context;
 	XEvent event;
 
@@ -72,7 +97,7 @@ int main(){
 		exit (-1);
 	}
 
-	// create a GLX context
+	// create a OpenGL rendering context
 	if ((context = glXCreateContext(xdisplay, vis_info, 0, GL_TRUE)) == 0) {
 		std::cout << "Cannot create context." << std::endl;
 		exit (-1);
@@ -87,18 +112,32 @@ int main(){
 	}
 
  	// create a window
+	XSetWindowAttributes swa;
+	unsigned long valuemask(0);
 	swa.colormap = cmap;
+	valuemask |= CWColormap;
 	swa.border_pixel = 0;
-	swa.event_mask = StructureNotifyMask;
+	valuemask |= CWBorderPixel;
+	swa.event_mask = ExposureMask | KeyPressMask | StructureNotifyMask;
+	valuemask |= CWEventMask;
+	
+	{
+		swa.cursor = None;
+		valuemask |= CWCursor;
+	}
+	
+	int width = 512;
+	int height = 480;
 	xwindow = XCreateWindow(xdisplay, RootWindow(xdisplay, vis_info->screen),
-		0, 0, 500, 500, 0, vis_info->depth, InputOutput, vis_info->visual,
-		CWBorderPixel|CWColormap|CWEventMask, &swa);
+		0, 0, width, height, 0, vis_info->depth, InputOutput, vis_info->visual,
+		valuemask, &swa);
 	XMapWindow(xdisplay, xwindow);
 	XIfEvent(xdisplay, &event, waitForNotify, (char*)xwindow);
 
 	// connect the context to the window
 	glXMakeCurrent(xdisplay, xwindow, context);
 
+	reshape(width, height);
 	initSaver();
 
 	// variables for limiting frame rate
@@ -108,9 +147,14 @@ int main(){
 	if(dFrameRateLimit)
 		desiredTimeStep = 1.0f / float(dFrameRateLimit);
 
-	while(1){
-		if(isSuspended)  // don't waste cycles if saver is suspended
+	while(false == quit){ 
+ 		handleEvents();
+
+		// don't waste cycles if saver is suspended
+		if(isSuspended)
 			sleep(1);
+
+		// idle processing
 		if(dFrameRateLimit){  // frame rate is limited
 			timeRemaining -= timer.tick();
 			// don't allow underflow

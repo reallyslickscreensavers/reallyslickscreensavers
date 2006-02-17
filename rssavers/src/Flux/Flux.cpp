@@ -501,7 +501,7 @@ void idleProc(){
 
 
 #ifdef FOR_XSCREENSAVER
-/*void reshape(){
+void reshape(int width, int height){
 	glViewport(0, 0, width, height);
 
 	glMatrixMode(GL_PROJECTION);
@@ -509,7 +509,7 @@ void idleProc(){
 	aspectRatio = float(width) / float(height);
 	gluPerspective(100.0, aspectRatio, 0.01, 200.0);
 	glMatrixMode(GL_MODELVIEW);
-}*/
+}
 #endif
 
 
@@ -534,12 +534,6 @@ void initSaver(HWND hwnd){
 #ifdef FOR_XSCREENSAVER
 void initSaver(){
 	setDefaults(DEFAULTS1);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	aspectRatio = 1.0f;
-	gluPerspective(100.0, aspectRatio, 0.01, 200.0);
-	glMatrixMode(GL_MODELVIEW);
 #endif
 	int i, j;
 	float x, y, temp;
