@@ -414,6 +414,10 @@ void draw(){
 	else  // completely
 		glClear(GL_COLOR_BUFFER_BIT);
 
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslatef(0.0, 0.0, -2.5);
+
 	// Rotate camera
 	static float cameraAngle = 0.0f;
 	cameraAngle += 0.01f * float(dRotation);
@@ -542,7 +546,6 @@ void initSaver(){
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glTranslatef(0.0, 0.0, -2.5);
 
 	if(dGeometry == 0){
 		glEnable(GL_POINT_SMOOTH);
