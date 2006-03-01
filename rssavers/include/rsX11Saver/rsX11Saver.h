@@ -34,7 +34,8 @@
 
 #include <GL/glx.h>
 
-#include "rsTimer.h"
+#include <util/rsTimer.h>
+#include <util/arguments.h>
 
 
 

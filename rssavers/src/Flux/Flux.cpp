@@ -505,9 +505,26 @@ void idleProc(){
 
 
 #ifdef FOR_XSCREENSAVER
+void handleCommandLine(int argc, char* argv[]){
+	int defaults = DEFAULTS1;
+	getArgumentsValue(argc, argv, std::string("-default"), defaults, DEFAULTS1, DEFAULTS6);
+	setDefaults(defaults);
+	getArgumentsValue(argc, argv, std::string("-fluxes"), dFluxes, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-particles"), dParticles, 1, 1000);
+	getArgumentsValue(argc, argv, std::string("-trail"), dTrail, 3, 10000);
+	getArgumentsValue(argc, argv, std::string("-geometry"), dGeometry, 0, 2);
+	getArgumentsValue(argc, argv, std::string("-size"), dSize, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-complexity"), dComplexity, 1, 10);
+	getArgumentsValue(argc, argv, std::string("-randomize"), dRandomize, 0, 100);
+	getArgumentsValue(argc, argv, std::string("-expansion"), dExpansion, 0, 100);
+	getArgumentsValue(argc, argv, std::string("-rotation"), dRotation, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-wind"), dWind, 1, 10);
+	getArgumentsValue(argc, argv, std::string("-instability"), dInstability, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-blur"), dBlur, 0, 100);
+}
+
 void reshape(int width, int height){
 	glViewport(0, 0, width, height);
-
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	aspectRatio = float(width) / float(height);
@@ -537,7 +554,6 @@ void initSaver(HWND hwnd){
 #endif
 #ifdef FOR_XSCREENSAVER
 void initSaver(){
-	setDefaults(DEFAULTS1);
 #endif
 	int i, j;
 	float x, y, temp;
@@ -726,7 +742,7 @@ void setDefaults(int which){
 		dFrameRateLimit = 60;
 		break;
 	case DEFAULTS6:  // Galactic
-		dFluxes = 1;
+		dFluxes = 4;
 		dParticles = 2;
 		dTrail = 1500;
 		dGeometry = 2;

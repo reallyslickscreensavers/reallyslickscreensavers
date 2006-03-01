@@ -9,7 +9,9 @@ OBJECTS = Flux.o
 all: ${OBJECTS}
 	gcc ${CFLAGS} ${OBJECTS} -o flux ${LIBRARY}
 
-
+clean:
+	rm ${OBJECTS}
+	
 
 .SUFFIXES: .cpp .o
 
