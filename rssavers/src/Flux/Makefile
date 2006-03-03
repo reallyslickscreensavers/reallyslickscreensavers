@@ -1,6 +1,6 @@
 INCLUDE = -I../../include
-LIBRARY = -L../../lib -lm -lGL -lGLU ../../lib/rsX11Saver.a ../../lib/Rgbhsl.a ../../lib/rsText.a
-CFLAGS = -O3 -DFOR_XSCREENSAVER $(INCLUDE)
+LIBRARY = -L../../lib -lm -lGL -lGLU ../../lib/rsXScreenSaver.a ../../lib/Rgbhsl.a ../../lib/rsText.a
+CFLAGS = -O3 -DRS_XSCREENSAVER $(INCLUDE)
 
 OBJECTS = Flux.o
 

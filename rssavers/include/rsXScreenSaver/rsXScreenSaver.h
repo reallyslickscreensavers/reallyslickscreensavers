@@ -1,13 +1,13 @@
 /*
  * Copyright (C) 2006  Terence M. Welsh
  *
- * This file is part of rsX11Saver.
+ * This file is part of rsXScreenSaver.
  *
- * rsX11Saver is free software; you can redistribute it and/or
+ * rsXScreenSaver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License version 2.1 as published by the Free Software Foundation.
  *
- * rsX11Saver is distributed in the hope that it will be useful,
+ * rsXScreenSaver is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -19,7 +19,7 @@
 
 
 /*
- * OpenGL screensaver library
+ * rsXScreenSaver library
  *
  * Library for handling standard OpenGL screensaver functionality, such
  * as opening windows, choosing pixel formats, setting video modes,
@@ -28,8 +28,8 @@
 
 
 
-#ifndef RSX11SAVER_H
-#define RSX11SAVER_H
+#ifndef RSXSCREENSAVER_H
+#define RSXSCREENSAVER_H
 
 
 #include <GL/glx.h>

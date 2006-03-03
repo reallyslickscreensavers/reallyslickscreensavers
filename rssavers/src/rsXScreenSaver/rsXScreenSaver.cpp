@@ -1,13 +1,13 @@
 /*
  * Copyright (C) 2006  Terence M. Welsh
  *
- * This file is part of rsX11Saver.
+ * This file is part of rsXScreenSaver.
  *
- * rsX11Saver is free software; you can redistribute it and/or
+ * rsXScreenSaver is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License version 2.1 as published by the Free Software Foundation.
  *
- * rsX11Saver is distributed in the hope that it will be useful,
+ * rsXScreenSaver is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -18,10 +18,10 @@
  */
 
 
-#include <rsX11Saver/rsX11Saver.h>
+#include <rsXScreenSaver/rsXScreenSaver.h>
 #include <iostream>
 #include <X11/keysym.h>
-#include <rsX11Saver/vroot.h>
+#include <rsXScreenSaver/vroot.h>
 
 //#include <fstream>
 //std::ofstream outfile;

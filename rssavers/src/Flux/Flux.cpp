@@ -28,8 +28,8 @@
 #include <time.h>
 #include <resource.h>
 #endif
-#ifdef FOR_XSCREENSAVER
-#include <rsX11Saver/rsX11Saver.h>
+#ifdef RS_XSCREENSAVER
+#include <rsXScreenSaver/rsXScreenSaver.h>
 #endif
 
 #include <stdio.h>
@@ -81,7 +81,7 @@ int dRotation;
 int dWind;
 int dInstability;
 int dBlur;
-#ifdef FOR_XSCREENSAVER
+#ifdef RS_XSCREENSAVER
 void setDefaults(int which);
 #define DEFAULTS1 1
 #define DEFAULTS2 2
@@ -488,7 +488,7 @@ void draw(){
 #ifdef WIN32
 	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
 #endif
-#ifdef FOR_XSCREENSAVER
+#ifdef RS_XSCREENSAVER
 	glXSwapBuffers(xdisplay, xwindow);
 #endif
 }
@@ -504,7 +504,7 @@ void idleProc(){
 }
 
 
-#ifdef FOR_XSCREENSAVER
+#ifdef RS_XSCREENSAVER
 void handleCommandLine(int argc, char* argv[]){
 	int defaults = DEFAULTS1;
 	getArgumentsValue(argc, argv, std::string("-default"), defaults, DEFAULTS1, DEFAULTS6);
@@ -552,7 +552,7 @@ void initSaver(HWND hwnd){
 	gluPerspective(100.0, aspectRatio, 0.01, 200.0);
 	glMatrixMode(GL_MODELVIEW);
 #endif
-#ifdef FOR_XSCREENSAVER
+#ifdef RS_XSCREENSAVER
 void initSaver(){
 #endif
 	int i, j;
@@ -660,7 +660,7 @@ void cleanUp(HWND hwnd){
 #endif
 
 
-#ifdef FOR_XSCREENSAVER
+#ifdef RS_XSCREENSAVER
 void cleanUp(){
 	// Free memory
 	delete[] fluxes;
