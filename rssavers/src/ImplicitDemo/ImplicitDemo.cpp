@@ -32,14 +32,8 @@
 #include <Implicit/impKnot.h>
 #include <Implicit/impSphere.h>
 #include <Implicit/impTorus.h>
-
 #include <ImplicitDemo/texture.h>
-
-#ifdef WIN32
-#include <rsWin32Saver/rsTimer.h>
-#else
-#include <rsX11Saver/rsTimer.h>
-#endif
+#include <util/rsTimer.h>
 
 
 impCubeVolume* volume;
