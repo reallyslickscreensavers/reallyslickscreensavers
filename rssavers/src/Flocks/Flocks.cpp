@@ -20,19 +20,24 @@
 
 // Flocks screensaver
 
+#ifdef WIN32
 #include <windows.h>
-#include <stdio.h>
 #include <rsWin32Saver/rsWin32Saver.h>
-#include <rsText/rsText.h>
-#include <math.h>
 #include <time.h>
-#include <gl/gl.h>
-#include <gl/glu.h>
 #include <regstr.h>
 #include <commctrl.h>
-#include <Rgbhsl/Rgbhsl.h>
 #include <resource.h>
+#endif
+#ifdef RS_XSCREENSAVER
+#include <rsXScreenSaver/rsXScreenSaver.h>
+#endif
 
+#include <stdio.h>
+#include <math.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <rsText/rsText.h>
+#include <Rgbhsl/Rgbhsl.h>
 
 #define R2D 57.2957795131f
 
@@ -41,9 +46,11 @@ class bug;
 
 
 // Globals
+#ifdef WIN32
 LPCTSTR registryPath = ("Software\\Really Slick\\Flocks");
 HDC hdc;
 HGLRC hglrc;
+#endif
 int readyToDraw = 0;
 float frameTime = 0.0f;
 float aspectRatio;
@@ -64,13 +71,18 @@ int dComplexity;
 int dSpeed;
 int dStretch;
 int dColorfadespeed;
-BOOL dChromatek;
-BOOL dConnections;
+int dChromatek;
+int dConnections;
 
 
-// useful random functions
-int rsRandi(int x){return(rand() * x / 32767);}
-float rsRandf(float x){return(float(rand()) * x / 32767.0f);}
+// Useful random number macros
+// Don't forget to initialize with srand()
+inline int rsRandi(int x){
+	return rand() % x;
+}
+inline float rsRandf(float x){
+	return x * (float(rand()) / float(RAND_MAX));
+}
 
 
 class bug{
@@ -328,14 +340,11 @@ void draw(){
 		first = 0;
 	}
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(50.0, aspectRatio, 0.1, 2000.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslatef(0.0, 0.0, -float(wide * 2));
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Update and draw leaders
 	for(i=0; i<dLeaders; i++)
@@ -374,7 +383,12 @@ void draw(){
 		glPopMatrix();
 	}
 
-    wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+#ifdef WIN32
+	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+#endif
+#ifdef RS_XSCREENSAVER
+	glXSwapBuffers(xdisplay, xwindow);
+#endif
 }
 
 
@@ -388,11 +402,61 @@ void idleProc(){
 }
 
 
-void initSaver(HWND hwnd){
-	int i;
-	RECT rect;
+void setDefaults(){
+	dLeaders = 4;
+	dFollowers = 1000;
+	dGeometry = 1;
+	dSize = 5;
+	dComplexity = 1;
+	dSpeed = 15;
+	dStretch = 20;
+	dColorfadespeed = 15;
+	dChromatek = 0;
+	dConnections = 0;
+}
 
-	srand((unsigned)time(NULL));
+
+#ifdef RS_XSCREENSAVER
+void handleCommandLine(int argc, char* argv[]){
+	setDefaults();
+	getArgumentsValue(argc, argv, std::string("-leaders"), dLeaders, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-followers"), dFollowers, 0, 10000);
+	getArgumentsValue(argc, argv, std::string("-geometry"), dGeometry, 0, 1);
+	getArgumentsValue(argc, argv, std::string("-size"), dSize, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-complexity"), dComplexity, 1, 10);
+	getArgumentsValue(argc, argv, std::string("-speed"), dSpeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-stretch"), dStretch, 0, 100);
+	getArgumentsValue(argc, argv, std::string("-colorfadespeed"), dColorfadespeed, 0, 100);
+	getArgumentsValue(argc, argv, std::string("-fadespeed"), dColorfadespeed, 0, 100);
+	getArgumentsValue(argc, argv, std::string("-chromatek"), dChromatek, 0, 1);
+	getArgumentsValue(argc, argv, std::string("-connections"), dConnections, 0, 1);
+}
+#endif
+
+
+void reshape(int width, int height){
+	glViewport(0, 0, width, height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	aspectRatio = float(width) / float(height);
+	gluPerspective(50.0, aspectRatio, 0.1, 2000.0);
+	glMatrixMode(GL_MODELVIEW);
+	
+	// calculate boundaries
+	if(aspectRatio >= 1.0f){
+		high = deep = 160;
+		wide = int(float(high) * aspectRatio);
+	}
+	else{
+		wide = deep = 160;
+		high = int(float(wide) / aspectRatio);
+	}
+}
+
+
+#ifdef WIN32
+void initSaver(HWND hwnd){
+	RECT rect;
 
 	// Window initialization
 	hdc = GetDC(hwnd);
@@ -400,18 +464,18 @@ void initSaver(HWND hwnd){
 	hglrc = wglCreateContext(hdc);
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
-	aspectRatio = float(rect.right) / float(rect.bottom);
-	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+	
+	reshape(rect.right, rect.bottom);
+#endif
+#ifdef RS_XSCREENSAVER
+void initSaver(){
+#endif
+	int i;
 
-	// calculate boundaries
-	if((rect.right - rect.left) > (rect.bottom - rect.top)){
-		high = deep = 160;
-		wide = high * (rect.right - rect.left) / (rect.bottom - rect.top);
-	}
-	else{
-		wide = deep = 160;
-		high = wide * (rect.bottom - rect.top) / (rect.right - rect.left);
-	}
+	srand((unsigned)time(NULL));
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 
 	glEnable(GL_DEPTH_TEST);
 	glFrontFace(GL_CCW);
@@ -459,8 +523,21 @@ void initSaver(HWND hwnd){
 		fBugs[i].initFollower();
 
 	colorFade = float(dColorfadespeed) * 0.01f;
+	
+	readyToDraw = 1;
 }
 
+
+#ifdef RS_XSCREENSAVER
+void cleanUp(){
+	// Free memory
+	delete[] lBugs;
+	delete[] fBugs;
+}
+#endif
+
+
+#ifdef WIN32
 void cleanUp(HWND hwnd){
 	// Free memory
 	delete[] lBugs;
@@ -470,20 +547,6 @@ void cleanUp(HWND hwnd){
 	ReleaseDC(hwnd, hdc);
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
-}
-
-
-void setDefaults(){
-	dLeaders = 4;
-	dFollowers = 1000;
-	dGeometry = 1;
-	dSize = 5;
-	dComplexity = 1;
-	dSpeed = 15;
-	dStretch = 20;
-	dColorfadespeed = 15;
-	dChromatek = FALSE;
-	dConnections = FALSE;
 }
 
 
@@ -750,7 +813,6 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	case WM_CREATE:
 		readRegistry();
 		initSaver(hwnd);
-		readyToDraw = 1;
 		break;
 	case WM_DESTROY:
 		readyToDraw = 0;
@@ -759,3 +821,4 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	}
 	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }
+#endif // WIN32

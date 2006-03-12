@@ -26,6 +26,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <map>
 
 
 
@@ -35,6 +36,23 @@ bool from_string(T& t, const std::string& str, std::ios_base& (*f)(std::ios_base
 	std::istringstream iss(str);
 	return !(iss >> f >> t).fail();
 }
+
+
+
+/*typedef union{
+	int i;
+	float f;
+	bool b;
+} arg_union;*/
+
+typedef struct{
+	int arg;
+	int min;
+	int max;
+} argument_int_t;
+
+// Map argument name to its value, min value, and max value.
+//typedef std::map<std::string, argument_t> argument_int_map_t;
 
 
 

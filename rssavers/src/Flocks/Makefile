@@ -1,13 +1,13 @@
 INCLUDE = -I../../include
-LIBRARY = -L../../lib -lm -lGL -lGLU ../../lib/rsXScreenSaver.a ../../lib/Rgbhsl.a ../../lib/rsText.a
+LIBRARY = -lm -lGL -lGLU ../../lib/rsXScreenSaver.a ../../lib/Rgbhsl.a ../../lib/rsText.a
 CFLAGS = -O3 -DRS_XSCREENSAVER $(INCLUDE)
 
-OBJECTS = Flux.o
+OBJECTS = Flocks.o
 
 
 
 all: ${OBJECTS}
-	gcc ${CFLAGS} ${OBJECTS} -o ../../bin/flux ${LIBRARY}
+	gcc ${CFLAGS} ${OBJECTS} -o ../../bin/flocks ${LIBRARY}
 
 clean:
 	rm ${OBJECTS}

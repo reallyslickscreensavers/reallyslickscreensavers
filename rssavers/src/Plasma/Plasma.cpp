@@ -20,29 +20,35 @@
 
 // Plasma screen saver
 
-
+#ifdef WIN32
 #include <windows.h>
-#include <stdio.h>
 #include <rsWin32Saver/rsWin32Saver.h>
-#include <rsText/rsText.h>
 #include <process.h>
-#include <math.h>
 #include <time.h>
-#include <gl/gl.h>
-#include <gl/glu.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include <resource.h>
+#endif
+#ifdef RS_XSCREENSAVER
+#include <rsXScreenSaver/rsXScreenSaver.h>
+#endif
 
+#include <stdio.h>
+#include <math.h>
+#include <rsText/rsText.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
-LPCTSTR registryPath = ("Software\\Really Slick\\Plasma");
 #define PIx2 6.28318530718f
 #define NUMCONSTS 18
-#define MAXTEXSIZE 1024
+#define TEXSIZE 1024
 
 // Globals
+#ifdef WIN32
+LPCTSTR registryPath = ("Software\\Really Slick\\Plasma");
 HGLRC hglrc;
 HDC hdc;
+#endif
 int readyToDraw = 0;
 float frameTime = 0.0f;
 float aspectRatio;
@@ -51,12 +57,11 @@ float high;
 float c[NUMCONSTS];  // constant
 float ct[NUMCONSTS];  // temporary value of constant
 float cv[NUMCONSTS];  // velocity of constant
-float ***position;
-float ***plasma;
+float position[TEXSIZE][TEXSIZE][2];
+float plasma[TEXSIZE][TEXSIZE][3];
+float plasmamap[TEXSIZE * TEXSIZE * 3];
 unsigned int tex;
-int texsize = 256;
 int plasmasize = 64;
-float *plasmamap;
 // text output
 rsText* textwriter;
 // Parameters edited in the dialog box
@@ -77,7 +82,7 @@ inline float rsRandf(float x){
 
 
 // Find absolute value and truncate to 1.0
-float fabstrunc(float f){
+inline float fabstrunc(float f){
 	if(f >= 0.0f)
 		return(f <= 1.0f ? f : 1.0f);
 	else
@@ -143,7 +148,7 @@ void draw(){
 				plasma[i][j][2] = rgb[2] - maxdiff;
 
 			// Put colors into texture
-			index = (i * texsize + j) * 3;
+			index = (i * TEXSIZE + j) * 3;
 			plasmamap[index] = fabstrunc(plasma[i][j][0]);
 			plasmamap[index+1] = fabstrunc(plasma[i][j][1]);
 			plasmamap[index+2] = fabstrunc(plasma[i][j][2]);
@@ -151,15 +156,15 @@ void draw(){
 	}
 
 	// Update texture
-	glPixelStorei(GL_UNPACK_ROW_LENGTH, texsize);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, TEXSIZE);
 	glBindTexture(GL_TEXTURE_2D, tex);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, int(float(plasmasize) / aspectRatio), plasmasize,
 		GL_RGB, GL_FLOAT, plasmamap);
 
 	// Draw it
 	// The "- 1" cuts off right and top edges to get rid of blending to black
-	static float texright = float(plasmasize - 1) / float(texsize);
-	static float textop = texright / aspectRatio;
+	float texright = float(plasmasize - 1) / float(TEXSIZE);
+	float textop = float(int(float(plasmasize) / aspectRatio) - 1) / float(TEXSIZE);
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2f(0.0f, 0.0f);
 		glVertex2f(0.0f, 0.0f);
@@ -201,7 +206,12 @@ void draw(){
 		glPopMatrix();
 	}
 
-    wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+#ifdef WIN32
+	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+#endif
+#ifdef RS_XSCREENSAVER
+	glXSwapBuffers(xdisplay, xwindow);
+#endif
 }
 
 
@@ -215,20 +225,7 @@ void idleProc(){
 }
 
 
-void doSaver(HWND hwnd){
-	int i, j;
-	RECT rect;
-
-	srand((unsigned)time(NULL));
-
-	// Window initialization
-	hdc = GetDC(hwnd);
-	setBestPixelFormat(hdc);
-	hglrc = wglCreateContext(hdc);
-	GetClientRect(hwnd, &rect);
-	wglMakeCurrent(hdc, hglrc);
-	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
-	aspectRatio = float(rect.right) / float(rect.bottom);
+void setPlasmaSize(){
 	if(aspectRatio >= 1.0f){
 		wide = 30.0f / float(dZoom);
 		high = wide / aspectRatio;
@@ -238,38 +235,14 @@ void doSaver(HWND hwnd){
 		wide = high * aspectRatio;
 	}
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluOrtho2D(0.0f, 1.0f, 0.0f, 1.0f);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
 	// Set resolution of plasma
 	if(aspectRatio >= 1.0f)
-		plasmasize = (dResolution * MAXTEXSIZE) / 100;
+		plasmasize = int(float(dResolution * TEXSIZE) * 0.01f);
 	else
-		plasmasize = int(float(dResolution * MAXTEXSIZE) * aspectRatio * 0.01f);
-	// Set resolution of texture
-	texsize = 16;
-	if(aspectRatio >= 1.0f)
-		while(plasmasize > texsize)
-			texsize *= 2;
-	else
-		while(int(float(plasmasize) / aspectRatio) > texsize)
-			texsize *= 2;
+		plasmasize = int(float(dResolution * TEXSIZE) * aspectRatio * 0.01f);
 
-	// Initialize memory and positions
-	plasmamap = new float[texsize*texsize*3];
-	for(i=0; i<texsize*texsize*3; i++)
-		plasmamap[i] = 0.0f;
-	plasma = new float**[plasmasize];
-	position = new float**[plasmasize];
-	for(i=0; i<plasmasize; i++){
-		plasma[i] = new float*[int(float(plasmasize) / aspectRatio)];
-		position[i] = new float*[int(float(plasmasize) / aspectRatio)];
-		for(j=0; j<int(float(plasmasize) / aspectRatio); j++){
-			plasma[i][j] = new float[3];
-			position[i][j] = new float[2];
+	for(int i=0; i<plasmasize; i++){
+		for(int j=0; j<int(float(plasmasize) / aspectRatio); j++){
 			plasma[i][j][0] = 0.0f;
 			plasma[i][j][1] = 0.0f;
 			plasma[i][j][2] = 0.0f;
@@ -277,6 +250,67 @@ void doSaver(HWND hwnd){
 			position[i][j][1] = float(j * high) / (float(plasmasize) / aspectRatio - 1.0f) - (high * 0.5f);
 		}
 	}
+}
+
+
+void setDefaults(){
+	dZoom = 10;
+	dFocus = 30;
+	dSpeed = 20;
+	dResolution = 25;
+	dFrameRateLimit = 30;
+}
+
+
+#ifdef RS_XSCREENSAVER
+void handleCommandLine(int argc, char* argv[]){
+	setDefaults();
+	getArgumentsValue(argc, argv, std::string("-zoom"), dZoom, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-focus"), dFocus, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-speed"), dSpeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-resolution"), dResolution, 1, 100);
+}
+
+void reshape(int width, int height){
+	glViewport(0, 0, width, height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	aspectRatio = float(width) / float(height);
+	gluOrtho2D(0.0f, 1.0f, 0.0f, 1.0f);
+	glMatrixMode(GL_MODELVIEW);
+
+	setPlasmaSize();
+}
+#endif
+
+
+#ifdef WIN32
+void initSaver(HWND hwnd){
+	RECT rect;
+
+	// Window initialization
+	hdc = GetDC(hwnd);
+	setBestPixelFormat(hdc);
+	hglrc = wglCreateContext(hdc);
+	GetClientRect(hwnd, &rect);
+	wglMakeCurrent(hdc, hglrc);
+	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+	aspectRatio = float(rect.right) / float(rect.bottom);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(0.0f, 1.0f, 0.0f, 1.0f);
+#endif
+#ifdef RS_XSCREENSAVER
+void initSaver(){
+#endif
+	int i, j;
+
+	srand((unsigned)time(NULL));
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
 	// Initialize constants
 	for(i=0; i<NUMCONSTS; i++){
 		ct[i] = rsRandf(PIx2);
@@ -290,31 +324,33 @@ void doSaver(HWND hwnd){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, texsize, texsize, 0,
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, TEXSIZE, TEXSIZE, 0,
 		GL_RGB, GL_FLOAT, plasmamap);
 	glEnable(GL_TEXTURE_2D);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-	//glPixelStorei(GL_UNPACK_ROW_LENGTH, texsize);
+
+	setPlasmaSize();
 
 	// Initialize text
 	textwriter = new rsText;
+
+	readyToDraw = 1;
 }
 
 
+#ifdef RS_XSCREENSAVER
+void cleanUp(){
+	;
+}
+#endif
+
+
+#ifdef WIN32
 void cleanUp(HWND hwnd){
 	// Kill device context
 	ReleaseDC(hwnd, hdc);
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
-}
-
-
-void setDefaults(){
-	dZoom = 10;
-	dFocus = 30;
-	dSpeed = 20;
-	dResolution = 25;
-	dFrameRateLimit = 30;
 }
 
 
@@ -500,7 +536,7 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
-		doSaver(hwnd);
+		initSaver(hwnd);
 		readyToDraw = 1;
 		break;
 	case WM_DESTROY:
@@ -510,3 +546,4 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	}
 	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }
+#endif // WIN32
