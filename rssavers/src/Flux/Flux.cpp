@@ -82,7 +82,6 @@ int dWind;
 int dInstability;
 int dBlur;
 #ifdef RS_XSCREENSAVER
-void setDefaults(int which);
 #define DEFAULTS1 1
 #define DEFAULTS2 2
 #define DEFAULTS3 3
@@ -504,6 +503,96 @@ void idleProc(){
 }
 
 
+void setDefaults(int which){
+	switch(which){
+	case DEFAULTS1:  // Regular
+		dFluxes = 1;
+		dParticles = 20;
+		dTrail = 40;
+		dGeometry = 2;
+		dSize = 15;
+		dRandomize = 0;
+		dExpansion = 40;
+		dRotation = 30;
+		dWind = 20;
+		dInstability = 20;
+		dBlur = 0;
+		dFrameRateLimit = 60;
+		break;
+	case DEFAULTS2:  // Hypnotic
+		dFluxes = 2;
+		dParticles = 10;
+		dTrail = 40;
+		dGeometry = 2;
+		dSize = 15;
+		dRandomize = 80;
+		dExpansion = 20;
+		dRotation = 0;
+		dWind = 40;
+		dInstability = 10;
+		dBlur = 30;
+		dFrameRateLimit = 60;
+		break;
+	case DEFAULTS3:  // Insane
+		dFluxes = 4;
+		dParticles = 30;
+		dTrail = 8;
+		dGeometry = 2;
+		dSize = 25;
+		dRandomize = 0;
+		dExpansion = 80;
+		dRotation = 60;
+		dWind = 40;
+		dInstability = 100;
+		dBlur = 10;
+		dFrameRateLimit = 60;
+		break;
+	case DEFAULTS4:  // Sparklers
+		dFluxes = 3;
+		dParticles = 20;
+		dTrail = 6;
+		dGeometry = 1;
+		dSize = 20;
+		dComplexity = 3;
+		dRandomize = 85;
+		dExpansion = 60;
+		dRotation = 30;
+		dWind = 20;
+		dInstability = 30;
+		dBlur = 0;
+		dFrameRateLimit = 60;
+		break;
+	case DEFAULTS5:  // Paradigm
+		dFluxes = 1;
+		dParticles = 40;
+		dTrail = 40;
+		dGeometry = 2;
+		dSize = 5;
+		dRandomize = 90;
+		dExpansion = 30;
+		dRotation = 20;
+		dWind = 10;
+		dInstability = 5;
+		dBlur = 10;
+		dFrameRateLimit = 60;
+		break;
+	case DEFAULTS6:  // Galactic
+		dFluxes = 4;
+		dParticles = 2;
+		dTrail = 1500;
+		dGeometry = 2;
+		dSize = 10;
+		dRandomize = 0;
+		dExpansion = 5;
+		dRotation = 25;
+		dWind = 0;
+		dInstability = 5;
+		dBlur = 0;
+		dFrameRateLimit = 60;
+	}
+}
+
+
 #ifdef RS_XSCREENSAVER
 void handleCommandLine(int argc, char* argv[]){
 	int defaults = DEFAULTS1;
@@ -545,12 +634,11 @@ void initSaver(HWND hwnd){
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
 	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+	aspectRatio = float(rect.right) / float(rect.bottom);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	aspectRatio = float(rect.right) / float(rect.bottom);
 	gluPerspective(100.0, aspectRatio, 0.01, 200.0);
-	glMatrixMode(GL_MODELVIEW);
 #endif
 #ifdef RS_XSCREENSAVER
 void initSaver(){
@@ -647,6 +735,14 @@ void initSaver(){
 }
 
 
+#ifdef RS_XSCREENSAVER
+void cleanUp(){
+	// Free memory
+	delete[] fluxes;
+}
+#endif
+
+
 #ifdef WIN32
 void cleanUp(HWND hwnd){
 	// Free memory
@@ -657,108 +753,7 @@ void cleanUp(HWND hwnd){
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
 }
-#endif
 
-
-#ifdef RS_XSCREENSAVER
-void cleanUp(){
-	// Free memory
-	delete[] fluxes;
-}
-#endif
-
-
-void setDefaults(int which){
-	switch(which){
-	case DEFAULTS1:  // Regular
-		dFluxes = 1;
-		dParticles = 20;
-		dTrail = 40;
-		dGeometry = 2;
-		dSize = 15;
-		dRandomize = 0;
-		dExpansion = 40;
-		dRotation = 30;
-		dWind = 20;
-		dInstability = 20;
-		dBlur = 0;
-		dFrameRateLimit = 60;
-		break;
-	case DEFAULTS2:  // Hypnotic
-		dFluxes = 2;
-		dParticles = 10;
-		dTrail = 40;
-		dGeometry = 2;
-		dSize = 15;
-		dRandomize = 80;
-		dExpansion = 20;
-		dRotation = 0;
-		dWind = 40;
-		dInstability = 10;
-		dBlur = 30;
-		dFrameRateLimit = 60;
-		break;
-	case DEFAULTS3:  // Insane
-		dFluxes = 4;
-		dParticles = 30;
-		dTrail = 8;
-		dGeometry = 2;
-		dSize = 25;
-		dRandomize = 0;
-		dExpansion = 80;
-		dRotation = 60;
-		dWind = 40;
-		dInstability = 100;
-		dBlur = 10;
-		dFrameRateLimit = 60;
-		break;
-	case DEFAULTS4:  // Sparklers
-		dFluxes = 3;
-		dParticles = 20;
-		dTrail = 6;
-		dGeometry = 1;
-		dSize = 20;
-		dComplexity = 3;
-		dRandomize = 85;
-		dExpansion = 60;
-		dRotation = 30;
-		dWind = 20;
-		dInstability = 30;
-		dBlur = 0;
-		dFrameRateLimit = 60;
-		break;
-	case DEFAULTS5:  // Paradigm
-		dFluxes = 1;
-		dParticles = 40;
-		dTrail = 40;
-		dGeometry = 2;
-		dSize = 5;
-		dRandomize = 90;
-		dExpansion = 30;
-		dRotation = 20;
-		dWind = 10;
-		dInstability = 5;
-		dBlur = 10;
-		dFrameRateLimit = 60;
-		break;
-	case DEFAULTS6:  // Galactic
-		dFluxes = 4;
-		dParticles = 2;
-		dTrail = 1500;
-		dGeometry = 2;
-		dSize = 10;
-		dRandomize = 0;
-		dExpansion = 5;
-		dRotation = 25;
-		dWind = 0;
-		dInstability = 5;
-		dBlur = 0;
-		dFrameRateLimit = 60;
-	}
-}
-
-
-#ifdef WIN32
 
 // Initialize all user-defined stuff
 void readRegistry(){
@@ -1085,7 +1080,6 @@ LRESULT screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	case WM_CREATE:
 		readRegistry();
 		initSaver(hwnd);
-		readyToDraw = 1;
 		break;
 	case WM_DESTROY:
 		readyToDraw = 0;
@@ -1094,5 +1088,4 @@ LRESULT screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	}
 	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }
-
 #endif // WIN32
