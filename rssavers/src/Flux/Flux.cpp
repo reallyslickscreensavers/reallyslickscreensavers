@@ -156,10 +156,6 @@ float particle::update(float *c){
 
 	// Record old position
 	int oldc = counter;
-	float oldpos[3];
-	oldpos[0] = vertices[oldc][0];
-	oldpos[1] = vertices[oldc][1];
-	oldpos[2] = vertices[oldc][2];
 
 	counter ++;
 	if(counter >= dTrail)
@@ -215,9 +211,9 @@ float particle::update(float *c){
 
 	// Bring particles back if they escape
 	if(!counter){
-		if((vertices[counter][0] > 10000.0f) || (vertices[counter][0] < -10000.0f)
-			|| (vertices[counter][1] > 10000.0f) || (vertices[counter][1] < -10000.0f)
-			|| (vertices[counter][2] > 10000.0f) || (vertices[counter][2] < -10000.0f)){
+		if(vertices[counter][0] * vertices[counter][0]
+			+ vertices[counter][1] * vertices[counter][1]
+			+ vertices[counter][2] * vertices[counter][2] > 100000000.0f){
 			vertices[counter][0] = rsRandf(2.0f) - 1.0f;
 			vertices[counter][1] = rsRandf(2.0f) - 1.0f;
 			vertices[counter][2] = rsRandf(2.0f) - 1.0f;
@@ -234,78 +230,94 @@ float particle::update(float *c){
 			p = 0;
 		growth++;
 
-		// assign color to particle
-		hsl2rgb(vertices[p][3], vertices[p][4], luminosity, rgb[0], rgb[1], rgb[2]);
-		glColor3fv(rgb);
+		if(vertices[p][0] * vertices[p][0]
+			+ vertices[p][1] * vertices[p][1]
+			+ vertices[p][2] * vertices[p][2] < 40000.0f){
 
-		glPushMatrix();
-		if(dGeometry == 1)  // Spheres
-			glTranslatef(vertices[p][0], vertices[p][1], vertices[p][2]);
-		else{  // Points or lights
-			depth = cosCameraAngle * vertices[p][2] - sinCameraAngle * vertices[p][0];
-			glTranslatef(cosCameraAngle * vertices[p][0] + sinCameraAngle
-				* vertices[p][2], vertices[p][1], depth);
-		}
-		if(dGeometry){  // Spheres or lights
-			switch(dTrail - growth){
-			case 0:
-				glScalef(0.259f, 0.259f, 0.259f);
+			// assign color to particle
+			hsl2rgb(vertices[p][3], vertices[p][4], luminosity, rgb[0], rgb[1], rgb[2]);
+			glColor3fv(rgb);
+
+			glPushMatrix();
+			switch(dGeometry){
+			case 0:  // Points
+				depth = cosCameraAngle * vertices[p][2] - sinCameraAngle * vertices[p][0];
+				glTranslatef(cosCameraAngle * vertices[p][0] + sinCameraAngle
+					* vertices[p][2], vertices[p][1], depth);
+				switch(dTrail - growth){
+				case 0:
+					glPointSize(float(dSize * (depth + 200.0f) * 0.001036f));
+					break;
+				case 1:
+					glPointSize(float(dSize * (depth + 200.0f) * 0.002f));
+					break;
+				case 2:
+					glPointSize(float(dSize * (depth + 200.0f) * 0.002828f));
+					break;
+				case 3:
+					glPointSize(float(dSize * (depth + 200.0f) * 0.003464f));
+					break;
+				case 4:
+					glPointSize(float(dSize * (depth + 200.0f) * 0.003864f));
+					break;
+				default:
+					glPointSize(float(dSize * (depth + 200.0f) * 0.004f));
+				}
+				glBegin(GL_POINTS);
+					glVertex3f(0.0f,0.0f,0.0f);
+				glEnd();
 				break;
-			case 1:
-				glScalef(0.5f, 0.5f, 0.5f);
+			case 1:  // Spheres
+				glTranslatef(vertices[p][0], vertices[p][1], vertices[p][2]);
+				switch(dTrail - growth){
+				case 0:
+					glScalef(0.259f, 0.259f, 0.259f);
+					break;
+				case 1:
+					glScalef(0.5f, 0.5f, 0.5f);
+					break;
+				case 2:
+					glScalef(0.707f, 0.707f, 0.707f);
+					break;
+				case 3:
+					glScalef(0.866f, 0.866f, 0.866f);
+					break;
+				case 4:
+					glScalef(0.966f, 0.966f, 0.966f);
+				}
+				glCallList(1);
 				break;
-			case 2:
-				glScalef(0.707f, 0.707f, 0.707f);
-				break;
-			case 3:
-				glScalef(0.866f, 0.866f, 0.866f);
-				break;
-			case 4:
-				glScalef(0.966f, 0.966f, 0.966f);
+			case 2:  // Lights
+				depth = cosCameraAngle * vertices[p][2] - sinCameraAngle * vertices[p][0];
+				glTranslatef(cosCameraAngle * vertices[p][0] + sinCameraAngle
+					* vertices[p][2], vertices[p][1], depth);
+				switch(dTrail - growth){
+				case 0:
+					glScalef(0.259f, 0.259f, 0.259f);
+					break;
+				case 1:
+					glScalef(0.5f, 0.5f, 0.5f);
+					break;
+				case 2:
+					glScalef(0.707f, 0.707f, 0.707f);
+					break;
+				case 3:
+					glScalef(0.866f, 0.866f, 0.866f);
+					break;
+				case 4:
+					glScalef(0.966f, 0.966f, 0.966f);
+				}
+				glCallList(1);
 			}
+			glPopMatrix();
 		}
-		switch(dGeometry){
-		case 0:  // Points
-			switch(dTrail - growth){
-			case 0:
-				glPointSize(float(dSize * (depth + 200.0f) * 0.001036f));
-				break;
-			case 1:
-				glPointSize(float(dSize * (depth + 200.0f) * 0.002f));
-				break;
-			case 2:
-				glPointSize(float(dSize * (depth + 200.0f) * 0.002828f));
-				break;
-			case 3:
-				glPointSize(float(dSize * (depth + 200.0f) * 0.003464f));
-				break;
-			case 4:
-				glPointSize(float(dSize * (depth + 200.0f) * 0.003864f));
-				break;
-			default:
-				glPointSize(float(dSize * (depth + 200.0f) * 0.004f));
-			}
-			glBegin(GL_POINTS);
-				glVertex3f(0.0f,0.0f,0.0f);
-			glEnd();
-			break;
-		case 1:  // Spheres
-		case 2:  // Lights
-			glCallList(1);
-		}
-		glPopMatrix();
+
 		vertices[p][0] *= expander;
 		vertices[p][1] *= expander;
 		vertices[p][2] *= expander;
 		vertices[p][2] += blower;
 		luminosity += lumdiff;
 	}
-
-	// Find distance between new position and old position and return it
-	oldpos[0] -= vertices[counter][0];
-	oldpos[1] -= vertices[counter][1];
-	oldpos[2] -= vertices[counter][2];
-	return(float(sqrt(oldpos[0] * oldpos[0] + oldpos[1] * oldpos[1] + oldpos[2] * oldpos[2])));
 }
 
 
@@ -373,9 +385,8 @@ void flux::update(){
 	orbitiness = 0.0f;
 
 	// update all particles in this flux field
-	float dist;
 	for(i=0; i<dParticles; i++)
-		dist = particles[i].update(c);
+		particles[i].update(c);
 
 /*	if(orbitiness < prevOrbitiness){
 		i = rsRandi(NUMCONSTS - 1);
@@ -511,6 +522,7 @@ void setDefaults(int which){
 		dTrail = 40;
 		dGeometry = 2;
 		dSize = 15;
+		dComplexity = 3;
 		dRandomize = 0;
 		dExpansion = 40;
 		dRotation = 30;
@@ -577,7 +589,7 @@ void setDefaults(int which){
 		dFrameRateLimit = 60;
 		break;
 	case DEFAULTS6:  // Galactic
-		dFluxes = 4;
+		dFluxes = 3;
 		dParticles = 2;
 		dTrail = 1500;
 		dGeometry = 2;
@@ -596,6 +608,7 @@ void setDefaults(int which){
 #ifdef RS_XSCREENSAVER
 void handleCommandLine(int argc, char* argv[]){
 	int defaults = DEFAULTS1;
+	setDefaults(defaults);
 	getArgumentsValue(argc, argv, std::string("-default"), defaults, DEFAULTS1, DEFAULTS6);
 	setDefaults(defaults);
 	getArgumentsValue(argc, argv, std::string("-fluxes"), dFluxes, 1, 100);
