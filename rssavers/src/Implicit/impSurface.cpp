@@ -101,45 +101,33 @@ void impSurface::calculateNormals(){
 	float norm[3];
 
 	// zero-out normals
-	float zeroes[3] = {0.0f, 0.0f, 0.0f};
+	const float zeroes[3] = {0.0f, 0.0f, 0.0f};
+	const int size(sizeof(int) * 3);
 	for(i=0; i<vertex_offset; i+=6)
-		memcpy(&(vertices[i]), zeroes, 12);
+		memcpy(&(vertices[i]), zeroes, size);
 
 	// add normal components from various triangles
 	for(i=0; i<num_tristrips; ++i){
-		// Calculate normal component at first vertex in tristrip
-		subvec(vec1, &(vertices[indices[k+1]*6+3]), &(vertices[indices[k]*6+3]));
-		subvec(vec2, &(vertices[indices[k+2]*6+3]), &(vertices[indices[k]*6+3]));
-		cross(norm, vec1, vec2);
-		// Approximate more weight for smaller triangles
-		const float weight(1.0f / (norm[0] * norm[0] + norm[1] * norm[1]
-			+ norm[2] * norm[2] + 0.00000000001f));
-		norm[0] *= weight;
-		norm[1] *= weight;
-		norm[2] *= weight;
-		// Add this normal component to first 2 vertices
-		addvec(&(vertices[indices[k]*6]), &(vertices[indices[k]*6]), norm);
-		addvec(&(vertices[indices[k+1]*6]), &(vertices[indices[k+1]*6]), norm);
-		for(j=2; j<triStripLengths[i]-1; ++j){
-			// Calculate normal component at this vertex
+		for(j=1; j<triStripLengths[i]-1; ++j){
+			// Calculate normal component for this triangle
 			const unsigned int ind(k+j);
 			subvec(vec1, &(vertices[indices[ind+1]*6+3]), &(vertices[indices[ind]*6+3]));
 			subvec(vec2, &(vertices[indices[ind-1]*6+3]), &(vertices[indices[ind]*6+3]));
 			cross(norm, vec1, vec2);
 			// Approximate more weight for smaller triangles
-			const float weight(1.0f / (norm[0] * norm[0] + norm[1] * norm[1]
-				+ norm[2] * norm[2] + 0.00000000001f));
-			// flip normal on even-numbered normals
-			const float sign(-1.0f + (j % 2) * 2.0f);
-			norm[0] *= weight * sign;
-			norm[1] *= weight * sign;
-			norm[2] *= weight * sign;
-			// Add normal component to this normal
+			const float multiplier(
+				// normalize
+				(1.0f / sqrtf(norm[0] * norm[0] + norm[1] * norm[1] + norm[2] * norm[2]))
+				// flip normal on even-numbered normals
+				* (-1.0f + ((j % 2) * 2.0f)));
+			norm[0] *= multiplier;
+			norm[1] *= multiplier;
+			norm[2] *= multiplier;
+			// Add normal component to the normal at each vertex of this triangle
+			addvec(&(vertices[indices[ind-1]*6]), &(vertices[indices[ind-1]*6]), norm);
 			addvec(&(vertices[indices[ind]*6]), &(vertices[indices[ind]*6]), norm);
+			addvec(&(vertices[indices[ind+1]*6]), &(vertices[indices[ind+1]*6]), norm);
 		}
-		// Use last calculated normal component for the last vertex in this tristrip
-		const unsigned int ind(k+triStripLengths[i]-1);
-		addvec(&(vertices[indices[ind]*6]), &(vertices[indices[ind]*6]), norm);
 		// advance index to next tristrip
 		k += triStripLengths[i];
 	}
