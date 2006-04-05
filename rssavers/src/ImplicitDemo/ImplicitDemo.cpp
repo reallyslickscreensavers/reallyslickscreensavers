@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2005  Terence M. Welsh
+ * Copyright (C) 2001-2006  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -261,7 +261,7 @@ int main(int argc,  char **argv){
 	volume = new impCubeVolume;
 	volume->init(50, 50, 50, 0.08f);
 	volume->function = function;
-	//volume->useFastNormals(true);
+	//volume->useFastNormals(false);
 	surface = volume->getSurface();
 
 	glutMainLoop();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2005  Terence M. Welsh
+ * Copyright (C) 2001-2006  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -38,29 +38,6 @@ void impSurface::reset(){
 	index_offset = 0;
 	vertex_offset = 0;
 }
-
-
-/*void impSurface::addstrip(unsigned char length, std::vector<float*> &data){
-	// make more tristrip storage if necessary
-	const size_t tslsize(triStripLengths.size());
-	if(num_tristrips == tslsize)
-		triStripLengths.resize(tslsize + 1000);
-
-	triStripLengths[num_tristrips] = length;
-
-	// make more vertex data storage if necessary
-	const size_t datasize(vertices.size());
-	if((vertex_offset + (length * 6)) >= datasize)
-		vertices.resize(datasize + 1000);
-
-	for(unsigned char i=0; i<length; ++i){
-		memcpy(&(vertices[vertex_offset]), data[i], vertex_data_size);
-		vertex_offset += 6;
-	}
-
-	++num_tristrips;
-	//data_index += length * 6;
-}*/
 
 
 void impSurface::addTriStripLength(unsigned char length){

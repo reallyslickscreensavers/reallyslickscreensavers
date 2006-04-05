@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2005  Terence M. Welsh
+ * Copyright (C) 2001-2006  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -77,7 +77,7 @@ public:
 private:
 	float lbf[3];  // left-bottom-far corner of volume
 	float cubewidth;
-	unsigned int w, h, l, w_1, h_1, l_1;
+	unsigned int w, h, l, w_1, h_1, l_1, w_1xh_1, w_1xh_1xl_1;
 	unsigned int triStripPatterns[256][17];
 	bool crawlDirections[256][6];
 	unsigned int currentVertexIndex;
@@ -115,12 +115,27 @@ public:
 private:
 	// x, y, and z define position of cube in this volume
 	inline unsigned int calculateCornerMask(unsigned int x, unsigned int y, unsigned int z);
+
 	inline void crawl_nosort(unsigned int x, unsigned int y, unsigned int z);
+
 	inline void crawl_sort(unsigned int x, unsigned int y, unsigned int z);
+
+	// re-crawl the surface, setting flags to false
 	inline void uncrawl(unsigned int x, unsigned int y, unsigned int z);
+
 	inline void polygonize(unsigned int index);
+
 	inline void findcornervalues(unsigned int x, unsigned int y, unsigned int z);
+
+	// functions for retrieving values that may or may not have been computed already
+	inline float getXPlus1Value(unsigned int index);
+	inline float getYPlus1Value(unsigned int index);
+	inline float getZPlus1Value(unsigned int index);
+
+	// compute an actual vertex position and normal and add it to the surface
 	inline void addVertexToSurface(unsigned int axis, unsigned int index);
+
+	// utility function for converting 3D cube coordinates to a cube index
 	inline unsigned int cubeindex(unsigned int i, unsigned int j, unsigned int k)
 		{ return (((k * h_1) + j) * w_1) + i; }
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2005  Terence M. Welsh
+ * Copyright (C) 2001-2006  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -33,27 +33,37 @@ class impSurface{
 public:
 	impSurface(){}
 	~impSurface();
-    void reset();
-//	void addstrip(unsigned char length, std::vector<float*> &data);
+
+	// Set data counts to 0
+	void reset();
+
+	// Add data to surface
 	void addTriStripLength(unsigned char length);
 	void addIndex(unsigned int index);
 	void addVertex(float* data);  // provide array of 6 floats (normal, position)
+	
+	// Compute normals from triangle data
+	// This is fast, but not quite as fast as the fast normals in
+	// impCubeVolume, and it also looks a lot worse.  Therefore, it
+	// is not used anymore.
 	void calculateNormals();
-    void draw();
+
+	void draw();
 	void draw_wireframe();
 
+	// convenient vector math functions
+	inline void addvec(float* dest, float* a, float* b);
+	inline void subvec(float* dest, float* a, float* b);
+	inline void cross(float* dest, float* a, float* b);
+
 private:
-    unsigned int num_tristrips;
+	unsigned int num_tristrips;
 	unsigned int index_offset;
 	unsigned int vertex_offset;
 	std::vector<unsigned int> triStripLengths;
 	std::vector<unsigned int> indices;
 	std::vector<float> vertices;
 	size_t vertex_data_size;
-
-	inline void addvec(float* dest, float* a, float* b);
-	inline void subvec(float* dest, float* a, float* b);
-	inline void cross(float* dest, float* a, float* b);
 };
 
 

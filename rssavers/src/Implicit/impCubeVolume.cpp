@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2005  Terence M. Welsh
+ * Copyright (C) 2001-2006  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -19,6 +19,7 @@
 
 
 #include <Implicit/impCubeVolume.h>
+#include <iostream>
 
 
 
@@ -36,7 +37,7 @@ impCubeVolume::impCubeVolume(){
 	init(4, 4, 4, 0.2f);
 	surfacevalue = 0.5f;
 
-	fastnormals = false;
+	fastnormals = true;
 }
 
 
@@ -52,12 +53,15 @@ void impCubeVolume::init(unsigned int width, unsigned int height, unsigned int l
     
 	cubes.clear();
 
+	// frequently used values
 	w = width;
 	w_1 = width + 1;
 	h = height;
 	h_1 = height + 1;
 	l = length;
 	l_1 = length + 1;
+	w_1xh_1 = w_1 * h_1;
+	w_1xh_1xl_1 = w_1 * h_1 * l_1;
 
 	// calculate position of left-bottom-front corner
 	cubewidth = cw;
@@ -66,10 +70,10 @@ void impCubeVolume::init(unsigned int width, unsigned int height, unsigned int l
 	lbf[2] = -float(l) * cubewidth * 0.5f;
 
 	// allocate cubedata memory and set cube positions
-	cubes.resize((width + 1) * (height + 1) * (length + 1));
-	for(i=0; i<=width; ++i){
-		for(j=0; j<=height; ++j){
-			for(k=0; k<=length; ++k){
+	cubes.resize(w_1xh_1xl_1);
+	for(i=0; i<w_1; ++i){
+		for(j=0; j<h_1; ++j){
+			for(k=0; k<l_1; ++k){
 				const unsigned int index(cubeindex(i,j,k));
 				cubes[index].x = lbf[0] + (cubewidth * float(i));
 				cubes[index].y = lbf[1] + (cubewidth * float(j));
@@ -113,9 +117,6 @@ void impCubeVolume::makeSurface(){
 			}
 		}
 	}
-
-	if(fastnormals)
-		surface->calculateNormals();
 }
 
 
@@ -166,9 +167,6 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez){
 	currentVertexIndex = 0;
 	for(std::list<sortableCube>::iterator c = sortableCubes.begin(); c != sortableCubes.end(); ++c)
 		polygonize(c->index);
-
-	if(fastnormals)
-		surface->calculateNormals();
 }
 
 
@@ -180,8 +178,6 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 	currentCubeIndex = 0;
 
 	// crawl from every crawl point to create the surface
-//	std::list<impCrawlPoint>::iterator crawliter = crawlpointlist.begin();
-//	while(crawliter != crawlpointlist.end()){
 	for(unsigned int cp=0; cp<cpv.size(); ++cp){
 		// find cube corresponding to crawl point
 		i = int((cpv[cp].position[0] - lbf[0]) / cubewidth);
@@ -227,8 +223,6 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 				}
 			}
 		}
-
-//		++crawliter;
 	}
 
 	// polygonize
@@ -237,68 +231,13 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 		polygonize(cubeIndices[c]);
 
 	// zero-out done labels
-	for(unsigned int n=0; n<w_1*h_1*l_1; ++n){
+	for(unsigned int n=0; n<w_1xh_1xl_1; ++n){
 		cubes[n].x_vertex_index = 0xFFFFFFFF;
 		cubes[n].y_vertex_index = 0xFFFFFFFF;
 		cubes[n].z_vertex_index = 0xFFFFFFFF;
 		cubes[n].cube_done = false;
 		cubes[n].corner_done = false;
 	}
-
-	// crawl from every crawl point to zero-out done flags
-/*	crawliter = crawlpointlist.begin();
-	while(crawliter != crawlpointlist.end()){
-		// find cube corresponding to crawl point
-		i = int((crawliter->position[0] - lbf[0]) / cubewidth);
-		if(i < 0)
-			i = 0;
-		if(i >= int(w))
-			i = int(w) - 1;
-		j = int((crawliter->position[1] - lbf[1]) / cubewidth);
-		if(j < 0)
-			j = 0;
-		if(j >= int(h))
-			j = int(h) - 1;
-		k = int((crawliter->position[2] - lbf[2]) / cubewidth);
-		if(k < 0)
-			k = 0;
-		if(k >= int(l))
-			k = int(l) - 1;
-
-		// escape if starting on a finished cube
-		crawlpointexit = 0;
-		while(!crawlpointexit){
-			const unsigned int ci(cubeindex(i,j,k));
-			if(!(cubes[ci].cube_done))
-				crawlpointexit = 1;  // escape if starting on an unused cube
-			else{
-				index = cubes[ci].index;
-				if(index == 0){
-					cubes[ci].cube_done = false;
-					cubes[ci].corner_done = false;
-					cubes[cubeindex(i,j,k+1)].corner_done = false;
-					cubes[cubeindex(i,j+1,k)].corner_done = false;
-					cubes[cubeindex(i,j+1,k+1)].corner_done = false;
-					cubes[cubeindex(i+1,j,k)].corner_done = false;
-					cubes[cubeindex(i+1,j,k+1)].corner_done = false;
-					cubes[cubeindex(i+1,j+1,k)].corner_done = false;
-					cubes[cubeindex(i+1,j+1,k+1)].corner_done = false;
-					--i;  // step to an adjacent cube and start over
-					if(i < 0)  // escape if you step outside of volume
-						crawlpointexit = 1;
-				}
-				else{
-					uncrawl(i, j, k);
-					crawlpointexit = 1;
-				}
-			}
-		}
-
-		++crawliter;
-	}*/
-
-	if(fastnormals)
-		surface->calculateNormals();
 }
 
 
@@ -311,8 +250,6 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 	sortableCubes.clear();
 
 	// crawl from every crawl point to create the surface
-//	std::list<impCrawlPoint>::iterator crawliter = crawlpointlist.begin();
-//	while(crawliter != crawlpointlist.end()){
 	for(unsigned int cp=0; cp<cpv.size(); ++cp){
 		// find cube corresponding to crawl point
 		i = int((cpv[cp].position[0] - lbf[0]) / cubewidth);
@@ -358,8 +295,6 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 				}
 			}
 		}
-
-//		++crawliter;
 	}
 
 	// find depths of cubes for sorting
@@ -380,16 +315,13 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 		polygonize(c->index);
 
 	// zero-out done labels
-	for(unsigned int n=0; n<w_1*h_1*l_1; ++n){
+	for(unsigned int n=0; n<w_1xh_1xl_1; ++n){
 		cubes[n].x_vertex_index = 0xFFFFFFFF;
 		cubes[n].y_vertex_index = 0xFFFFFFFF;
 		cubes[n].z_vertex_index = 0xFFFFFFFF;
 		cubes[n].cube_done = false;
 		cubes[n].corner_done = false;
 	}
-
-	if(fastnormals)
-		surface->calculateNormals();
 }
 
 
@@ -401,7 +333,7 @@ inline unsigned int impCubeVolume::calculateCornerMask(unsigned int x, unsigned 
 	if(cubes[index].value < surfacevalue)
 		mask |= LBF;
 
-	index += w_1 * h_1;  // + z
+	index += w_1xh_1;  // + z
 	if(cubes[index].value < surfacevalue)
 		mask |= LBN;
 
@@ -409,7 +341,7 @@ inline unsigned int impCubeVolume::calculateCornerMask(unsigned int x, unsigned 
 	if(cubes[index].value < surfacevalue)
 		mask |= LTN;
 
-	index -= w_1 * h_1;  // - z
+	index -= w_1xh_1;  // - z
 	if(cubes[index].value < surfacevalue)
 		mask |= LTF;
 
@@ -417,7 +349,7 @@ inline unsigned int impCubeVolume::calculateCornerMask(unsigned int x, unsigned 
 	if(cubes[index].value < surfacevalue)
 		mask |= RTF;
 	
-	index += w_1 * h_1;  // + z
+	index += w_1xh_1;  // + z
 	if(cubes[index].value < surfacevalue)
 		mask |= RTN;
 
@@ -425,7 +357,7 @@ inline unsigned int impCubeVolume::calculateCornerMask(unsigned int x, unsigned 
 	if(cubes[index].value < surfacevalue)
 		mask |= RBN;
 
-	index -= w_1 * h_1;  // - z
+	index -= w_1xh_1;  // - z
 	if(cubes[index].value < surfacevalue)
 		mask |= RBF;
 
@@ -568,7 +500,7 @@ inline void impCubeVolume::polygonize(unsigned int index){
 				addVertexToSurface(1, index);
 				break;
 			case 2:
-				addVertexToSurface(1, index + w_1*h_1);
+				addVertexToSurface(1, index + w_1xh_1);
 				break;
 			case 3:
 				addVertexToSurface(2, index + w_1);
@@ -577,13 +509,13 @@ inline void impCubeVolume::polygonize(unsigned int index){
 				addVertexToSurface(0, index);
 				break;
 			case 5:
-				addVertexToSurface(0, index + w_1*h_1);
+				addVertexToSurface(0, index + w_1xh_1);
 				break;
 			case 6:
 				addVertexToSurface(0, index + w_1);
 				break;
 			case 7:
-				addVertexToSurface(0, index + w_1 + w_1*h_1);
+				addVertexToSurface(0, index + w_1 + w_1xh_1);
 				break;
 			case 8:
 				addVertexToSurface(2, index + 1);
@@ -592,7 +524,7 @@ inline void impCubeVolume::polygonize(unsigned int index){
 				addVertexToSurface(1, index + 1);
 				break;
 			case 10:
-				addVertexToSurface(1, index + 1 + w_1*h_1);
+				addVertexToSurface(1, index + 1 + w_1xh_1);
 				break;
 			case 11:
 				addVertexToSurface(2, index + 1 + w_1);
@@ -659,6 +591,69 @@ inline void impCubeVolume::findcornervalues(unsigned int x, unsigned int y, unsi
 }
 
 
+inline float impCubeVolume::getXPlus1Value(unsigned int index){
+	const unsigned int indexPlus1(index + 1);
+
+	// compute new value if index is at the edge of the volume
+	if((indexPlus1 % w_1) == 0){
+		float* pos = &(cubes[index].x);
+		pos[0] += cubewidth;
+		const float value(function(pos));
+		pos[0] -= cubewidth;
+		return value;
+	}
+
+	// return already computed value
+	if(cubes[indexPlus1].corner_done)
+		return cubes[indexPlus1].value;
+
+	// compute new value
+	return function(&(cubes[indexPlus1].x));
+}
+
+
+inline float impCubeVolume::getYPlus1Value(unsigned int index){
+	const unsigned int indexPlus1(index + w_1);
+
+	// compute new value if index is at the edge of the volume
+	if(((indexPlus1 / w_1) % h_1) == 0){
+		float* pos = &(cubes[index].x);
+		pos[1] += cubewidth;
+		const float value(function(pos));
+		pos[1] -= cubewidth;
+		return value;
+	}
+
+	// return already computed value
+	if(cubes[indexPlus1].corner_done)
+		return cubes[indexPlus1].value;
+
+	// compute new value
+	return function(&(cubes[indexPlus1].x));
+}
+
+
+inline float impCubeVolume::getZPlus1Value(unsigned int index){
+	const unsigned int indexPlus1(index + w_1xh_1);
+
+	// compute new value if index is at the edge of the volume
+	if(indexPlus1 >= w_1xh_1 * l){
+		float* pos = &(cubes[index].x);
+		pos[2] += cubewidth;
+		const float value(function(pos));
+		pos[2] -= cubewidth;
+		return value;
+	}
+
+	// return already computed value
+	if(cubes[indexPlus1].corner_done)
+		return cubes[indexPlus1].value;
+
+	// compute new value
+	return function(&(cubes[indexPlus1].x));
+}
+
+
 inline void impCubeVolume::addVertexToSurface(unsigned int axis, unsigned int index){
 	float data[6];
 
@@ -669,15 +664,31 @@ inline void impCubeVolume::addVertexToSurface(unsigned int axis, unsigned int in
 				surface->addIndex(cubes[index].x_vertex_index);
 				return;
 			}
-			else{
-				surface->addIndex(currentVertexIndex);
-				cubes[index].x_vertex_index = currentVertexIndex;
-				currentVertexIndex ++;
-				data[3] = cubes[index].x
-					+ (cubewidth * ((surfacevalue - cubes[index].value)
-					/ (cubes[index+1].value - cubes[index].value)));
-				data[4] = cubes[index].y;
-				data[5] = cubes[index].z;
+			surface->addIndex(currentVertexIndex);
+			cubes[index].x_vertex_index = currentVertexIndex;
+			currentVertexIndex ++;
+			const float t((surfacevalue - cubes[index].value)
+				/ (cubes[index+1].value - cubes[index].value));
+			data[3] = cubes[index].x + (cubewidth * t);
+			data[4] = cubes[index].y;
+			data[5] = cubes[index].z;
+			if(fastnormals){
+				// compute normal
+				const float one_minus_t(1.0f - t);
+				const float nx(one_minus_t * (cubes[index].value - cubes[index+1].value)
+					+ t * (cubes[index+1].value - getXPlus1Value(index+1)));
+				const float ny(one_minus_t * (cubes[index].value - getYPlus1Value(index))
+					+ t * (cubes[index+1].value - getYPlus1Value(index+1)));
+				const float nz(one_minus_t * (cubes[index].value - getZPlus1Value(index))
+					+ t * (cubes[index+1].value - getZPlus1Value(index+1)));
+				// then normalize
+				const float normalizer(1.0f / sqrtf(nx * nx + ny * ny + nz * nz));
+				data[0] = nx * normalizer;
+				data[1] = ny * normalizer;
+				data[2] = nz * normalizer;
+				// Add this vertex to surface
+				surface->addVertex(data);
+				return;
 			}
 			break;
 		}
@@ -686,15 +697,31 @@ inline void impCubeVolume::addVertexToSurface(unsigned int axis, unsigned int in
 				surface->addIndex(cubes[index].y_vertex_index);
 				return;
 			}
-			else{
-				surface->addIndex(currentVertexIndex);
-				cubes[index].y_vertex_index = currentVertexIndex;
-				currentVertexIndex ++;
-				data[3] = cubes[index].x;
-				data[4] = cubes[index].y
-					+ (cubewidth * ((surfacevalue - cubes[index].value)
-					/ (cubes[index+w_1].value - cubes[index].value)));
-				data[5] = cubes[index].z;
+			surface->addIndex(currentVertexIndex);
+			cubes[index].y_vertex_index = currentVertexIndex;
+			currentVertexIndex ++;
+			const float t((surfacevalue - cubes[index].value)
+				/ (cubes[index+w_1].value - cubes[index].value));
+			data[3] = cubes[index].x;
+			data[4] = cubes[index].y + (cubewidth * t);
+			data[5] = cubes[index].z;
+			if(fastnormals){
+				// compute normal
+				const float one_minus_t(1.0f - t);
+				const float nx(one_minus_t * (cubes[index].value - getXPlus1Value(index))
+					+ t * (cubes[index+w_1].value - getXPlus1Value(index+w_1)));
+				const float ny(one_minus_t * (cubes[index].value - cubes[index+w_1].value)
+					+ t * (cubes[index+w_1].value - getYPlus1Value(index+w_1)));
+				const float nz(one_minus_t * (cubes[index].value - getZPlus1Value(index))
+					+ t * (cubes[index+w_1].value - getZPlus1Value(index+w_1)));
+				// then normalize
+				const float normalizer(1.0f / sqrtf(nx * nx + ny * ny + nz * nz));
+				data[0] = nx * normalizer;
+				data[1] = ny * normalizer;
+				data[2] = nz * normalizer;
+				// Add this vertex to surface
+				surface->addVertex(data);
+				return;
 			}
 			break;
 		}
@@ -703,42 +730,57 @@ inline void impCubeVolume::addVertexToSurface(unsigned int axis, unsigned int in
 				surface->addIndex(cubes[index].z_vertex_index);
 				return;
 			}
-			else{
-				surface->addIndex(currentVertexIndex);
-				cubes[index].z_vertex_index = currentVertexIndex;
-				currentVertexIndex ++;
-				data[3] = cubes[index].x;
-				data[4] = cubes[index].y;
-				data[5] = cubes[index].z
-					+ (cubewidth * ((surfacevalue - cubes[index].value)
-					/ (cubes[index+(w_1*h_1)].value - cubes[index].value)));
+			surface->addIndex(currentVertexIndex);
+			cubes[index].z_vertex_index = currentVertexIndex;
+			currentVertexIndex ++;
+			const float t((surfacevalue - cubes[index].value)
+				/ (cubes[index+w_1xh_1].value - cubes[index].value));
+			data[3] = cubes[index].x;
+			data[4] = cubes[index].y;
+			data[5] = cubes[index].z + (cubewidth * t);
+			if(fastnormals){
+				// compute normal
+				const float one_minus_t(1.0f - t);
+				const float nx(one_minus_t * (cubes[index].value - getXPlus1Value(index))
+					+ t * (cubes[index+w_1xh_1].value - getXPlus1Value(index+w_1xh_1)));
+				const float ny(one_minus_t * (cubes[index].value - getYPlus1Value(index))
+					+ t * (cubes[index+w_1xh_1].value - getYPlus1Value(index+w_1xh_1)));
+				const float nz(one_minus_t * (cubes[index].value - cubes[index+w_1*h_1].value)
+					+ t * (cubes[index+w_1xh_1].value - getZPlus1Value(index+w_1xh_1)));
+				// then normalize
+				const float normalizer(1.0f / sqrtf(nx * nx + ny * ny + nz * nz));
+				data[0] = nx * normalizer;
+				data[1] = ny * normalizer;
+				data[2] = nz * normalizer;
+				// Add this vertex to surface
+				surface->addVertex(data);
+				return;
 			}
 			break;
 		}
 	}
 
-	if(!fastnormals){
-		// Find normal vector at vertex along this edge
-		// First find normal vector origin value
-		float* pos = &(data[3]);
-		const float val(function(pos));
-		// then find values at slight displacements and subtract
-		pos[0] -= 0.01f;
-		const float nx(function(pos) - val);
-		pos[0] += 0.01f;
-		pos[1] -= 0.01f;
-		const float ny(function(pos) - val);
-		pos[1] += 0.01f;
-		pos[2] -= 0.01f;
-		const float nz(function(pos) - val);
-		pos[2] += 0.01f;
-		// then normalize
-		const float normalizer(1.0f / sqrtf(nx * nx + ny * ny + nz * nz));
-		data[0] = nx * normalizer;
-		data[1] = ny * normalizer;
-		data[2] = nz * normalizer;
-	}
-	
+	// Find normal vector at vertex along this edge
+	// First find normal vector origin value
+	float* pos = &(data[3]);
+	const float offset(cubewidth * 0.01f);
+	const float val(function(pos));
+	// then find values at slight displacements and subtract
+	pos[0] -= offset;
+	const float nx(function(pos) - val);
+	pos[0] += offset;
+	pos[1] -= offset;
+	const float ny(function(pos) - val);
+	pos[1] += offset;
+	pos[2] -= offset;
+	const float nz(function(pos) - val);
+	pos[2] += offset;
+	// then normalize
+	const float normalizer(1.0f / sqrtf(nx * nx + ny * ny + nz * nz));
+	data[0] = nx * normalizer;
+	data[1] = ny * normalizer;
+	data[2] = nz * normalizer;
+
 	// Add this vertex to surface
 	surface->addVertex(data);
 }
