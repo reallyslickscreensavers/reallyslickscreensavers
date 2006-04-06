@@ -50,7 +50,9 @@ impCubeVolume::~impCubeVolume(){
 
 void impCubeVolume::init(unsigned int width, unsigned int height, unsigned int length, float cw){
 	unsigned int i, j, k;
-    
+
+	normal_offset = cw * 0.1f;
+
 	cubes.clear();
 
 	// frequently used values
@@ -763,18 +765,17 @@ inline void impCubeVolume::addVertexToSurface(unsigned int axis, unsigned int in
 	// Find normal vector at vertex along this edge
 	// First find normal vector origin value
 	float* pos = &(data[3]);
-	const float offset(cubewidth * 0.01f);
 	const float val(function(pos));
 	// then find values at slight displacements and subtract
-	pos[0] -= offset;
+	pos[0] -= normal_offset;
 	const float nx(function(pos) - val);
-	pos[0] += offset;
-	pos[1] -= offset;
+	pos[0] += normal_offset;
+	pos[1] -= normal_offset;
 	const float ny(function(pos) - val);
-	pos[1] += offset;
-	pos[2] -= offset;
+	pos[1] += normal_offset;
+	pos[2] -= normal_offset;
 	const float nz(function(pos) - val);
-	pos[2] += offset;
+	pos[2] += normal_offset;
 	// then normalize
 	const float normalizer(1.0f / sqrtf(nx * nx + ny * ny + nz * nz));
 	data[0] = nx * normalizer;
