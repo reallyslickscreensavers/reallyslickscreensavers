@@ -77,7 +77,6 @@ public:
 private:
 	float lbf[3];  // left-bottom-far corner of volume
 	float cubewidth;
-	float normal_offset;  // used for quality normals only
 	unsigned int w, h, l, w_1, h_1, l_1, w_1xh_1, w_1xh_1xl_1;
 	unsigned int triStripPatterns[256][17];
 	bool crawlDirections[256][6];
