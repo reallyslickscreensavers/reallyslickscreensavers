@@ -399,13 +399,13 @@ bool rsMatrix::invert(){
 	const float det3_2(-determinant3(ab, ac, ad, cb, cc, cd, db, dc, dd));
 	const float det3_3(determinant3(ab, ac, ad, bb, bc, bd, db, dc, dd));
 	const float det3_4(-determinant3(ab, ac, ad, bb, bc, bd, cb, cc, cd));
-    const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
+	const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
 
 	if(fabs(det) < RS_EPSILON)
 		return false;  // matrix is singular, cannot be inverted
 
 	// reciprocal of determinant
-    const float rec_det(1.0f / det);
+	const float rec_det(1.0f / det);
 
 	// calculate inverted matrix
 	m[0]  =   det3_1 * rec_det;
@@ -452,13 +452,13 @@ bool rsMatrix::invert(const rsMatrix &mat){
 	const float det3_2(-determinant3(ab, ac, ad, cb, cc, cd, db, dc, dd));
 	const float det3_3(determinant3(ab, ac, ad, bb, bc, bd, db, dc, dd));
 	const float det3_4(-determinant3(ab, ac, ad, bb, bc, bd, cb, cc, cd));
-    const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
+	const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
 
 	if(fabs(det) < RS_EPSILON)
 		return false;  // matrix is singular, cannot be inverted
 
 	// reciprocal of determinant
-    const float rec_det(1.0f / det);
+	const float rec_det(1.0f / det);
 
 	// calculate inverted matrix
 	m[0]  =   det3_1 * rec_det;
