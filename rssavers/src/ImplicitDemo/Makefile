@@ -10,6 +10,8 @@ OBJECTS = ImplicitDemo.o
 all: ${OBJECTS}
 	gcc ${CFLAGS} ${OBJECTS} -o ../../bin/ImplicitDemo ${LIBRARY}
 
+clean:
+	rm ${OBJECTS}
 
 
 .SUFFIXES: .cpp .o

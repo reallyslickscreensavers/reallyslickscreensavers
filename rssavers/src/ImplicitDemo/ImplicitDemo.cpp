@@ -262,6 +262,7 @@ int main(int argc,  char **argv){
 	volume->init(50, 50, 50, 0.08f);
 	volume->function = function;
 	//volume->useFastNormals(false);
+	//volume->setCrawlFromSides(true);
 	surface = volume->getSurface();
 
 	glutMainLoop();
