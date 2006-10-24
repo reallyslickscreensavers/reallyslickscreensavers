@@ -38,6 +38,7 @@ impCubeVolume::impCubeVolume(){
 	surfacevalue = 0.5f;
 
 	fastnormals = true;
+	crawlfromsides = false;
 }
 
 
@@ -171,7 +172,7 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez){
 
 
 void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
-	int i, j, k;
+	unsigned int i, j, k;
 	bool crawlpointexit;
 	unsigned int mask;
 
@@ -212,8 +213,8 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 				else{
 					if(mask == 0){  // this cube is inside volume
 						cubes[ci].cube_done = true;
-						--i;  // step to an adjacent cube and start over
-						if(i < 0)  // escape if you step outside of volume
+						++i;  // step to an adjacent cube and start over
+						if(i >= w)  // escape if you step outside of volume
 							crawlpointexit = 1;
 					}
 					else{
@@ -221,6 +222,27 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 						crawlpointexit = 1;
 					}
 				}
+			}
+		}
+	}
+
+	if(crawlfromsides){
+		for(j=0; j<h; ++j){
+			for(i=0; i<w; ++i){
+				attempt_crawl_nosort(i, j, 0);
+				attempt_crawl_nosort(i, j, l-1);
+			}
+		}
+		for(k=1; k<l-1; ++k){
+			for(i=0; i<w; ++i){
+				attempt_crawl_nosort(i, 0, k);
+				attempt_crawl_nosort(i, h-1, k);
+			}
+		}
+		for(k=1; k<l-1; ++k){
+			for(j=1; j<h-1; ++j){
+				attempt_crawl_nosort(0, j, k);
+				attempt_crawl_nosort(w-1, j, k);
 			}
 		}
 	}
@@ -297,6 +319,27 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 		}
 	}
 
+	if(crawlfromsides){
+		for(j=0; j<h; ++j){
+			for(i=0; i<w; ++i){
+				attempt_crawl_sort(i, j, 0);
+				attempt_crawl_sort(i, j, l-1);
+			}
+		}
+		for(k=1; k<l-1; ++k){
+			for(i=0; i<w; ++i){
+				attempt_crawl_sort(i, 0, k);
+				attempt_crawl_sort(i, h-1, k);
+			}
+		}
+		for(k=1; k<l-1; ++k){
+			for(j=1; j<h-1; ++j){
+				attempt_crawl_sort(0, j, k);
+				attempt_crawl_sort(w-1, j, k);
+			}
+		}
+	}
+
 	// find depths of cubes for sorting
 	for(std::list<sortableCube>::iterator c = sortableCubes.begin(); c != sortableCubes.end(); ++c){
 		const unsigned int ci(c->index);
@@ -365,6 +408,23 @@ inline unsigned int impCubeVolume::calculateCornerMask(unsigned int x, unsigned 
 }
 
 
+inline void impCubeVolume::attempt_crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
+	const unsigned int ci(cubeindex(x, y, z));
+	if(cubes[ci].cube_done)
+		return;
+
+	findcornervalues(x, y, z);
+	unsigned int mask(calculateCornerMask(x, y, z));
+
+	if(mask == 255)  // escape if outside surface
+		return;
+	if(mask == 0)
+		return;
+
+	crawl_nosort(x, y, z);
+}
+
+
 inline void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
 	findcornervalues(x, y, z);
 	const unsigned int mask(calculateCornerMask(x, y, z));
@@ -399,6 +459,23 @@ inline void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned
 		crawl_nosort(x, y, z-1);
 	if(crawlDirections[mask][5] && z < l-1)
 		crawl_nosort(x, y, z+1);
+}
+
+
+inline void impCubeVolume::attempt_crawl_sort(unsigned int x, unsigned int y, unsigned int z){
+	const unsigned int ci(cubeindex(x, y, z));
+	if(cubes[ci].cube_done)
+		return;
+
+	findcornervalues(x, y, z);
+	unsigned int mask(calculateCornerMask(x, y, z));
+
+	if(mask == 255)  // escape if outside surface
+		return;
+	if(mask == 0)
+		return;
+
+	crawl_sort(x, y, z);
 }
 
 

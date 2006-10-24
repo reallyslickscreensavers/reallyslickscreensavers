@@ -86,6 +86,7 @@ private:
 	std::list<sortableCube> sortableCubes;
 	unsigned int currentCubeIndex;
 	bool fastnormals;
+	bool crawlfromsides;
 	float surfacevalue;  // surface's position on gradient
 	impSurface* surface;
 
@@ -95,6 +96,7 @@ public:
 	// pass dimensions of volume in cubes plus "cubewidth"
 	void init(unsigned int width, unsigned int height, unsigned int length, float cw);
 	void useFastNormals(bool val){fastnormals = val;}
+	void setCrawlFromSides(bool val){crawlfromsides = val;}
 	void setSurfaceValue(float sv){surfacevalue = sv;}
 	float getSurfaceValue(){return surfacevalue;}
 	void setSurface(impSurface* s){surface = s;}
@@ -116,8 +118,11 @@ private:
 	// x, y, and z define position of cube in this volume
 	inline unsigned int calculateCornerMask(unsigned int x, unsigned int y, unsigned int z);
 
-	inline void crawl_nosort(unsigned int x, unsigned int y, unsigned int z);
+	// Try to start crawling, but quit if cube has mask 0 or 255.
+	inline void attempt_crawl_nosort(unsigned int x, unsigned int y, unsigned int z);
+	inline void attempt_crawl_sort(unsigned int x, unsigned int y, unsigned int z);
 
+	inline void crawl_nosort(unsigned int x, unsigned int y, unsigned int z);
 	inline void crawl_sort(unsigned int x, unsigned int y, unsigned int z);
 
 	// re-crawl the surface, setting flags to false

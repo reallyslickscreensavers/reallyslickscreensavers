@@ -14,6 +14,9 @@ OBJECTS = impCubeTables.o \
 all: $(OBJECTS)
 	ar cr ../../lib/Implicit.a $(OBJECTS)
 
+clean:
+	rm ${OBJECTS}
+
 
 .SUFFIXES: .cpp .o
 
