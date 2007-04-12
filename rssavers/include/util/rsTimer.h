@@ -28,12 +28,19 @@
 #else
 #include <stdlib.h>
 #include <sys/time.h>
+#include <iostream>
 #endif
 
 
 class rsTimer{
 public:
-	float time;
+	// Time since last call to tick()
+	float elapsed_time;
+	// Time waited so far by wait()
+	float waited_time;
+	// Wait() would take a hair too long, if we didn't keep track of the
+	// extra time it was spending.  That's what wait_overhead is for.
+	float wait_function_overhead;
 #ifdef WIN32
 	BOOL highResCounterSupported;
 	float freq;  // high frequency system counts per second
@@ -45,7 +52,9 @@ public:
 #endif
 
 	rsTimer(){
-		time = 0.0f;
+		elapsed_time = 0.0f;
+		waited_time = 0.0f;
+		wait_function_overhead = 0.0f;
 #ifdef WIN32
 		// init high- and low-res timers
 		LARGE_INTEGER n[1];
@@ -64,7 +73,7 @@ public:
 	~rsTimer(){}
 
 	// return time elapsed since last call to tick()
-	float tick(){
+	inline float tick(){
 #ifdef WIN32
 		if(highResCounterSupported){
 			prev = curr;
@@ -72,24 +81,40 @@ public:
 			QueryPerformanceCounter(n);
 			curr = n[0].QuadPart;
 			if(curr >= prev) 
-				time = float(curr - prev) * freq;
+				elapsed_time = float(curr - prev) * freq;
 			// else use time from last frame
 		}
 		else{
 			lowResPrev = lowResCurr;
 			lowResCurr = timeGetTime();
 			if(lowResCurr >= lowResPrev) 
-				time = float(lowResCurr - lowResPrev) * 0.001f;
+				elapsed_time = float(lowResCurr - lowResPrev) * 0.001f;
 			// else use time from last frame
 		}
 #else
 		struct timeval curr_tv;
 		gettimeofday(&curr_tv, NULL);
-		float time = (curr_tv.tv_sec - prev_tv.tv_sec)
+		float elapsed_time = (curr_tv.tv_sec - prev_tv.tv_sec)
 			+ ((curr_tv.tv_usec - prev_tv.tv_usec) * 0.000001f);
 		prev_tv = curr_tv;
 #endif
-		return time;
+		return elapsed_time;
+	}
+
+	// Wait until target_time has elapsed, then return.
+	// If you call this function after target_time has already elapsed,
+	// it will return immediately.  Think of target_time as a lower limit
+	// on frame time.
+	// Returns actual time elapsed since last call to wait().
+	inline float wait(float target_time){
+		waited_time = tick();
+		float actual_waited_time(waited_time + wait_function_overhead);
+		if(actual_waited_time < target_time){
+			usleep(long(1000000.0f * (target_time - actual_waited_time)));
+			waited_time += tick();
+		}
+		wait_function_overhead += 0.05f * (waited_time - target_time);
+		return waited_time;
 	}
 };
 
