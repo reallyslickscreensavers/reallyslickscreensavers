@@ -393,7 +393,7 @@ void doSaver(HWND hwnd){
 					temp = 1.0f;
 				if(temp < 0.0f)
 					temp = 0.0f;
-				lightTexture[i][j] = unsigned char(255.0f * temp);
+				lightTexture[i][j] = (unsigned char)(255.0f * temp);
 			}
 		}
 		glEnable(GL_TEXTURE_2D);
