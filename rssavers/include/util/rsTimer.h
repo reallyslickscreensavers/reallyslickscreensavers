@@ -110,7 +110,11 @@ public:
 		waited_time = tick();
 		float actual_waited_time(waited_time + wait_function_overhead);
 		if(actual_waited_time < target_time){
+#ifdef WIN32
+			Sleep(DWORD(1000.0f * (target_time - actual_waited_time)));
+#else
 			usleep(long(1000000.0f * (target_time - actual_waited_time)));
+#endif
 			waited_time += tick();
 		}
 		wait_function_overhead += 0.05f * (waited_time - target_time);
