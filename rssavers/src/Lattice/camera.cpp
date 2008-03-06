@@ -29,7 +29,7 @@ void camera::init(float* mat, float f){
 	// far clipping plane
 	farplane = f;
 
-	// bottom and planes' vectors
+	// bottom and top planes' vectors
 	temp = atanf(1.0f / mat[5]);
 	cullVec[0][0] = 0.0f;
 	cullVec[0][1] = cosf(temp);
