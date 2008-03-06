@@ -94,6 +94,8 @@ void impCubeVolume::init(unsigned int width, unsigned int height, unsigned int l
 void impCubeVolume::makeSurface(){
 	unsigned int i, j, k;
 
+	surface->reset();
+
 	// find gradient value at every corner
 	for(i=0; i<=w; ++i){
 		for(j=0; j<=h; ++j){
@@ -123,6 +125,8 @@ void impCubeVolume::makeSurface(){
 
 void impCubeVolume::makeSurface(float eyex, float eyey, float eyez){
 	unsigned int i, j, k;
+
+	surface->reset();
 
 	// find gradient value at every corner
 	for(i=0; i<=w; ++i){
@@ -175,6 +179,8 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 	unsigned int i, j, k;
 	bool crawlpointexit;
 	unsigned int mask;
+
+	surface->reset();
 
 	currentCubeIndex = 0;
 
@@ -267,6 +273,8 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 	int i, j, k;
 	bool crawlpointexit;
 	unsigned int mask;
+
+	surface->reset();
 
 	// erase list from last frame
 	sortableCubes.clear();

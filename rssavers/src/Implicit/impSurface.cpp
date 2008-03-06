@@ -23,6 +23,13 @@
 #include <iostream>
 
 
+impSurface::impSurface(){
+	glGenBuffers(1, &vbo_array_id);
+	glGenBuffers(1, &vbo_index_id);
+
+	mCompile = false;
+}
+
 
 impSurface::~impSurface(){
 	triStripLengths.resize(0);
@@ -37,6 +44,8 @@ void impSurface::reset(){
 	num_tristrips = 0;
 	index_offset = 0;
 	vertex_offset = 0;
+
+	mCompile = true;
 }
 
 
@@ -123,8 +132,18 @@ void impSurface::calculateNormals(){
 
 
 void impSurface::draw(){
-	// draw using regular immediate mode OpenGL
-	/*unsigned int i, j, k = 0;
+// Draw using immediate mode.  (In tests, display lists were extra slow.)
+#if 0
+/*	static bool first = true;
+	if(first){
+	   mDisplayList = glGenLists(1);
+		first = false;
+	}
+
+	if(mCompile){
+		glNewList(mDisplayList, GL_COMPILE_AND_EXECUTE);*/
+
+	unsigned int i, j, k = 0;
 	for(i=0; i<num_tristrips; ++i){
 		glBegin(GL_TRIANGLE_STRIP);
 			for(j=0; j<triStripLengths[i]; ++j){
@@ -134,15 +153,72 @@ void impSurface::draw(){
 				++k;
 			}
 		glEnd();
-	}*/
+	}
 
-	// draw using vertex arrays
+/*		glEndList();
+		mCompile = false;
+	}
+	else
+		glCallList(mDisplayList);*/
+
+// Draw using Vertex Arrays
+#elif 1
+/*	static bool first = true;
+	if(first){
+	   mDisplayList = glGenLists(1);
+		first = false;
+	}
+
+	if(mCompile){
+		glNewList(mDisplayList, GL_COMPILE_AND_EXECUTE);*/
+
 	glInterleavedArrays(GL_N3F_V3F, 0, &(vertices[0]));
 	int start_vert = 0;
 	for(unsigned int i=0; i<num_tristrips; ++i){
 		glDrawElements(GL_TRIANGLE_STRIP, triStripLengths[i], GL_UNSIGNED_INT, &(indices[start_vert]));
 		start_vert += triStripLengths[i];
 	}
+
+/*		glEndList();
+		mCompile = false;
+	}
+	else
+		glCallList(mDisplayList);*/
+
+// Draw using Vertex Buffer Objects
+#elif 0
+	if(mCompile){
+		if(vbo_index_offsets.size() < triStripLengths.size())
+			vbo_index_offsets.resize(triStripLengths.size());
+
+		unsigned int offset = 0;
+		const unsigned int index_size(sizeof(GLuint));
+		for(unsigned int i=0; i<triStripLengths.size(); ++i){
+			vbo_index_offsets[i] = (GLvoid*)(offset * index_size);
+			//vbo_index_offsets[i] = (GLvoid*)(&(indices[offset]));
+			offset += triStripLengths[i];
+		}
+	}
+
+	// create a data store for vertex information and fill it with the vertices
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_array_id);
+	glNormalPointer(GL_FLOAT, 6 * sizeof(float), (const GLvoid*)0);
+	glVertexPointer(3, GL_FLOAT, 6 * sizeof(float), (const GLvoid*)(3 * sizeof(float)));
+	if(mCompile)
+		glBufferData(GL_ARRAY_BUFFER, vertex_offset * sizeof(GLfloat), &(vertices[0]), GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_index_id);
+	if(mCompile)
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_offset * sizeof(GLuint), &(indices[0]), GL_DYNAMIC_DRAW);
+
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+   	glMultiDrawElements(GL_TRIANGLE_STRIP, (const GLsizei*)(&(triStripLengths[0])),
+			GL_UNSIGNED_INT, (const GLvoid**)(&(vbo_index_offsets[0])), num_tristrips);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+
+	mCompile = false;
+#endif
 }
 
 

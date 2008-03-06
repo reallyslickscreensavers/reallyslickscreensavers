@@ -30,8 +30,27 @@
 
 
 class impSurface{
+private:
+	unsigned int num_tristrips;
+	unsigned int index_offset;
+	unsigned int vertex_offset;
+	std::vector<unsigned int> triStripLengths;
+	std::vector<unsigned int> indices;
+	std::vector<float> vertices;
+	size_t vertex_data_size;
+
+	bool mCompile;
+
+	// display list
+	GLuint mDisplayList;
+
+	// vbo
+	GLuint vbo_array_id;
+	GLuint vbo_index_id;
+	std::vector<GLvoid*> vbo_index_offsets;
+
 public:
-	impSurface(){}
+	impSurface();
 	~impSurface();
 
 	// Set data counts to 0
@@ -55,15 +74,6 @@ public:
 	inline void addvec(float* dest, float* a, float* b);
 	inline void subvec(float* dest, float* a, float* b);
 	inline void cross(float* dest, float* a, float* b);
-
-private:
-	unsigned int num_tristrips;
-	unsigned int index_offset;
-	unsigned int vertex_offset;
-	std::vector<unsigned int> triStripLengths;
-	std::vector<unsigned int> indices;
-	std::vector<float> vertices;
-	size_t vertex_data_size;
 };
 
 
