@@ -22,11 +22,12 @@
 #include <Implicit/impSurface.h>
 #include <math.h>
 #include <iostream>
+#include <GL/glext.h>
 
 
 impSurface::impSurface(){
-	glGenBuffers(1, &vbo_array_id);
-	glGenBuffers(1, &vbo_index_id);
+	//glGenBuffers(1, &vbo_array_id);
+	//glGenBuffers(1, &vbo_index_id);
 
 	mCompile = false;
 }
@@ -133,8 +134,8 @@ void impSurface::calculateNormals(){
 
 
 void impSurface::draw(){
+#if IMM_DRAW
 // Draw using immediate mode.  (In tests, display lists were extra slow.)
-#if 0
 /*	static bool first = true;
 	if(first){
 	   mDisplayList = glGenLists(1);
@@ -161,9 +162,10 @@ void impSurface::draw(){
 	}
 	else
 		glCallList(mDisplayList);*/
+#endif
 
-// Draw using Vertex Arrays
-#elif 1
+#if DRAWARRAY_DRAW
+	// Draw using Vertex Arrays
 /*	static bool first = true;
 	if(first){
 	   mDisplayList = glGenLists(1);
@@ -185,9 +187,10 @@ void impSurface::draw(){
 	}
 	else
 		glCallList(mDisplayList);*/
+#endif
 
-// Draw using Vertex Buffer Objects
-#elif 0
+#if VBO_DRAW
+	// Draw using Vertex Buffer Objects
 	if(mCompile){
 		if(vbo_index_offsets.size() < triStripLengths.size())
 			vbo_index_offsets.resize(triStripLengths.size());

@@ -111,7 +111,7 @@ public:
 
 	particle();
 	~particle();
-	float update(float *c);
+	void update(float *c);
 };
 
 particle::particle(){
@@ -145,7 +145,7 @@ particle::~particle(){
 	delete[] vertices;
 }
 
-float particle::update(float *c){
+void particle::update(float *c){
 	int i, p, growth;
 	float rgb[3];
 	float cx, cy, cz;  // Containment variables

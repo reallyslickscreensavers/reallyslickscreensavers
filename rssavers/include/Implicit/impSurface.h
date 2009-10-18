@@ -30,6 +30,12 @@
 #include <GL/gl.h>
 
 
+// set only one of these to 1 to specify draw method
+#define IMM_DRAW 0  // immediate mode
+#define DRAWARRAY_DRAW 1  // draw arrays
+#define VBO_DRAW 0  // Vertex Buffer Objects (won't work in Windows without initializing glGenBuffersARB)
+
+
 class impSurface{
 private:
 	unsigned int num_tristrips;
@@ -46,9 +52,11 @@ private:
 	GLuint mDisplayList;
 
 	// vbo
+#if VBO_DRAW
 	GLuint vbo_array_id;
 	GLuint vbo_index_id;
 	std::vector<GLvoid*> vbo_index_offsets;
+#endif
 
 public:
 	impSurface();
