@@ -222,10 +222,10 @@ void display(){
 	// print timing info
 	totalTime += frameTime;
 	++printFPS;
-	if(printFPS == 50){
-		std::cout << "FPS = " << 50.0f / totalTime << std::endl;
-		std::cout << "  compute = " << computeTime / 50.0f << std::endl;
-		std::cout << "     draw = " << drawTime / 50.0f << std::endl;
+	if(printFPS == 500){
+		std::cout << "FPS = " << 500.0f / totalTime << std::endl;
+		std::cout << "  compute = " << computeTime / 500.0f << std::endl;
+		std::cout << "     draw = " << drawTime / 500.0f << std::endl;
 		printFPS = 0;
 		totalTime = 0.0f;
 		computeTime = 0.0f;

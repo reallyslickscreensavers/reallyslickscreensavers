@@ -23,7 +23,7 @@
 #define RSMATH_H
 
 
-
+#include <stdlib.h>
 #include <math.h>
 #include <rsMath/rsVec.h>
 #include <rsMath/rsVec4.h>

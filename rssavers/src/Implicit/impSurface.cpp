@@ -21,6 +21,7 @@
 
 #include <Implicit/impSurface.h>
 #include <math.h>
+#include <string.h>
 #include <iostream>
 #include <GL/glext.h>
 
