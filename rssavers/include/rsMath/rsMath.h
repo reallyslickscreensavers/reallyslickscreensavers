@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2005  Terence M. Welsh
+ * Copyright (C) 1999-2010  Terence M. Welsh
  *
  * This file is part of rsMath.
  *
@@ -24,12 +24,15 @@
 
 
 
-#include <stdlib.h>
+#include <math.h>
 #include <rsMath/rsVec.h>
+#include <rsMath/rsVec4.h>
 #include <rsMath/rsMatrix.h>
 #include <rsMath/rsQuat.h>
 #include <rsMath/rsTrigonometry.h>
-
+#ifdef __SSE__
+#include <xmmintrin.h>
+#endif
 
 
 #define RS_EPSILON 0.000001f
@@ -50,6 +53,42 @@ inline int rsRandi(int x){
 inline float rsRandf(float x){
 	return x * (float(rand()) / float(RAND_MAX));
 }
+
+
+inline float rsSqrtf(const float& x){
+#ifdef __SSE__
+	float out[4];
+	_mm_store_ps(out, _mm_sqrt_ss( _mm_set_ss( x ) ) );
+	return out[0];
+#else
+	//return powf(x, 0.5f);
+	return sqrtf(x);
+#endif
+}
+
+
+inline float rsInvSqrtf(const float& x){
+#ifdef __SSE__
+	float out[4];
+	_mm_store_ps(out, _mm_rsqrt_ss( _mm_set_ss( x ) ) );
+	return out[0];
+#else
+	//return 1.0f / powf(x, 0.5f);
+	return 1.0f / sqrtf(x);
+#endif
+}
+/*typedef union {
+	float f;
+	int i;
+} float_or_int;
+
+inline float rsInvSqrtf(const float& x){
+	float_or_int tmp;
+	tmp.f = x;
+	tmp.i = 0x5f3759df - (tmp.i >> 1);
+	return tmp.f * (1.5f - 0.5f * x * tmp.f * tmp.f);
+}*/
+
 
 
 
