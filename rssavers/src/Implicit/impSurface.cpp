@@ -20,7 +20,7 @@
 
 
 #include <Implicit/impSurface.h>
-#include <math.h>
+#include <rsMath/rsMath.h>
 #include <string.h>
 #include <iostream>
 #include <GL/glext.h>
@@ -106,7 +106,7 @@ void impSurface::calculateNormals(){
 			// Approximate more weight for smaller triangles
 			const float multiplier(
 				// normalize
-				(1.0f / sqrtf(norm[0] * norm[0] + norm[1] * norm[1] + norm[2] * norm[2]))
+				(rsInvSqrtf(norm[0] * norm[0] + norm[1] * norm[1] + norm[2] * norm[2]))
 				// flip normal on even-numbered normals
 				* (-1.0f + ((j % 2) * 2.0f)));
 			norm[0] *= multiplier;
@@ -125,7 +125,7 @@ void impSurface::calculateNormals(){
 	for(i=0; i<vertex_offset; i+=6){
 		const unsigned int ii(i+1);
 		const unsigned int iii(i+2);
-		const float normalizer(1.0f / sqrtf(vertices[i] * vertices[i]
+		const float normalizer(rsInvSqrtf(vertices[i] * vertices[i]
 			+ vertices[ii] * vertices[ii] + vertices[iii] * vertices[iii]));
 		vertices[i] *= normalizer;
 		vertices[ii] *= normalizer;

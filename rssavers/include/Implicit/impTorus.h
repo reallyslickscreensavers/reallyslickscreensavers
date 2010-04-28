@@ -28,7 +28,7 @@
 
 
 
-class impTorus : public impShape{
+class  impTorus : public impShape{
 private:
 	float radius;
 

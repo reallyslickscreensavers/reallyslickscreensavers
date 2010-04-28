@@ -41,6 +41,9 @@ struct cubedata{
 	float x;
 	float y;
 	float z;
+#ifdef __SSE__
+	float w;  // must have a 1.0f here for SSE dot product computations
+#endif
 	// field value at this corner
 	float value;
 	// edge vertex indices for surfaces
@@ -48,8 +51,11 @@ struct cubedata{
 	unsigned int y_vertex_index;
 	unsigned int z_vertex_index;
 	// done flags
-	bool cube_done;
-	bool corner_done;
+	unsigned short cube_frame;
+	unsigned short corner_frame;
+	unsigned short x_vertex_frame;
+	unsigned short y_vertex_frame;
+	unsigned short z_vertex_frame;
 };
 
 
@@ -81,6 +87,9 @@ private:
 	unsigned int w, h, l, w_1, h_1, l_1, w_1xh_1, w_1xh_1xl_1;
 	unsigned int triStripPatterns[256][17];
 	bool crawlDirections[256][6];
+	// Frame number to mark corners, edges, and cubes so we know if they
+	// have been computed during the current frame.
+	unsigned short frame;
 	unsigned int currentVertexIndex;
 	std::vector<cubedata> cubes;
 	std::vector<unsigned int> cubeIndices;
@@ -126,9 +135,6 @@ private:
 	inline void crawl_nosort(unsigned int x, unsigned int y, unsigned int z);
 	inline void crawl_sort(unsigned int x, unsigned int y, unsigned int z);
 
-	// re-crawl the surface, setting flags to false
-	inline void uncrawl(unsigned int x, unsigned int y, unsigned int z);
-
 	inline void polygonize(unsigned int index);
 
 	inline void findcornervalues(unsigned int x, unsigned int y, unsigned int z);
@@ -137,6 +143,10 @@ private:
 	inline float getXPlus1Value(unsigned int index);
 	inline float getYPlus1Value(unsigned int index);
 	inline float getZPlus1Value(unsigned int index);
+	
+	//inline float getXMinus1Value(unsigned int index);
+	//inline float getYMinus1Value(unsigned int index);
+	//inline float getZMinus1Value(unsigned int index);
 
 	// compute an actual vertex position and normal and add it to the surface
 	inline void addVertexToSurface(unsigned int axis, unsigned int index);

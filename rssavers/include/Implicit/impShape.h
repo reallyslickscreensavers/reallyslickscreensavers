@@ -30,12 +30,20 @@
 
 #include <Implicit/impCrawlPoint.h>
 #include <math.h>
+#ifdef __SSE__
+#include <malloc.h>
+#include <xmmintrin.h>
+#endif
 
 
 class impShape{
 public:
+#ifdef __SSE__
+	__m128 invtrmatrow[4];  // inverted and then transposed
+#endif
 	float mat[16];
-	float invmat[16];
+	float invmat[16];  // inverted
+	float invtrmat[16];  // inverted and then transposed
 	// Thickness is only necessary in torii and knots, but can be used in other shapes.
 	// Thickness is different from scale (which can be applied using an element's
 	// matrix) because it only scales the width of appendages and not their relative
@@ -46,7 +54,7 @@ public:
 	impShape();
 	~impShape(){};
 	void setPosition(float x, float y, float z);
-	void setPosition(float* position);
+	void setPosition(float* position){ setPosition(position[0], position[1], position[2]); }
 	void setMatrix(float* m);
 	float determinant3(const float aa, const float ab, const float ac,
 		const float ba, const float bb, const float bc,
@@ -64,6 +72,25 @@ public:
 	virtual void center(float* position);
 	// adds surface crawler start position(s) to given crawlPointVector
 	virtual void addCrawlPoint(impCrawlPointVector &cpv);
+
+// When using SSE, __m128 will not be byte aligned when used in a class.  Overriding
+// new and delete ensures this whole class gets aligned to a 16-byte boundary.
+#ifdef __SSE__
+	void* operator new(size_t size){
+#ifdef WIN32
+		return _aligned_malloc(size, 16);
+#else
+		return memalign(16, size);
+#endif
+	}
+	void operator delete (void* mem){
+#ifdef WIN32
+		_aligned_free(mem);
+#else
+		free(mem);
+#endif
+	}
+#endif
 };
 
 

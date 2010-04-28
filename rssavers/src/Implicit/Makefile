@@ -1,5 +1,5 @@
 INCLUDE = -I../../include
-COMPILE = gcc $(INCLUDE) -O3 -DGL_GLEXT_PROTOTYPES
+COMPILE = gcc $(INCLUDE) -O3 -DGL_GLEXT_PROTOTYPES -msse -mfpmath=sse
 OBJECTS = impCubeTables.o \
 	impCubeVolume.o \
 	impSurface.o \

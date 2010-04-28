@@ -28,9 +28,9 @@ float impEllipsoid::value(float* position){
 	const float y(position[1]);
 	const float z(position[2]);
 
-	const float tx(x * invmat[0] + y * invmat[4] + z * invmat[8] + invmat[12]);
-	const float ty(x * invmat[1] + y * invmat[5] + z * invmat[9] + invmat[13]);
-	const float tz(x * invmat[2] + y * invmat[6] + z * invmat[10] + invmat[14]);
+	const float tx(x * invtrmat[0] + y * invtrmat[1] + z * invtrmat[2] + invtrmat[3]);
+	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
+	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
 	return(thicknessSquared / (tx*tx + ty*ty + tz*tz));
 }

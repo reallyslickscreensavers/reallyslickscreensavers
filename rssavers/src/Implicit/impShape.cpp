@@ -45,26 +45,46 @@ void impShape::setPosition(float x, float y, float z){
 	invmat[12] = -x;
 	invmat[13] = -y;
 	invmat[14] = -z;
-}
-
-
-void impShape::setPosition(float* position){
-	mat[12] = position[0];
-	mat[13] = position[1];
-	mat[14] = position[2];
-	invmat[12] = -position[0];
-	invmat[13] = -position[1];
-	invmat[14] = -position[2];
+	invtrmat[3] = -x;
+	invtrmat[5] = -y;
+	invtrmat[11] = -z;
+#ifdef __SSE__
+	((float*)(&(invtrmatrow[0])))[3] = -x;
+	((float*)(&(invtrmatrow[1])))[3] = -y;
+	((float*)(&(invtrmatrow[2])))[3] = -z;
+#endif
 }
 
 
 // Don't need to set this for simple spheres.
 // A whole matrix is only necessary for weird asymmetric objects.
 void impShape::setMatrix(float* m){
-	for(unsigned int i=0; i<16; ++i)
-		mat[i] = m[i];
+	memcpy(mat, m, 16 * sizeof(float));
 	
 	invertMatrix();
+
+	invtrmat[0] = invmat[0];
+	invtrmat[1] = invmat[4];
+	invtrmat[2] = invmat[8];
+	invtrmat[3] = invmat[12];
+	invtrmat[4] = invmat[1];
+	invtrmat[5] = invmat[5];
+	invtrmat[6] = invmat[9];
+	invtrmat[7] = invmat[13];
+	invtrmat[8] = invmat[2];
+	invtrmat[9] = invmat[6];
+	invtrmat[10] = invmat[10];
+	invtrmat[11] = invmat[14];
+	invtrmat[12] = invmat[3];
+	invtrmat[13] = invmat[7];
+	invtrmat[14] = invmat[11];
+	invtrmat[15] = invmat[15];
+#ifdef __SSE__
+	invtrmatrow[0] = _mm_loadu_ps(invtrmat);
+	invtrmatrow[1] = _mm_loadu_ps(&(invtrmat[4]));
+	invtrmatrow[2] = _mm_loadu_ps(&(invtrmat[8]));
+	invtrmatrow[3] = _mm_loadu_ps(&(invtrmat[12]));
+#endif
 }
 
 
@@ -99,13 +119,13 @@ bool impShape::invertMatrix(){
 	const float det3_2(-determinant3(ab, ac, ad, cb, cc, cd, db, dc, dd));
 	const float det3_3(determinant3(ab, ac, ad, bb, bc, bd, db, dc, dd));
 	const float det3_4(-determinant3(ab, ac, ad, bb, bc, bd, cb, cc, cd));
-    const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
+	const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
 
 	if(fabs(det) < 0.000001f)
 		return false;  // matrix is singular, cannot be inverted
 
 	// reciprocal of determinant
-    const float rec_det(1.0f / det);
+	const float rec_det(1.0f / det);
 
 	// calculate inverted matrix
 	invmat[0]  =   det3_1 * rec_det;

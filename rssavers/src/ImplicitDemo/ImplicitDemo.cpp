@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2006  Terence M. Welsh
+ * Copyright (C) 2001-2010  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -62,6 +62,7 @@ void initOpengl(){
 	glLoadIdentity();
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_NORMALIZE);
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
@@ -110,11 +111,11 @@ void display(){
 	static float center[3];
 	static float move[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 	static rsMatrix mat1, mat2;
-	float frameTime;
+	double frameTime;
 	static int printFPS = 0;
-	static float totalTime = 0.0f;
-	static float computeTime = 0.0f;
-	static float drawTime = 0.0f;
+	static double totalTime = 0.0f;
+	static double computeTime = 0.0f;
+	static double drawTime = 0.0f;
 
 	static rsTimer computeTimer, drawTimer;
 	// start compute time timer
@@ -222,10 +223,10 @@ void display(){
 	// print timing info
 	totalTime += frameTime;
 	++printFPS;
-	if(printFPS == 500){
-		std::cout << "FPS = " << 500.0f / totalTime << std::endl;
-		std::cout << "  compute = " << computeTime / 500.0f << std::endl;
-		std::cout << "     draw = " << drawTime / 500.0f << std::endl;
+	if(printFPS == 2000){
+		std::cout << "FPS = " << 2000.0 / totalTime << std::endl;
+		std::cout << "  compute = " << computeTime / 2000.0 << std::endl;
+		std::cout << "     draw = " << drawTime / 2000.0 << std::endl;
 		printFPS = 0;
 		totalTime = 0.0f;
 		computeTime = 0.0f;
