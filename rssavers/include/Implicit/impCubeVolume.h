@@ -126,7 +126,7 @@ public:
 
 private:
 	// x, y, and z define position of cube in this volume
-	inline unsigned int calculateCornerMask(unsigned int x, unsigned int y, unsigned int z);
+	inline const unsigned int calculateCornerMask(const unsigned int& x, const unsigned int& y, const unsigned int& z);
 
 	// Try to start crawling, but quit if cube has mask 0 or 255.
 	inline void attempt_crawl_nosort(unsigned int x, unsigned int y, unsigned int z);
@@ -149,10 +149,10 @@ private:
 	//inline float getZMinus1Value(unsigned int index);
 
 	// compute an actual vertex position and normal and add it to the surface
-	inline void addVertexToSurface(unsigned int axis, unsigned int index);
+	inline void addVertexToSurface(const unsigned int& axis, const unsigned int& index);
 
 	// utility function for converting 3D cube coordinates to a cube index
-	inline unsigned int cubeindex(unsigned int i, unsigned int j, unsigned int k)
+	inline const unsigned int cubeindex(const unsigned int& i, const unsigned int& j, const unsigned int& k)
 		{ return (((k * h_1) + j) * w_1) + i; }
 };
 

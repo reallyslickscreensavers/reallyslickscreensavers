@@ -365,46 +365,20 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 
 
 // calculate index into cubetable
-inline unsigned int impCubeVolume::calculateCornerMask(unsigned int x, unsigned int y, unsigned int z){
-	unsigned int mask(0);
-
-	unsigned int index(cubeindex(x,y,z));
-	if(cubes[index].value < surfacevalue)
-		mask |= LBF;
-
-	index += w_1xh_1;  // + z
-	if(cubes[index].value < surfacevalue)
-		mask |= LBN;
-
-	index += w_1;  // + y
-	if(cubes[index].value < surfacevalue)
-		mask |= LTN;
-
-	index -= w_1xh_1;  // - z
-	if(cubes[index].value < surfacevalue)
-		mask |= LTF;
-
-	index += 1;  // +x
-	if(cubes[index].value < surfacevalue)
-		mask |= RTF;
-	
-	index += w_1xh_1;  // + z
-	if(cubes[index].value < surfacevalue)
-		mask |= RTN;
-
-	index -= w_1;  // - y
-	if(cubes[index].value < surfacevalue)
-		mask |= RBN;
-
-	index -= w_1xh_1;  // - z
-	if(cubes[index].value < surfacevalue)
-		mask |= RBF;
-
-	return(mask);
+const unsigned int impCubeVolume::calculateCornerMask(const unsigned int& x, const unsigned int& y, const unsigned int& z){
+	const unsigned int index(cubeindex(x,y,z));
+	return ((cubes[index].value < surfacevalue) ? LBF : 0)
+		+ ((cubes[index+1].value < surfacevalue) ? RBF : 0)
+		+ ((cubes[index+w_1].value < surfacevalue) ? LTF : 0)
+		+ ((cubes[index+1+w_1].value < surfacevalue) ? RTF : 0)
+		+ ((cubes[index+w_1xh_1].value < surfacevalue) ? LBN : 0)
+		+ ((cubes[index+1+w_1xh_1].value < surfacevalue) ? RBN : 0)
+		+ ((cubes[index+w_1+w_1xh_1].value < surfacevalue) ? LTN : 0)
+		+ ((cubes[index+1+w_1+w_1xh_1].value < surfacevalue) ? RTN : 0);
 }
 
 
-inline void impCubeVolume::attempt_crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
+void impCubeVolume::attempt_crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
 	const unsigned int ci(cubeindex(x, y, z));
 	if(cubes[ci].cube_frame == frame)
 		return;
@@ -421,13 +395,14 @@ inline void impCubeVolume::attempt_crawl_nosort(unsigned int x, unsigned int y, 
 }
 
 
-inline void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
+void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
 	findcornervalues(x, y, z);
 	const unsigned int mask(calculateCornerMask(x, y, z));
 
 	// quit if this cube has been done or does not intersect surface
 	const unsigned int ci(cubeindex(x,y,z));
-	if(cubes[ci].cube_frame == frame)
+	cubedata& cube(cubes[ci]);
+	if(cube.cube_frame == frame)
 		return;
 
 	// add this cube to list of crawled cubes, resizing vector if necessary
@@ -437,10 +412,10 @@ inline void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned
 	cubeIndices[currentCubeIndex++] = ci;
 
 	// save index for polygonizing and uncrawling
-	cubes[ci].mask = mask;
+	cube.mask = mask;
 
 	// mark this cube as completed
-	cubes[ci].cube_frame = frame;
+	cube.cube_frame = frame;
 
 	// crawl to adjacent cubes
 	if(crawlDirections[mask][0] && x > 0)
@@ -458,13 +433,13 @@ inline void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned
 }
 
 
-inline void impCubeVolume::attempt_crawl_sort(unsigned int x, unsigned int y, unsigned int z){
+void impCubeVolume::attempt_crawl_sort(unsigned int x, unsigned int y, unsigned int z){
 	const unsigned int ci(cubeindex(x, y, z));
 	if(cubes[ci].cube_frame == frame)
 		return;
 
 	findcornervalues(x, y, z);
-	unsigned int mask(calculateCornerMask(x, y, z));
+	const unsigned int mask(calculateCornerMask(x, y, z));
 
 	if(mask == 255)  // escape if outside surface
 		return;
@@ -475,23 +450,24 @@ inline void impCubeVolume::attempt_crawl_sort(unsigned int x, unsigned int y, un
 }
 
 
-inline void impCubeVolume::crawl_sort(unsigned int x, unsigned int y, unsigned int z){
+void impCubeVolume::crawl_sort(unsigned int x, unsigned int y, unsigned int z){
 	findcornervalues(x, y, z);
 	const int mask(calculateCornerMask(x, y, z));
 
 	// quit if this cube has been done or does not intersect surface
 	const unsigned int ci(cubeindex(x,y,z));
-	if(cubes[ci].cube_frame == frame)
+	cubedata& cube(cubes[ci]);
+	if(cube.cube_frame == frame)
 		return;
 
 	// add cube to list
 	sortableCubes.push_back(sortableCube(ci));
 
 	// save index for uncrawling
-	cubes[ci].mask = mask;
+	cube.mask = mask;
 
 	// mark this cube as completed
-	cubes[ci].cube_frame = frame;
+	cube.cube_frame = frame;
 
 	// crawl to adjacent cubes
 	if(crawlDirections[mask][0] && x > 0)
@@ -510,7 +486,7 @@ inline void impCubeVolume::crawl_sort(unsigned int x, unsigned int y, unsigned i
 
 
 // polygonize an individual cube
-inline void impCubeVolume::polygonize(unsigned int index){
+void impCubeVolume::polygonize(unsigned int index){
 	// find index into cubetable
 	const unsigned int mask(cubes[index].mask);
 
@@ -566,60 +542,67 @@ inline void impCubeVolume::polygonize(unsigned int index){
 
 
 // find value at all corners of this cube
-inline void impCubeVolume::findcornervalues(unsigned int x, unsigned int y, unsigned int z){
-	unsigned int index;
-
-	index = cubeindex(x,y,z);
-	if(cubes[index].corner_frame != frame){
-		cubes[index].value = function(&(cubes[index].x));
-		cubes[index].corner_frame = frame;
+void impCubeVolume::findcornervalues(unsigned int x, unsigned int y, unsigned int z){
+	{
+		cubedata& cube(cubes[cubeindex(x,y,z)]);
+		if(cube.corner_frame != frame){
+			cube.corner_frame = frame;
+			cube.value = function(&(cube.x));
+		}
 	}
-	++z;
-	index = cubeindex(x,y,z);
-	if(cubes[index].corner_frame != frame){
-		cubes[index].value = function(&(cubes[index].x));
-		cubes[index].corner_frame = frame;
+	{
+		cubedata& cube(cubes[cubeindex(x+1,y,z)]);
+		if(cube.corner_frame != frame){
+			cube.corner_frame = frame;
+			cube.value = function(&(cube.x));
+		}
 	}
-	++y;
-	index = cubeindex(x,y,z);
-	if(cubes[index].corner_frame != frame){
-		cubes[index].value = function(&(cubes[index].x));
-		cubes[index].corner_frame = frame;
+	{
+		cubedata& cube(cubes[cubeindex(x,y+1,z)]);
+		if(cube.corner_frame != frame){
+			cube.corner_frame = frame;
+			cube.value = function(&(cube.x));
+		}
 	}
-	--z;
-	index = cubeindex(x,y,z);
-	if(cubes[index].corner_frame != frame){
-		cubes[index].value = function(&(cubes[index].x));
-		cubes[index].corner_frame = frame;
+	{
+		cubedata& cube(cubes[cubeindex(x+1,y+1,z)]);
+		if(cube.corner_frame != frame){
+			cube.corner_frame = frame;
+			cube.value = function(&(cube.x));
+		}
 	}
-	++x;
-	index = cubeindex(x,y,z);
-	if(cubes[index].corner_frame != frame){
-		cubes[index].value = function(&(cubes[index].x));
-		cubes[index].corner_frame = frame;
+	{
+		cubedata& cube(cubes[cubeindex(x,y,z+1)]);
+		if(cube.corner_frame != frame){
+			cube.corner_frame = frame;
+			cube.value = function(&(cube.x));
+		}
 	}
-	++z;
-	index = cubeindex(x,y,z);
-	if(cubes[index].corner_frame != frame){
-		cubes[index].value = function(&(cubes[index].x));
-		cubes[index].corner_frame = frame;
+	{
+		cubedata& cube(cubes[cubeindex(x+1,y,z+1)]);
+		if(cube.corner_frame != frame){
+			cube.corner_frame = frame;
+			cube.value = function(&(cube.x));
+		}
 	}
-	--y;
-	index = cubeindex(x,y,z);
-	if(cubes[index].corner_frame != frame){
-		cubes[index].value = function(&(cubes[index].x));
-		cubes[index].corner_frame = frame;
+	{
+		cubedata& cube(cubes[cubeindex(x,y+1,z+1)]);
+		if(cube.corner_frame != frame){
+			cube.corner_frame = frame;
+			cube.value = function(&(cube.x));
+		}
 	}
-	--z;
-	index = cubeindex(x,y,z);
-	if(cubes[index].corner_frame != frame){
-		cubes[index].value = function(&(cubes[index].x));
-		cubes[index].corner_frame = frame;
+	{
+		cubedata& cube(cubes[cubeindex(x+1,y+1,z+1)]);
+		if(cube.corner_frame != frame){
+			cube.corner_frame = frame;
+			cube.value = function(&(cube.x));
+		}
 	}
 }
 
 
-inline float impCubeVolume::getXPlus1Value(unsigned int index){
+float impCubeVolume::getXPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + 1);
 
 	// compute new value if index is at the edge of the volume
@@ -641,7 +624,7 @@ inline float impCubeVolume::getXPlus1Value(unsigned int index){
 }
 
 
-inline float impCubeVolume::getYPlus1Value(unsigned int index){
+float impCubeVolume::getYPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + w_1);
 
 	// compute new value if index is at the edge of the volume
@@ -663,7 +646,7 @@ inline float impCubeVolume::getYPlus1Value(unsigned int index){
 }
 
 
-inline float impCubeVolume::getZPlus1Value(unsigned int index){
+float impCubeVolume::getZPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + w_1xh_1);
 
 	// compute new value if index is at the edge of the volume
@@ -685,7 +668,7 @@ inline float impCubeVolume::getZPlus1Value(unsigned int index){
 }
 
 
-/*inline float impCubeVolume::getXPlus1Value(unsigned int index){
+/*float impCubeVolume::getXPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + 1);
 
 	// return already computed value
@@ -697,7 +680,7 @@ inline float impCubeVolume::getZPlus1Value(unsigned int index){
 }
 
 
-inline float impCubeVolume::getYPlus1Value(unsigned int index){
+float impCubeVolume::getYPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + w_1);
 
 	// return already computed value
@@ -709,7 +692,7 @@ inline float impCubeVolume::getYPlus1Value(unsigned int index){
 }
 
 
-inline float impCubeVolume::getZPlus1Value(unsigned int index){
+float impCubeVolume::getZPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + w_1xh_1);
 
 	// return already computed value
@@ -721,7 +704,7 @@ inline float impCubeVolume::getZPlus1Value(unsigned int index){
 }
 
 
-inline float impCubeVolume::getXMinus1Value(unsigned int index){
+float impCubeVolume::getXMinus1Value(unsigned int index){
 	const unsigned int indexMinus1(index - 1);
 
 	// return already computed value
@@ -733,7 +716,7 @@ inline float impCubeVolume::getXMinus1Value(unsigned int index){
 }
 
 
-inline float impCubeVolume::getYMinus1Value(unsigned int index){
+float impCubeVolume::getYMinus1Value(unsigned int index){
 	const unsigned int indexMinus1(index - w_1);
 
 	// return already computed value
@@ -745,7 +728,7 @@ inline float impCubeVolume::getYMinus1Value(unsigned int index){
 }
 
 
-inline float impCubeVolume::getZMinus1Value(unsigned int index){
+float impCubeVolume::getZMinus1Value(unsigned int index){
 	const unsigned int indexMinus1(index - w_1xh_1);
 
 	// return already computed value
@@ -757,7 +740,7 @@ inline float impCubeVolume::getZMinus1Value(unsigned int index){
 }*/
 
 
-inline void impCubeVolume::addVertexToSurface(unsigned int axis, unsigned int index){
+void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned int& index){
 	float data[6];
 
 	// find position of vertex along this edge
