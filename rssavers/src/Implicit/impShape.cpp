@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2005  Terence M. Welsh
+ * Copyright (C) 2001-2010  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -20,7 +20,7 @@
 
 
 #include <Implicit/impShape.h>
-
+#include <string.h>
 
 
 impShape::impShape(){

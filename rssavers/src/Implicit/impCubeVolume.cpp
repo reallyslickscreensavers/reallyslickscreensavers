@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2006  Terence M. Welsh
+ * Copyright (C) 2001-2010  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -216,7 +216,7 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 			else{  // find index for this cube
 				findcornervalues(i, j, k);
 				mask = calculateCornerMask(i, j, k);
-				// save index for uncrawling
+				// save index for polygonizing
 				cubes[ci].mask = mask;
 				if(mask == 255)  // escape if outside surface
 					crawlpointexit = 1;
@@ -304,7 +304,7 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 			else{  // find index for this cube
 				findcornervalues(i, j, k);
 				mask = calculateCornerMask(i, j, k);
-				// save index for uncrawling
+				// save index for polygonizing
 				cubes[ci].mask = mask;
 				if(mask == 255)  // escape if outside surface
 					crawlpointexit = 1;
@@ -411,7 +411,7 @@ void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned int z)
 		cubeIndices.resize(tslsize + 1000);
 	cubeIndices[currentCubeIndex++] = ci;
 
-	// save index for polygonizing and uncrawling
+	// save index for polygonizing
 	cube.mask = mask;
 
 	// mark this cube as completed
@@ -463,7 +463,7 @@ void impCubeVolume::crawl_sort(unsigned int x, unsigned int y, unsigned int z){
 	// add cube to list
 	sortableCubes.push_back(sortableCube(ci));
 
-	// save index for uncrawling
+	// save index for polygonizing
 	cube.mask = mask;
 
 	// mark this cube as completed

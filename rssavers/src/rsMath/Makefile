@@ -9,6 +9,8 @@ OBJECTS = rsVec.o \
 all: $(OBJECTS)
 	ar cr ../../lib/rsMath.a $(OBJECTS)
 
+clean:
+	rm ${OBJECTS}
 
 .SUFFIXES: .cpp .o
 
