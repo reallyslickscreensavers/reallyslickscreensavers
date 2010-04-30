@@ -57,9 +57,7 @@ inline float rsRandf(float x){
 
 inline float rsSqrtf(const float& x){
 #ifdef __SSE__
-	float out[4];
-	_mm_store_ps(out, _mm_sqrt_ss( _mm_set_ss( x ) ) );
-	return out[0];
+	return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
 #else
 	//return powf(x, 0.5f);
 	return sqrtf(x);
@@ -69,9 +67,7 @@ inline float rsSqrtf(const float& x){
 
 inline float rsInvSqrtf(const float& x){
 #ifdef __SSE__
-	float out[4];
-	_mm_store_ps(out, _mm_rsqrt_ss( _mm_set_ss( x ) ) );
-	return out[0];
+	return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x)));
 #else
 	//return 1.0f / powf(x, 0.5f);
 	return 1.0f / sqrtf(x);
