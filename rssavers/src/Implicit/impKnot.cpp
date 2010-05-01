@@ -20,7 +20,7 @@
 
 
 #include <Implicit/impKnot.h>
-
+#include <rsMath/rsMath.h>
 
 
 float impKnot::value(float* position){
@@ -32,13 +32,13 @@ float impKnot::value(float* position){
 	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
 	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
-	const float temp(sqrtf(tx*tx + ty*ty) - radius1);
-	const float lat(atan2f(ty, tx) * twistsOverCoils);
+	const float temp(rsSqrtf(tx*tx + ty*ty) - radius1);
+	const float lat(rsAtan2f(ty, tx) * twistsOverCoils);
 	float retval(0.0f);
 	for(int i=0; i<coils; ++i){
 		const float lon(lat + lat_offset * float(i));
-		const float hor(temp - cosf(lon) * radius2);
-		const float ver(tz - sinf(lon) * radius2);
+		const float hor(temp - rsCosf(lon) * radius2);
+		const float ver(tz - rsSinf(lon) * radius2);
 		retval += thicknessSquared / (hor * hor + ver * ver);
 	}
 	return retval;

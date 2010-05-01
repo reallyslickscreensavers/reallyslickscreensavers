@@ -203,6 +203,22 @@ inline float rsSinf(float value){
 }
 
 
+#define PIo4 0.785398163f
+#define PI3o4 2.35619449019f
+inline const float rsAtan2f(const float& y, const float& x){
+	float angle;
+	const float abs_y(fabsf(y) + 0.000001f);
+	if(x >= 0.0f)
+		angle = PIo4 - PIo4 * ((x - abs_y) / (x + abs_y));
+	else
+		angle = PI3o4 - PIo4 * ((x + abs_y) / (abs_y - x));
+
+	if(y < 0)
+		return(-angle);
+	return(angle);
+}
+
+
 	/*outfile.open("outfile");
 	outfile << "float rs_cosine_table[256] = {" << std::endl;
 	for(int i=0; i<256; i++){

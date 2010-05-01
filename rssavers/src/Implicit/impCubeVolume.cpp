@@ -208,28 +208,28 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 			k = int(l) - 1;
 
 		// escape if starting on a finished cube
-		crawlpointexit = 0;
+		crawlpointexit = false;
 		while(!crawlpointexit){
 			const unsigned int ci(cubeindex(i,j,k));
 			if(cubes[ci].cube_frame == frame)
-				crawlpointexit = 1;  // escape if starting on a finished cube
+				crawlpointexit = true;  // escape if starting on a finished cube
 			else{  // find index for this cube
 				findcornervalues(i, j, k);
 				mask = calculateCornerMask(i, j, k);
 				// save index for polygonizing
 				cubes[ci].mask = mask;
 				if(mask == 255)  // escape if outside surface
-					crawlpointexit = 1;
+					crawlpointexit = true;
 				else{
 					if(mask == 0){  // this cube is inside volume
 						cubes[ci].cube_frame = frame;
 						++i;  // step to an adjacent cube and start over
 						if(i >= w)  // escape if you step outside of volume
-							crawlpointexit = 1;
+							crawlpointexit = true;
 					}
 					else{
 						crawl_nosort(i, j, k);
-						crawlpointexit = 1;
+						crawlpointexit = true;
 					}
 				}
 			}
@@ -296,28 +296,28 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 			k = int(l) - 1;
 
 		// escape if starting on a finished cube
-		crawlpointexit = 0;
+		crawlpointexit = false;
 		while(!crawlpointexit){
 			const unsigned int ci(cubeindex(i,j,k));
 			if(cubes[ci].cube_frame == frame)
-				crawlpointexit = 1;  // escape if starting on a finished cube
+				crawlpointexit = true;  // escape if starting on a finished cube
 			else{  // find index for this cube
 				findcornervalues(i, j, k);
 				mask = calculateCornerMask(i, j, k);
 				// save index for polygonizing
 				cubes[ci].mask = mask;
 				if(mask == 255)  // escape if outside surface
-					crawlpointexit = 1;
+					crawlpointexit = true;
 				else{
 					if(mask == 0){  // this cube is inside volume
 						cubes[ci].cube_frame = frame;
 						--i;  // step to an adjacent cube and start over
 						if(i < 0)  // escape if you step outside of volume
-							crawlpointexit = 1;
+							crawlpointexit = true;
 					}
 					else{
 						crawl_sort(i, j, k);
-						crawlpointexit = 1;
+						crawlpointexit = true;
 					}
 				}
 			}

@@ -27,10 +27,18 @@
 
 
 impSurface::impSurface(){
-	//glGenBuffers(1, &vbo_array_id);
-	//glGenBuffers(1, &vbo_index_id);
+	num_tristrips = 0;
+	index_offset = 0;
+	vertex_offset = 0;
+	triStripLengths.resize(0);
+	indices.resize(0);
+	vertices.resize(0);
+	vertex_data_size = sizeof(float) * 6;
 
 	mCompile = false;
+
+	//glGenBuffers(1, &vbo_array_id);
+	//glGenBuffers(1, &vbo_index_id);
 }
 
 
@@ -38,8 +46,6 @@ impSurface::~impSurface(){
 	triStripLengths.resize(0);
 	indices.resize(0);
 	vertices.resize(0);
-
-	vertex_data_size = sizeof(float) * 6;
 }
 
 

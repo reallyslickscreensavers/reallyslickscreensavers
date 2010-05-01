@@ -86,6 +86,4 @@ inline float rsInvSqrtf(const float& x){
 }*/
 
 
-
-
 #endif
