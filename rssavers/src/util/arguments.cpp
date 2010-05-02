@@ -20,6 +20,7 @@
 
 
 #include <util/arguments.h>
+#include <string.h>
 
 
 // Find the specified argument in the input stream.
