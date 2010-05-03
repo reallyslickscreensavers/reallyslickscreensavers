@@ -379,8 +379,7 @@ const unsigned int impCubeVolume::calculateCornerMask(const unsigned int& x, con
 
 
 void impCubeVolume::attempt_crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
-	const unsigned int ci(cubeindex(x, y, z));
-	if(cubes[ci].cube_frame == frame)
+	if(cubes[cubeindex(x, y, z)].cube_frame == frame)
 		return;
 
 	findcornervalues(x, y, z);
@@ -396,14 +395,14 @@ void impCubeVolume::attempt_crawl_nosort(unsigned int x, unsigned int y, unsigne
 
 
 void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
-	findcornervalues(x, y, z);
-	const unsigned int mask(calculateCornerMask(x, y, z));
-
-	// quit if this cube has been done or does not intersect surface
+	// quit if this cube has been done
 	const unsigned int ci(cubeindex(x,y,z));
 	cubedata& cube(cubes[ci]);
 	if(cube.cube_frame == frame)
 		return;
+
+	findcornervalues(x, y, z);
+	const unsigned int mask(calculateCornerMask(x, y, z));
 
 	// add this cube to list of crawled cubes, resizing vector if necessary
 	const size_t tslsize(cubeIndices.size());
@@ -434,8 +433,7 @@ void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned int z)
 
 
 void impCubeVolume::attempt_crawl_sort(unsigned int x, unsigned int y, unsigned int z){
-	const unsigned int ci(cubeindex(x, y, z));
-	if(cubes[ci].cube_frame == frame)
+	if(cubes[cubeindex(x, y, z)].cube_frame == frame)
 		return;
 
 	findcornervalues(x, y, z);
@@ -451,14 +449,14 @@ void impCubeVolume::attempt_crawl_sort(unsigned int x, unsigned int y, unsigned 
 
 
 void impCubeVolume::crawl_sort(unsigned int x, unsigned int y, unsigned int z){
-	findcornervalues(x, y, z);
-	const int mask(calculateCornerMask(x, y, z));
-
-	// quit if this cube has been done or does not intersect surface
+	// quit if this cube has been done
 	const unsigned int ci(cubeindex(x,y,z));
 	cubedata& cube(cubes[ci]);
 	if(cube.cube_frame == frame)
 		return;
+
+	findcornervalues(x, y, z);
+	const int mask(calculateCornerMask(x, y, z));
 
 	// add cube to list
 	sortableCubes.push_back(sortableCube(ci));
