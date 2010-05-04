@@ -237,22 +237,104 @@ void impCubeVolume::makeSurface(impCrawlPointVector &cpv){
 	}
 
 	if(crawlfromsides){
-		for(j=0; j<h; ++j){
-			for(i=0; i<w; ++i){
-				attempt_crawl_nosort(i, j, 0);
-				attempt_crawl_nosort(i, j, l-1);
+		for(j=0; j<=h; ++j){
+			for(i=j%2; i<=w; i+=2){
+				// left side of volume
+				cubedata& cube0(cubes[cubeindex(i,j,0)]);
+				if(cube0.corner_frame != frame){
+					cube0.corner_frame = frame;
+					cube0.value = function(&(cube0.x));
+				}
+				if(cube0.value >= surfacevalue){
+					if(i!=0 && j!=0)
+						crawl_nosort(i-1,j-1,0);
+					if(i!=w && j!=0)
+						crawl_nosort(i,j-1,0);
+					if(i!=0 && j!=h)
+						crawl_nosort(i-1,j,0);
+					if(i!=w && j!=h)
+						crawl_nosort(i,j,0);
+				}
+				// right side of volume
+				cubedata& cube1(cubes[cubeindex(i,j,l)]);
+				if(cube1.corner_frame != frame){
+					cube1.corner_frame = frame;
+					cube1.value = function(&(cube1.x));
+				}
+				if(cube1.value >= surfacevalue){
+					if(i!=0 && j!=0)
+						crawl_nosort(i-1,j-1,l-1);
+					if(i!=w && j!=0)
+						crawl_nosort(i,j-1,l-1);
+					if(i!=0 && j!=h)
+						crawl_nosort(i-1,j,l-1);
+					if(i!=w && j!=h)
+						crawl_nosort(i,j,l-1);
+				}
 			}
 		}
-		for(k=1; k<l-1; ++k){
-			for(i=0; i<w; ++i){
-				attempt_crawl_nosort(i, 0, k);
-				attempt_crawl_nosort(i, h-1, k);
+		for(k=1; k<l; ++k){
+			for(i=k%2; i<=w; i+=2){
+				// bottom of volume
+				cubedata& cube0(cubes[cubeindex(i,0,k)]);
+				if(cube0.corner_frame != frame){
+					cube0.corner_frame = frame;
+					cube0.value = function(&(cube0.x));
+				}
+				if(cube0.value >= surfacevalue){
+					if(i!=0){
+						crawl_nosort(i-1,0,k-1);
+						crawl_nosort(i-1,0,k);
+					}
+					if(i!=w){
+						crawl_nosort(i,0,k-1);
+						crawl_nosort(i,0,k);
+					}
+				}
+				// top of volume
+				cubedata& cube1(cubes[cubeindex(i,h,k)]);
+				if(cube1.corner_frame != frame){
+					cube1.corner_frame = frame;
+					cube1.value = function(&(cube1.x));
+				}
+				if(cube1.value >= surfacevalue){
+					if(i!=0){
+						crawl_nosort(i-1,h-1,k-1);
+						crawl_nosort(i-1,h-1,k);
+					}
+					if(i!=w){
+						crawl_nosort(i,h-1,k-1);
+						crawl_nosort(i,h-1,k);
+					}
+				}
 			}
 		}
-		for(k=1; k<l-1; ++k){
-			for(j=1; j<h-1; ++j){
-				attempt_crawl_nosort(0, j, k);
-				attempt_crawl_nosort(w-1, j, k);
+		for(k=1; k<l; ++k){
+			for(j=(k%2)+1; j<h; j+=2){
+				// back of volume
+				cubedata& cube0(cubes[cubeindex(0,j,k)]);
+				if(cube0.corner_frame != frame){
+					cube0.corner_frame = frame;
+					cube0.value = function(&(cube0.x));
+				}
+				if(cube0.value >= surfacevalue){
+					crawl_nosort(0,j-1,k-1);
+					crawl_nosort(0,j,k-1);
+					crawl_nosort(0,j-1,k);
+					crawl_nosort(0,j,k);
+				}
+				// front of volume
+				cubedata& cube1(cubes[cubeindex(w,j,k)]);
+				if(cube1.corner_frame != frame){
+					cube1.corner_frame = frame;
+					cube1.value = function(&(cube1.x));
+				}
+				if(cube1.value >= surfacevalue){
+					crawl_nosort(w-1,j-1,k-1);
+					crawl_nosort(w-1,j,k-1);
+					crawl_nosort(w-1,j-1,k);
+					crawl_nosort(w-1,j,k);
+				}
 			}
 		}
 	}
@@ -325,22 +407,104 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 	}
 
 	if(crawlfromsides){
-		for(j=0; j<h; ++j){
-			for(i=0; i<w; ++i){
-				attempt_crawl_sort(i, j, 0);
-				attempt_crawl_sort(i, j, l-1);
+		for(j=0; j<=h; ++j){
+			for(i=j%2; i<=w; i+=2){
+				// left side of volume
+				cubedata& cube0(cubes[cubeindex(i,j,0)]);
+				if(cube0.corner_frame != frame){
+					cube0.corner_frame = frame;
+					cube0.value = function(&(cube0.x));
+				}
+				if(cube0.value >= surfacevalue){
+					if(i!=0 && j!=0)
+						crawl_sort(i-1,j-1,0);
+					if(i!=w && j!=0)
+						crawl_sort(i,j-1,0);
+					if(i!=0 && j!=h)
+						crawl_sort(i-1,j,0);
+					if(i!=w && j!=h)
+						crawl_sort(i,j,0);
+				}
+				// right side of volume
+				cubedata& cube1(cubes[cubeindex(i,j,l)]);
+				if(cube1.corner_frame != frame){
+					cube1.corner_frame = frame;
+					cube1.value = function(&(cube1.x));
+				}
+				if(cube1.value >= surfacevalue){
+					if(i!=0 && j!=0)
+						crawl_sort(i-1,j-1,l-1);
+					if(i!=w && j!=0)
+						crawl_sort(i,j-1,l-1);
+					if(i!=0 && j!=h)
+						crawl_sort(i-1,j,l-1);
+					if(i!=w && j!=h)
+						crawl_sort(i,j,l-1);
+				}
 			}
 		}
-		for(k=1; k<l-1; ++k){
-			for(i=0; i<w; ++i){
-				attempt_crawl_sort(i, 0, k);
-				attempt_crawl_sort(i, h-1, k);
+		for(k=1; k<l; ++k){
+			for(i=k%2; i<=w; i+=2){
+				// bottom of volume
+				cubedata& cube0(cubes[cubeindex(i,0,k)]);
+				if(cube0.corner_frame != frame){
+					cube0.corner_frame = frame;
+					cube0.value = function(&(cube0.x));
+				}
+				if(cube0.value >= surfacevalue){
+					if(i!=0){
+						crawl_sort(i-1,0,k-1);
+						crawl_sort(i-1,0,k);
+					}
+					if(i!=w){
+						crawl_sort(i,0,k-1);
+						crawl_sort(i,0,k);
+					}
+				}
+				// top of volume
+				cubedata& cube1(cubes[cubeindex(i,h,k)]);
+				if(cube1.corner_frame != frame){
+					cube1.corner_frame = frame;
+					cube1.value = function(&(cube1.x));
+				}
+				if(cube1.value >= surfacevalue){
+					if(i!=0){
+						crawl_sort(i-1,h-1,k-1);
+						crawl_sort(i-1,h-1,k);
+					}
+					if(i!=w){
+						crawl_sort(i,h-1,k-1);
+						crawl_sort(i,h-1,k);
+					}
+				}
 			}
 		}
-		for(k=1; k<l-1; ++k){
-			for(j=1; j<h-1; ++j){
-				attempt_crawl_sort(0, j, k);
-				attempt_crawl_sort(w-1, j, k);
+		for(k=1; k<l; ++k){
+			for(j=(k%2)+1; j<h; j+=2){
+				// back of volume
+				cubedata& cube0(cubes[cubeindex(0,j,k)]);
+				if(cube0.corner_frame != frame){
+					cube0.corner_frame = frame;
+					cube0.value = function(&(cube0.x));
+				}
+				if(cube0.value >= surfacevalue){
+					crawl_sort(0,j-1,k-1);
+					crawl_sort(0,j,k-1);
+					crawl_sort(0,j-1,k);
+					crawl_sort(0,j,k);
+				}
+				// front of volume
+				cubedata& cube1(cubes[cubeindex(w,j,k)]);
+				if(cube1.corner_frame != frame){
+					cube1.corner_frame = frame;
+					cube1.value = function(&(cube1.x));
+				}
+				if(cube1.value >= surfacevalue){
+					crawl_sort(w-1,j-1,k-1);
+					crawl_sort(w-1,j,k-1);
+					crawl_sort(w-1,j-1,k);
+					crawl_sort(w-1,j,k);
+				}
 			}
 		}
 	}
@@ -375,22 +539,6 @@ const unsigned int impCubeVolume::calculateCornerMask(const unsigned int& x, con
 		+ ((cubes[index+1+w_1xh_1].value < surfacevalue) ? RBN : 0)
 		+ ((cubes[index+w_1+w_1xh_1].value < surfacevalue) ? LTN : 0)
 		+ ((cubes[index+1+w_1+w_1xh_1].value < surfacevalue) ? RTN : 0);
-}
-
-
-void impCubeVolume::attempt_crawl_nosort(unsigned int x, unsigned int y, unsigned int z){
-	if(cubes[cubeindex(x, y, z)].cube_frame == frame)
-		return;
-
-	findcornervalues(x, y, z);
-	unsigned int mask(calculateCornerMask(x, y, z));
-
-	if(mask == 255)  // escape if outside surface
-		return;
-	if(mask == 0)
-		return;
-
-	crawl_nosort(x, y, z);
 }
 
 
@@ -429,22 +577,6 @@ void impCubeVolume::crawl_nosort(unsigned int x, unsigned int y, unsigned int z)
 		crawl_nosort(x, y, z-1);
 	if(crawlDirections[mask][5] && z < l-1)
 		crawl_nosort(x, y, z+1);
-}
-
-
-void impCubeVolume::attempt_crawl_sort(unsigned int x, unsigned int y, unsigned int z){
-	if(cubes[cubeindex(x, y, z)].cube_frame == frame)
-		return;
-
-	findcornervalues(x, y, z);
-	const unsigned int mask(calculateCornerMask(x, y, z));
-
-	if(mask == 255)  // escape if outside surface
-		return;
-	if(mask == 0)
-		return;
-
-	crawl_sort(x, y, z);
 }
 
 

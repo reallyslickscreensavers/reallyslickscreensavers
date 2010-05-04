@@ -128,11 +128,9 @@ private:
 	// x, y, and z define position of cube in this volume
 	inline const unsigned int calculateCornerMask(const unsigned int& x, const unsigned int& y, const unsigned int& z);
 
-	// Try to start crawling, but quit if cube has mask 0 or 255.
-	inline void attempt_crawl_nosort(unsigned int x, unsigned int y, unsigned int z);
-	inline void attempt_crawl_sort(unsigned int x, unsigned int y, unsigned int z);
-
+	// Crawl the cube starting at this location
 	inline void crawl_nosort(unsigned int x, unsigned int y, unsigned int z);
+	// Same as above, but store the cubes containing surface for sorting later
 	inline void crawl_sort(unsigned int x, unsigned int y, unsigned int z);
 
 	inline void polygonize(unsigned int index);
