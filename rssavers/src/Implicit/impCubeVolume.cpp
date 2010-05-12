@@ -745,12 +745,14 @@ float impCubeVolume::getXPlus1Value(unsigned int index){
 	}
 
 	// return already computed value
-	if(cubes[indexPlus1].corner_frame == frame)
-		return cubes[indexPlus1].value;
+	cubedata& cube(cubes[indexPlus1]);
+	if(cube.corner_frame == frame)
+		return cube.value;
 
 	// compute new value
-	cubes[indexPlus1].corner_frame = frame;
-	return function(&(cubes[indexPlus1].x));
+	cube.corner_frame = frame;
+	cube.value = function(&(cube.x));
+	return cube.value;
 }
 
 
@@ -767,12 +769,14 @@ float impCubeVolume::getYPlus1Value(unsigned int index){
 	}
 
 	// return already computed value
-	if(cubes[indexPlus1].corner_frame == frame)
-		return cubes[indexPlus1].value;
+	cubedata& cube(cubes[indexPlus1]);
+	if(cube.corner_frame == frame)
+		return cube.value;
 
 	// compute new value
-	cubes[indexPlus1].corner_frame = frame;
-	return function(&(cubes[indexPlus1].x));
+	cube.corner_frame = frame;
+	cube.value = function(&(cube.x));
+	return cube.value;
 }
 
 
@@ -789,12 +793,14 @@ float impCubeVolume::getZPlus1Value(unsigned int index){
 	}
 
 	// return already computed value
-	if(cubes[indexPlus1].corner_frame == frame)
-		return cubes[indexPlus1].value;
+	cubedata& cube(cubes[indexPlus1]);
+	if(cube.corner_frame == frame)
+		return cube.value;
 
 	// compute new value
-	cubes[indexPlus1].corner_frame = frame;
-	return function(&(cubes[indexPlus1].x));
+	cube.corner_frame = frame;
+	cube.value = function(&(cube.x));
+	return cube.value;
 }
 
 
@@ -802,11 +808,13 @@ float impCubeVolume::getZPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + 1);
 
 	// return already computed value
-	if(cubes[indexPlus1].corner_done)
+	if(cubes[indexPlus1].corner_frame == frame)
 		return cubes[indexPlus1].value;
 
 	// compute new value
-	return function(&(cubes[indexPlus1].x));
+	cubes[indexPlus1].corner_frame = frame;
+	cubes[indexPlus1].value = function(&(cubes[indexPlus1].x));
+	return cubes[indexPlus1].value;
 }
 
 
@@ -814,11 +822,13 @@ float impCubeVolume::getYPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + w_1);
 
 	// return already computed value
-	if(cubes[indexPlus1].corner_done)
+	if(cubes[indexPlus1].corner_frame == frame)
 		return cubes[indexPlus1].value;
 
 	// compute new value
-	return function(&(cubes[indexPlus1].x));
+	cubes[indexPlus1].corner_frame = frame;
+	cubes[indexPlus1].value = function(&(cubes[indexPlus1].x));
+	return cubes[indexPlus1].value;
 }
 
 
@@ -826,11 +836,13 @@ float impCubeVolume::getZPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + w_1xh_1);
 
 	// return already computed value
-	if(cubes[indexPlus1].corner_done)
+	if(cubes[indexPlus1].corner_frame == frame)
 		return cubes[indexPlus1].value;
 
 	// compute new value
-	return function(&(cubes[indexPlus1].x));
+	cubes[indexPlus1].corner_frame = frame;
+	cubes[indexPlus1].value = function(&(cubes[indexPlus1].x));
+	return cubes[indexPlus1].value;
 }
 
 
@@ -838,11 +850,13 @@ float impCubeVolume::getXMinus1Value(unsigned int index){
 	const unsigned int indexMinus1(index - 1);
 
 	// return already computed value
-	if(cubes[indexMinus1].corner_done)
+	if(cubes[indexMinus1].corner_frame == frame)
 		return cubes[indexMinus1].value;
 
 	// compute new value
-	return function(&(cubes[indexMinus1].x));
+	cubes[indexMinus1].corner_frame = frame;
+	cubes[indexMinus1].value = function(&(cubes[indexMinus1].x));
+	return cubes[indexMinus1].value;
 }
 
 
@@ -850,11 +864,13 @@ float impCubeVolume::getYMinus1Value(unsigned int index){
 	const unsigned int indexMinus1(index - w_1);
 
 	// return already computed value
-	if(cubes[indexMinus1].corner_done)
+	if(cubes[indexMinus1].corner_frame == frame)
 		return cubes[indexMinus1].value;
 
 	// compute new value
-	return function(&(cubes[indexMinus1].x));
+	cubes[indexMinus1].corner_frame = frame;
+	cubes[indexMinus1].value = function(&(cubes[indexMinus1].x));
+	return cubes[indexMinus1].value;
 }
 
 
@@ -862,11 +878,13 @@ float impCubeVolume::getZMinus1Value(unsigned int index){
 	const unsigned int indexMinus1(index - w_1xh_1);
 
 	// return already computed value
-	if(cubes[indexMinus1].corner_done)
+	if(cubes[indexMinus1].corner_frame == frame)
 		return cubes[indexMinus1].value;
 
 	// compute new value
-	return function(&(cubes[indexMinus1].x));
+	cubes[indexMinus1].corner_frame = frame;
+	cubes[indexMinus1].value = function(&(cubes[indexMinus1].x));
+	return cubes[indexMinus1].value;
 }*/
 
 
@@ -989,7 +1007,7 @@ void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned 
 	// Find normal vector at vertex along this edge
 	// First find normal vector origin value
 	float* pos = &(data[3]);
-	const float offset(cubewidth * 0.01f);
+	const float offset(cubewidth * 0.1f);
 	const float val(function(pos));
 	// then find values at slight displacements and subtract
 	pos[0] -= offset;

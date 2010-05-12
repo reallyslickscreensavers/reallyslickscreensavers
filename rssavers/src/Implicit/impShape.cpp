@@ -46,7 +46,7 @@ void impShape::setPosition(float x, float y, float z){
 	invmat[13] = -y;
 	invmat[14] = -z;
 	invtrmat[3] = -x;
-	invtrmat[5] = -y;
+	invtrmat[7] = -y;
 	invtrmat[11] = -z;
 #ifdef __SSE__
 	((float*)(&(invtrmatrow[0])))[3] = -x;
