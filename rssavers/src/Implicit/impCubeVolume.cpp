@@ -760,7 +760,7 @@ float impCubeVolume::getYPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + w_1);
 
 	// compute new value if index is at the edge of the volume
-	if(((indexPlus1 / w_1) % h_1) == 0){
+	if(indexPlus1 % w_1xh_1 < w_1){
 		float* pos = &(cubes[index].x);
 		pos[1] += cubewidth;
 		const float value(function(pos));
@@ -784,7 +784,7 @@ float impCubeVolume::getZPlus1Value(unsigned int index){
 	const unsigned int indexPlus1(index + w_1xh_1);
 
 	// compute new value if index is at the edge of the volume
-	if(indexPlus1 >= w_1xh_1 * l){
+	if(indexPlus1 >= w_1xh_1xl_1){
 		float* pos = &(cubes[index].x);
 		pos[2] += cubewidth;
 		const float value(function(pos));
@@ -804,90 +804,11 @@ float impCubeVolume::getZPlus1Value(unsigned int index){
 }
 
 
-/*float impCubeVolume::getXPlus1Value(unsigned int index){
-	const unsigned int indexPlus1(index + 1);
-
-	// return already computed value
-	if(cubes[indexPlus1].corner_frame == frame)
-		return cubes[indexPlus1].value;
-
-	// compute new value
-	cubes[indexPlus1].corner_frame = frame;
-	cubes[indexPlus1].value = function(&(cubes[indexPlus1].x));
-	return cubes[indexPlus1].value;
-}
-
-
-float impCubeVolume::getYPlus1Value(unsigned int index){
-	const unsigned int indexPlus1(index + w_1);
-
-	// return already computed value
-	if(cubes[indexPlus1].corner_frame == frame)
-		return cubes[indexPlus1].value;
-
-	// compute new value
-	cubes[indexPlus1].corner_frame = frame;
-	cubes[indexPlus1].value = function(&(cubes[indexPlus1].x));
-	return cubes[indexPlus1].value;
-}
-
-
-float impCubeVolume::getZPlus1Value(unsigned int index){
-	const unsigned int indexPlus1(index + w_1xh_1);
-
-	// return already computed value
-	if(cubes[indexPlus1].corner_frame == frame)
-		return cubes[indexPlus1].value;
-
-	// compute new value
-	cubes[indexPlus1].corner_frame = frame;
-	cubes[indexPlus1].value = function(&(cubes[indexPlus1].x));
-	return cubes[indexPlus1].value;
-}
-
-
-float impCubeVolume::getXMinus1Value(unsigned int index){
-	const unsigned int indexMinus1(index - 1);
-
-	// return already computed value
-	if(cubes[indexMinus1].corner_frame == frame)
-		return cubes[indexMinus1].value;
-
-	// compute new value
-	cubes[indexMinus1].corner_frame = frame;
-	cubes[indexMinus1].value = function(&(cubes[indexMinus1].x));
-	return cubes[indexMinus1].value;
-}
-
-
-float impCubeVolume::getYMinus1Value(unsigned int index){
-	const unsigned int indexMinus1(index - w_1);
-
-	// return already computed value
-	if(cubes[indexMinus1].corner_frame == frame)
-		return cubes[indexMinus1].value;
-
-	// compute new value
-	cubes[indexMinus1].corner_frame = frame;
-	cubes[indexMinus1].value = function(&(cubes[indexMinus1].x));
-	return cubes[indexMinus1].value;
-}
-
-
-float impCubeVolume::getZMinus1Value(unsigned int index){
-	const unsigned int indexMinus1(index - w_1xh_1);
-
-	// return already computed value
-	if(cubes[indexMinus1].corner_frame == frame)
-		return cubes[indexMinus1].value;
-
-	// compute new value
-	cubes[indexMinus1].corner_frame = frame;
-	cubes[indexMinus1].value = function(&(cubes[indexMinus1].x));
-	return cubes[indexMinus1].value;
-}*/
-
-
+// Here we compute a vertex position and normal and add it to the surface.
+// If fastnormal is true, we use the difference between existing corner values as much as possible,
+// only computing new values when necessary.  Many different combinations and blends of value
+// differences were tried out.  The final algorithm used here is not only the simplest possible, but
+// also the best looking.  Using more data to compute the normals always made the normals look worse.
 void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned int& index){
 	float data[6];
 
@@ -903,6 +824,7 @@ void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned 
 			surface->addIndex(currentVertexIndex);
 			cubes[index].x_vertex_index = currentVertexIndex;
 			currentVertexIndex ++;
+			// compute vertex position
 			const float t((surfacevalue - cubes[index].value) / (cubes[index+1].value - cubes[index].value));
 			data[3] = cubes[index].x + (cubewidth * t);
 			data[4] = cubes[index].y;
@@ -910,37 +832,11 @@ void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned 
 			if(fastnormals){
 				// compute normal
 				const float one_minus_t(1.0f - t);
-				data[0] = one_minus_t * (cubes[index].value - cubes[index+1].value) + t * (cubes[index+1].value - getXPlus1Value(index+1));
-				data[1] = one_minus_t * (cubes[index].value - getYPlus1Value(index)) + t * (cubes[index+1].value - getYPlus1Value(index+1));
-				data[2] = one_minus_t * (cubes[index].value - getZPlus1Value(index)) + t * (cubes[index+1].value - getZPlus1Value(index+1));
-				/*if(t < 0.5f){
-					if(index % w_1){
-						const float tt(t + 0.5f);
-						data[0] = tt * (cubes[index].value - cubes[index+1].value) + (1.0f - tt) * (getXMinus1Value(index) - cubes[index].value);
-					}
-					else
-						data[0] = cubes[index].value - cubes[index+1].value;
-				}
-				else{
-					if((index + 2) % w_1){
-						const float tt(t - 0.5f);
-						data[0] = (1.0f - tt) * (cubes[index].value - cubes[index+1].value) + tt * (cubes[index+1].value - getXPlus1Value(index+1));
-					}
-					else
-						data[0] = cubes[index].value - cubes[index+1].value;
-				}
-				if((index / w_1) % h_1 == 0)
-					data[1] = one_minus_t * (cubes[index].value - getYPlus1Value(index)) + t * (cubes[index+1].value - getYPlus1Value(index+1));
-				else if(((index + w_1 + w_1) / w_1) % h_1 == 0)
-					data[1] = one_minus_t * (getYMinus1Value(index) - cubes[index].value) + t * (getYMinus1Value(index) - cubes[index+1].value);
-				else
-					data[1] = (one_minus_t * (getYMinus1Value(index) - getYPlus1Value(index)) + t * (getYMinus1Value(index+1) - getYPlus1Value(index+1))) * 0.5f;
-				if(index < w_1xh_1)
-					data[2] = one_minus_t * (cubes[index].value - getZPlus1Value(index)) + t * (cubes[index+1].value - getZPlus1Value(index+1));
-				else if(index >= (w_1xh_1 * (l - 1)))
-					data[2] = one_minus_t * (getZMinus1Value(index) - cubes[index].value) + t * (getZMinus1Value(index+1) - cubes[index+1].value);
-				else
-					data[2] = (one_minus_t * (getZMinus1Value(index) - getZPlus1Value(index)) + t * (getZMinus1Value(index+1) - getZPlus1Value(index+1))) * 0.5f;*/
+				const float& val(cubes[index].value);
+				const float& valp1(cubes[index+1].value);
+				data[0] = one_minus_t * (val - valp1) + t * (valp1 - getXPlus1Value(index+1));
+				data[1] = one_minus_t * (val - getYPlus1Value(index)) + t * (valp1 - getYPlus1Value(index+1));
+				data[2] = one_minus_t * (val - getZPlus1Value(index)) + t * (valp1 - getZPlus1Value(index+1));
 				// For speed, do not normalize; use GL_NORMALIZE instead
 				// Add this vertex to surface
 				surface->addVertex(data);
@@ -958,6 +854,7 @@ void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned 
 			surface->addIndex(currentVertexIndex);
 			cubes[index].y_vertex_index = currentVertexIndex;
 			currentVertexIndex ++;
+			// compute vertex position
 			const float t((surfacevalue - cubes[index].value) / (cubes[index+w_1].value - cubes[index].value));
 			data[3] = cubes[index].x;
 			data[4] = cubes[index].y + (cubewidth * t);
@@ -965,9 +862,11 @@ void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned 
 			if(fastnormals){
 				// compute normal
 				const float one_minus_t(1.0f - t);
-				data[0] = one_minus_t * (cubes[index].value - getXPlus1Value(index)) + t * (cubes[index+w_1].value - getXPlus1Value(index+w_1));
-				data[1] = one_minus_t * (cubes[index].value - cubes[index+w_1].value) + t * (cubes[index+w_1].value - getYPlus1Value(index+w_1));
-				data[2] = one_minus_t * (cubes[index].value - getZPlus1Value(index)) + t * (cubes[index+w_1].value - getZPlus1Value(index+w_1));
+				const float& val(cubes[index].value);
+				const float& valp1(cubes[index+w_1].value);
+				data[0] = one_minus_t * (val - getXPlus1Value(index)) + t * (valp1 - getXPlus1Value(index+w_1));
+				data[1] = one_minus_t * (val - valp1) + t * (valp1 - getYPlus1Value(index+w_1));
+				data[2] = one_minus_t * (val - getZPlus1Value(index)) + t * (valp1 - getZPlus1Value(index+w_1));
 				// For speed, do not normalize; use GL_NORMALIZE instead
 				// Add this vertex to surface
 				surface->addVertex(data);
@@ -985,6 +884,7 @@ void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned 
 			surface->addIndex(currentVertexIndex);
 			cubes[index].z_vertex_index = currentVertexIndex;
 			currentVertexIndex ++;
+			// compute vertex position
 			const float t((surfacevalue - cubes[index].value) / (cubes[index+w_1xh_1].value - cubes[index].value));
 			data[3] = cubes[index].x;
 			data[4] = cubes[index].y;
@@ -992,9 +892,11 @@ void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned 
 			if(fastnormals){
 				// compute normal
 				const float one_minus_t(1.0f - t);
-				data[0] = one_minus_t * (cubes[index].value - getXPlus1Value(index)) + t * (cubes[index+w_1xh_1].value - getXPlus1Value(index+w_1xh_1));
-				data[1] = one_minus_t * (cubes[index].value - getYPlus1Value(index)) + t * (cubes[index+w_1xh_1].value - getYPlus1Value(index+w_1xh_1));
-				data[2] = one_minus_t * (cubes[index].value - cubes[index+w_1xh_1].value) + t * (cubes[index+w_1xh_1].value - getZPlus1Value(index+w_1xh_1));
+				const float& val(cubes[index].value);
+				const float& valp1(cubes[index+w_1xh_1].value);
+				data[0] = one_minus_t * (val - getXPlus1Value(index)) + t * (valp1 - getXPlus1Value(index+w_1xh_1));
+				data[1] = one_minus_t * (val - getYPlus1Value(index)) + t * (valp1 - getYPlus1Value(index+w_1xh_1));
+				data[2] = one_minus_t * (val - valp1) + t * (valp1 - getZPlus1Value(index+w_1xh_1));
 				// For speed, do not normalize; use GL_NORMALIZE instead
 				// Add this vertex to surface
 				surface->addVertex(data);
@@ -1004,6 +906,8 @@ void impCubeVolume::addVertexToSurface(const unsigned int& axis, const unsigned 
 		}
 	}
 
+	// Slow but accurate normals.
+	// These will be computed if fast normals were not computed above.
 	// Find normal vector at vertex along this edge
 	// First find normal vector origin value
 	float* pos = &(data[3]);

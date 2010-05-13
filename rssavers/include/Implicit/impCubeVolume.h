@@ -141,10 +141,6 @@ private:
 	inline float getXPlus1Value(unsigned int index);
 	inline float getYPlus1Value(unsigned int index);
 	inline float getZPlus1Value(unsigned int index);
-	
-	//inline float getXMinus1Value(unsigned int index);
-	//inline float getYMinus1Value(unsigned int index);
-	//inline float getZMinus1Value(unsigned int index);
 
 	// compute an actual vertex position and normal and add it to the surface
 	inline void addVertexToSurface(const unsigned int& axis, const unsigned int& index);
