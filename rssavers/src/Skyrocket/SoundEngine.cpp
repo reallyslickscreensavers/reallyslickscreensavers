@@ -46,8 +46,8 @@ static float reference_distance[NUM_BUFFERS] =
 
 SoundEngine::SoundEngine(HWND hwnd, float volume){
 	// Open device
-	//device = alcOpenDevice(ALubyte*)"DirectSound3D");  // specific device
- 	device = alcOpenDevice(NULL);  // default device
+	device = alcOpenDevice((ALCchar*)"Generic Software");  // might work if NULL doesn't due to sound driver problems
+ 	//device = alcOpenDevice(NULL);  // default device
 	if(device == NULL)
 		return;
 	// Create context

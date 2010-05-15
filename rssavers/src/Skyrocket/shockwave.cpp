@@ -80,31 +80,18 @@ void drawShockwave(float temperature, float texmove){
 	float temp;
 
 	// setup diminishing alpha values in color array
-	if(temperature > 0.5f){
-		temp = 1.0f;
-		colors[0][3] = 1.0f;
-		colors[1][3] = 0.9f;
-		colors[2][3] = 0.8f;
-		colors[3][3] = 0.7f;
-		colors[4][3] = 0.5f;
-		colors[5][3] = 0.3f;
-		colors[6][3] = 0.0f;
-	}
-	else{
-		temp = temperature * 2.0f;
-		colors[0][3] = temp;
-		colors[1][3] = temp * 0.9f;
-		colors[2][3] = temp * 0.8f;
-		colors[3][3] = temp * 0.7f;
-		colors[4][3] = temp * 0.5f;
-		colors[5][3] = temp * 0.3f;
-		colors[6][3] = 0.0f;
-	}
+	temp = temperature * temperature;
+	colors[0][3] = temp;
+	colors[1][3] = temp * 0.9f;
+	colors[2][3] = temp * 0.8f;
+	colors[3][3] = temp * 0.7f;
+	colors[4][3] = temp * 0.5f;
+	colors[5][3] = temp * 0.3f;
+	colors[6][3] = 0.0f;
 	// setup rgb values in color array
 	for(i=0; i<=5; i++){
 		colors[i][0] = 1.0f;
-		//colors[i][1] = temp + (((1.0f - temp) * 0.5f) - (1.0f - temp) * float(i) * 0.1f);
-		colors[i][1] = temp;
+		colors[i][1] = (temperature + 1.0f) * 0.5f;
 		colors[i][2] = temperature;
 	}
 
@@ -132,9 +119,8 @@ void drawShockwave(float temperature, float texmove){
 	}
 
 	// keep colors a little warmer on top (more green)
-	if(temperature < 0.5f)
-		for(i=1; i<=5; i++)
-			colors[i][1] = temperature + 0.5f;
+	for(i=1; i<=6; i++)
+		colors[i][1] = (temperature + 2.0f) * 0.333333f;
 	
 	// draw top of shockwave
 	for(i=0; i<6; i++){

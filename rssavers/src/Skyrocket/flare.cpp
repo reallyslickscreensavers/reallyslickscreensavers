@@ -51,7 +51,7 @@ void initFlares(){
 				temp = 1.0f;
 			if(temp < 0.0f)
 				temp = 0.0f;
-			flare1[i][j][3] = (unsigned char)(255.0f * temp * temp);
+			flare1[i][j][3] = (unsigned char)(255.0f * temp * temp * temp * temp);
 		}
 	}
 	glBindTexture(GL_TEXTURE_2D, flaretex[0]);
@@ -96,8 +96,7 @@ void initFlares(){
 				temp = 1.0f;
 			if(temp < 0.0f)
 				temp = 0.0f;
-			temp = temp * temp * temp * temp;
-			flare3[i][j][3] = (unsigned char)(255.0f * temp);
+			flare3[i][j][3] = (unsigned char)(255.0f * temp * temp * temp * temp);
 		}
 	}
 	glBindTexture(GL_TEXTURE_2D, flaretex[2]);

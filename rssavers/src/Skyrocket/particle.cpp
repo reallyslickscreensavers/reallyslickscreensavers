@@ -691,6 +691,7 @@ void particle::initExplosion(){
 	life = 1.0f;
 	size = 100.0f;
 	makeSmoke = 0;
+	const float num_part_scale = 1.5f;
 
 	// Don't do massive explosions too close to the ground
 	if((explosiontype == 19 || explosiontype == 20) && (xyz[1] < 600.0f))
@@ -701,23 +702,23 @@ void particle::initExplosion(){
 	case 0:
 		randomColor(rgb);
 		if(!rsRandi(10))  // big sphere
-			popSphere(225, 1000.0f, rgb);
+			popSphere(int(225.0f * num_part_scale), 1000.0f, rgb);
 		else  // regular sphere
-			popSphere(175, rsRandf(100.0f) + 400.0f, rgb);
+			popSphere(int(175.0f * num_part_scale), rsRandf(100.0f) + 400.0f, rgb);
 		break;
 	case 1:
 		randomColor(rgb);
 		if(!rsRandi(10))  // big split sphere
-			popSplitSphere(225, 1000.0f, rgb);
+			popSplitSphere(int(225.0f * num_part_scale), 1000.0f, rgb);
 		else  // regular split sphere
-			popSplitSphere(175, rsRandf(100.0f) + 400.0f, rgb);
+			popSplitSphere(int(175.0f * num_part_scale), rsRandf(100.0f) + 400.0f, rgb);
 		break;
 	case 2:
 		rgb.set(1.0f, 1.0f, 1.0f);
 		if(!rsRandi(10))  // big multicolored sphere
-			popMultiColorSphere(225, 1000.0f);
+			popMultiColorSphere(int(225.0f * num_part_scale), 1000.0f);
 		else  // regular multicolored sphere
-			popMultiColorSphere(175, rsRandf(100.0f) + 400.0f);
+			popMultiColorSphere(int(175.0f * num_part_scale), rsRandf(100.0f) + 400.0f);
 		break;
 	case 3:  // ring
 		randomColor(rgb);
@@ -726,46 +727,46 @@ void particle::initExplosion(){
 	case 4:  // double sphere
 		randomColor(rgb);
 		randomColor(rgb2);
-		popSphere(90, rsRandf(50.0f) + 200.0f, rgb2);
-		popSphere(150, rsRandf(100.0f) + 500.0f, rgb);
+		popSphere(int(90.0f * num_part_scale), rsRandf(50.0f) + 200.0f, rgb2);
+		popSphere(int(150.0f * num_part_scale), rsRandf(100.0f) + 500.0f, rgb);
 		break;
 	case 5:  // sphere and ring
 		randomColor(rgb);
 		randomColor(rgb2);
-		popRing(80, rsRandf(100.0f) + 500.0f, rgb2);
-		popSphere(150, rsRandf(50.0f) + 200.0f, rgb);
+		popRing(int(80.0f * num_part_scale), rsRandf(100.0f) + 500.0f, rgb2);
+		popSphere(int(150.0f * num_part_scale), rsRandf(50.0f) + 200.0f, rgb);
 		break;
 	case 6:  // Sphere of streamers
 		randomColor(rgb);
-		popStreamers(40, rsRandf(100.0f) + 400.0f, rgb);
+		popStreamers(int(40.0f * num_part_scale), rsRandf(100.0f) + 400.0f, rgb);
 		break;
 	case 7:  // Sphere of meteors
 		randomColor(rgb);
-		popMeteors(40, rsRandf(100.0f) + 400.0f, rgb);
+		popMeteors(int(40.0f * num_part_scale), rsRandf(100.0f) + 400.0f, rgb);
 		break;
 	case 8:  // Small sphere of stars and large sphere of streamers
 		randomColor(rgb);
 		randomColor(rgb2);
-		popStreamers(30, rsRandf(100.0f) + 500.0f, rgb);
-		popSphere(90, rsRandf(50.0f) + 200.0f, rgb2);
+		popStreamers(int(30.0f * num_part_scale), rsRandf(100.0f) + 500.0f, rgb);
+		popSphere(int(90.0f * num_part_scale), rsRandf(50.0f) + 200.0f, rgb2);
 		break;
 	case 9:  // Small sphere of stars and large sphere of meteors
 		randomColor(rgb);
 		randomColor(rgb2);
-		popMeteors(30, rsRandf(100.0f) + 500.0f, rgb);
-		popSphere(90, rsRandf(50.0f) + 200.0f, rgb2);
+		popMeteors(int(30.0f * num_part_scale), rsRandf(100.0f) + 500.0f, rgb);
+		popSphere(int(90.0f * num_part_scale), rsRandf(50.0f) + 200.0f, rgb2);
 		break;
 	case 10:  // Sphere of streamers inside sphere of stars
 		randomColor(rgb);
 		randomColor(rgb2);
-		popStreamers(30, rsRandf(100.0f) + 450.0f, rgb);
-		popSphere(150, rsRandf(50.0f) + 500.0f, rgb2);
+		popStreamers(int(30.0f * num_part_scale), rsRandf(100.0f) + 450.0f, rgb);
+		popSphere(int(150.0f * num_part_scale), rsRandf(50.0f) + 500.0f, rgb2);
 		break;
 	case 11:  // Sphere of meteors inside sphere of stars
 		randomColor(rgb);
 		randomColor(rgb2);
-		popMeteors(30, rsRandf(100.0f) + 450.0f, rgb);
-		popSphere(150, rsRandf(50.0f) + 500.0f, rgb2);
+		popMeteors(int(30.0f * num_part_scale), rsRandf(100.0f) + 450.0f, rgb);
+		popSphere(int(150.0f * num_part_scale), rsRandf(50.0f) + 500.0f, rgb2);
 		break;
 	case 12:  // a few bombs that fall and explode into stars
 		randomColor(rgb);
@@ -780,11 +781,11 @@ void particle::initExplosion(){
 		popMeteorPoppers(8, rsRandf(100.0f) + 300.0f, rgb);
 		break;
 	case 15:  // lots of little falling firecrackers
-		popLittlePoppers(250, rsRandf(50.0f) + 150.0f);
+		popLittlePoppers(int(250.0f * num_part_scale), rsRandf(50.0f) + 150.0f);
 		break;
 	case 16:
 		randomColor(rgb);
-		popBees(50, 10.0f, rgb);
+		popBees(int(50.0f * num_part_scale), 10.0f, rgb);
 		break;
 	case 17:  // Boom!  (loud noise and flash of light)
 		rgb.set(1.0f, 1.0f, 1.0f);
@@ -800,7 +801,7 @@ void particle::initExplosion(){
 		initStretcher();
 		break;
 	case 100:  // these three are little explosions for poppers
-		popSphere(30, 100.0f, rgb);
+		popSphere(int(30.0f * num_part_scale), 100.0f, rgb);
 		break;
 	case 101:
 		popStreamers(10, 100.0f, rgb);
@@ -1318,19 +1319,19 @@ void particle::update(){
 		// distance streamer traveled since last frame
 		sparkTrailLength += diff.length();
 		// number of sparks to release each frame
-		int sparks = int(sparkTrailLength * 0.04f);
-		sparkTrailLength -= float(sparks) * 25.0f;
+		int sparks = int(sparkTrailLength * 0.1f);
+		sparkTrailLength -= float(sparks) * 10.0f;
 		for(i=0; i<sparks; ++i){
 			newp = addParticle();
 			newp->initStar();
 			newp->xyz = xyz - (diff * rsRandf(1.0f));
-			newp->vel.set(vel[0] + rsRandf(80.0f) - 40.0f,
-				vel[1] + rsRandf(80.0f) - 40.0f,
-				vel[2] + rsRandf(80.0f) - 40.0f);
-			newp->drag = 2.5f;
-			newp->size = rsRandf(8.0f) + 4.0f;
-			newp->rgb.set(1.0f, 0.8f, 0.6f);
-			newp->t = rsRandf(2.0f) + 1.0f;
+			newp->vel.set(vel[0] + rsRandf(50.0f) - 25.0f, 
+				vel[1] + rsRandf(50.0f) - 25.0f, 
+				vel[2] + rsRandf(50.0f) - 25.0f);
+			newp->rgb.set(1.0f, 0.7f, 0.4f);
+			newp->size = rsRandf(5.0f) + 5.0f;
+			newp->drag = 2.0f;
+			newp->t = newp->tr = rsRandf(2.0f) + 1.0f;
 			newp->tr = newp->t;
 			newp->makeSmoke = 0;
 		}
@@ -1339,28 +1340,24 @@ void particle::update(){
 	// trail from meteors
 	if(type == METEOR){
 		rsVec diff = xyz - lastxyz;
-		// distance rocket traveled since last frame
+		// distance meteor traveled since last frame
 		sparkTrailLength += diff.length();
 		// number of sparks to release
 		int sparks = int(sparkTrailLength * 0.1f);
-		rsVec smkpos = lastxyz;
-		// release star every 10 feet
-		float multiplier = 10.0f / sparkTrailLength;
+		sparkTrailLength -= float(sparks) * 10.0f;
 		for(i=0; i<sparks; ++i){
-			smkpos += diff * multiplier;
 			newp = addParticle();
 			newp->initStar();
-			newp->xyz = smkpos;
-			newp->vel.set(vel[0] + rsRandf(40.0f) - 20.0f, 
-				vel[1] + rsRandf(40.0f) - 20.0f, 
-				vel[2] + rsRandf(40.0f) - 20.0f);
+			newp->xyz = xyz - (diff * rsRandf(1.0f));
+			newp->vel.set(vel[0] + rsRandf(100.0f) - 50.0f,
+				vel[1] + rsRandf(100.0f) - 50.0f,
+				vel[2] + rsRandf(100.0f) - 50.0f);
 			newp->rgb = rgb;
+			newp->size = rsRandf(5.0f) + 5.0f;
 			newp->drag = 2.0f;
 			newp->t = newp->tr = rsRandf(0.5f) + 1.5f;
-			newp->size = 10.0f;
 			newp->makeSmoke = 0;
 		}
-		sparkTrailLength -= float(sparks) * 10.0f;
 	}
 
 	// trail from bees

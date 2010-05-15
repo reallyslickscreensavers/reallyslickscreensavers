@@ -648,11 +648,16 @@ void draw(){
 
 		// Change rocket firing rate
 		static float rocketTimer = 0.0f;
+		// a rocket usually lasts about 10 seconds, so fastest rate is all rockets within 10 seconds
 		static float rocketTimeConst = 10.0f / float(dMaxrockets);
 		static float changeRocketTimeConst = 20.0f;
 		changeRocketTimeConst -= frameTime;
 		if(changeRocketTimeConst <= 0.0f){
-			float temp = rsRandf(4.0f);
+			float temp;
+			if(rsRandi(10))
+				temp = rsRandf(4.0f);
+			else
+				temp = 0.0f;
 			rocketTimeConst = (temp * temp) + (10.0f / float(dMaxrockets));
 			changeRocketTimeConst = rsRandf(30.0f) + 10.0f;
 		}
