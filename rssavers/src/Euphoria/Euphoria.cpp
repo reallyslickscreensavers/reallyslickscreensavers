@@ -52,7 +52,6 @@ int readyToDraw = 0;
 wisp *backwisps;
 wisp *wisps;
 unsigned int tex;
-//unsigned char* feedbackmap;
 float aspectRatio;
 int viewport[4];
 float frameTime = 0.0f;
@@ -373,8 +372,6 @@ void draw(){
 		glReadBuffer(GL_BACK);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, feedbacktexsize);
 		glBindTexture(GL_TEXTURE_2D, feedbacktex);
-		//glReadPixels(0, 0, feedbacktexsize, feedbacktexsize, GL_RGB, GL_UNSIGNED_BYTE, feedbackmap);
-		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, feedbacktexsize, feedbacktexsize, GL_RGB, GL_UNSIGNED_BYTE, feedbackmap);
 		glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, feedbacktexsize, feedbacktexsize);
 
 		// create regular drawing area
@@ -520,6 +517,8 @@ void initSaver(HWND hwnd){
 
 	if(dFeedback){
 		feedbacktexsize = int(powf(2, dFeedbacksize));
+		// Feedback texture can't be bigger than the window using glCopyTexSubImage2D.
+		// (This wouldn't be a limitation if we used FBOs.)
 		while(feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]){
 			dFeedbacksize -= 1;
 			feedbacktexsize = int(powf(2, dFeedbacksize));
@@ -527,7 +526,6 @@ void initSaver(HWND hwnd){
 
 		// feedback texture setup
 		glEnable(GL_TEXTURE_2D);
-		//feedbackmap = new unsigned char[feedbacktexsize*feedbacktexsize*3];
 		glGenTextures(1, &feedbacktex);
 		glBindTexture(GL_TEXTURE_2D, feedbacktex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -577,7 +575,7 @@ void setDefaults(int which){
 		dFeedbackspeed = 1;
 		dFeedbacksize = 10;
 		dWireframe = 0;
-		dTexture = 2;
+		dTexture = 4;
 		break;
 	case DEFAULTS2:  // Grid
 		dWisps = 4;
@@ -615,29 +613,29 @@ void setDefaults(int which){
 		dWireframe = 1;
 		dTexture = 2;
 		break;
-	case DEFAULTS5:  // M-Theory
-		dWisps = 3;
-		dBackground = 0;
-		dDensity = 35;
-		dVisibility = 15;
+	case DEFAULTS5:  // Jack
+		dWisps = 0;
+		dBackground = 2;
+		dDensity = 25;
+		dVisibility = 10;
 		dSpeed = 20;
-		dFeedback = 40;
-		dFeedbackspeed = 20;
+		dFeedback = 90;
+		dFeedbackspeed = 3;
 		dFeedbacksize = 10;
 		dWireframe = 0;
 		dTexture = 0;
 		break;
-	case DEFAULTS6:  // ultra high frequency tunneling electron microscope
-		dWisps = 0;
-		dBackground = 3;
-		dDensity = 35;
-		dVisibility = 5;
-		dSpeed = 50;
-		dFeedback = 0;
-		dFeedbackspeed = 1;
+	case DEFAULTS6:  // Overdose
+		dWisps = 2;
+		dBackground = 2;
+		dDensity = 100;
+		dVisibility = 40;
+		dSpeed = 40;
+		dFeedback = 80;
+		dFeedbackspeed = 10;
 		dFeedbacksize = 10;
 		dWireframe = 0;
-		dTexture = 0;
+		dTexture = 4;
 		break;
 	case DEFAULTS7:  // Nowhere
 		dWisps = 0;
@@ -658,7 +656,7 @@ void setDefaults(int which){
 		dVisibility = 30;
 		dSpeed = 20;
 		dFeedback = 85;
-		dFeedbackspeed = 30;
+		dFeedbackspeed = 15;
 		dFeedbacksize = 10;
 		dWireframe = 0;
 		dTexture = 1;
@@ -958,10 +956,6 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
-		// Don't bother with feedback when doing the preview.
-		// The window isn't big enough to make it worthwhile.
-		if(doingPreview)
-			dFeedback = 0;
 		initSaver(hwnd);
 		readyToDraw = 1;
 		break;
