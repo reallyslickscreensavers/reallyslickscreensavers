@@ -764,6 +764,8 @@ void doSaver(HWND hwnd){
 	glEnable(GL_BLEND);
 	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
+	glEnable(GL_NORMALIZE);
+
 	// Clear the buffers and test for type of buffer swapping
 	/*glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
