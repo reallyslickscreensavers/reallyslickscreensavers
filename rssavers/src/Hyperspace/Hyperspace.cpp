@@ -22,7 +22,7 @@
 // Hyperspace screensaver
 // Terry Welsh
 // Originally wrote this saver in 2001, but computers weren't fast
-// enough to run it at a decent frame rate.
+// enough to run it at a decent frame rate.  Finally released it in 2005.
 
 #ifdef WIN32
 	#include <windows.h>
@@ -581,6 +581,7 @@ void initSaver(HWND hwnd){
 				nebulamap[i][j][2] = unsigned char(float(nebulamap[i][j][2]) * temp);
 			}
 		}
+		glEnable(GL_NORMALIZE);
 		glBindTexture(GL_TEXTURE_2D, nebulatex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);

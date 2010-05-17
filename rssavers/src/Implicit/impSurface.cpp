@@ -182,7 +182,8 @@ void impSurface::draw(){
 	if(mCompile){
 		glNewList(mDisplayList, GL_COMPILE_AND_EXECUTE);*/
 
-	glInterleavedArrays(GL_N3F_V3F, 0, &(vertices[0]));
+	if(num_tristrips)
+		glInterleavedArrays(GL_N3F_V3F, 0, &(vertices[0]));
 	int start_vert = 0;
 	for(unsigned int i=0; i<num_tristrips; ++i){
 		glDrawElements(GL_TRIANGLE_STRIP, triStripLengths[i], GL_UNSIGNED_INT, &(indices[start_vert]));
