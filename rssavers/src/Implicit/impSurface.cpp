@@ -37,8 +37,10 @@ impSurface::impSurface(){
 
 	mCompile = false;
 
-	//glGenBuffers(1, &vbo_array_id);
-	//glGenBuffers(1, &vbo_index_id);
+#if VBO_DRAW
+	glGenBuffers(1, &vbo_array_id);
+	glGenBuffers(1, &vbo_index_id);
+#endif
 }
 
 
@@ -54,6 +56,7 @@ void impSurface::reset(){
 	index_offset = 0;
 	vertex_offset = 0;
 
+	// New data is going to be created, so VBO or display list must be compiled again.
 	mCompile = true;
 }
 
@@ -141,6 +144,9 @@ void impSurface::calculateNormals(){
 
 
 void impSurface::draw(){
+	if(num_tristrips == 0)
+		return;
+
 #if IMM_DRAW
 // Draw using immediate mode.  (In tests, display lists were extra slow.)
 /*	static bool first = true;
@@ -182,8 +188,7 @@ void impSurface::draw(){
 	if(mCompile){
 		glNewList(mDisplayList, GL_COMPILE_AND_EXECUTE);*/
 
-	if(num_tristrips)
-		glInterleavedArrays(GL_N3F_V3F, 0, &(vertices[0]));
+	glInterleavedArrays(GL_N3F_V3F, 0, &(vertices[0]));
 	int start_vert = 0;
 	for(unsigned int i=0; i<num_tristrips; ++i){
 		glDrawElements(GL_TRIANGLE_STRIP, triStripLengths[i], GL_UNSIGNED_INT, &(indices[start_vert]));
@@ -229,6 +234,7 @@ void impSurface::draw(){
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
 
+	// Do not compile the same data again; draw this same data again.
 	mCompile = false;
 #endif
 }
