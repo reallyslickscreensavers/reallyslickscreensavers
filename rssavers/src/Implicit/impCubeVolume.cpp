@@ -622,48 +622,63 @@ void impCubeVolume::polygonize(unsigned int index){
 
 	unsigned int counter = 0;
 	unsigned int nedges = triStripPatterns[mask][counter];
+	unsigned int tri_ind;
 	while(nedges != 0){
+#if USE_TRIANGLE_STRIPS
 		surface->addTriStripLength(nedges);
-		for(unsigned int i=0; i<nedges; ++i){
-			// generate vertex position and normal data
-			switch(triStripPatterns[mask][i+counter+1]){
-			case 0:
-				addVertexToSurface(2, index);
-				break;
-			case 1:
-				addVertexToSurface(1, index);
-				break;
-			case 2:
-				addVertexToSurface(1, index + w_1xh_1);
-				break;
-			case 3:
-				addVertexToSurface(2, index + w_1);
-				break;
-			case 4:
-				addVertexToSurface(0, index);
-				break;
-			case 5:
-				addVertexToSurface(0, index + w_1xh_1);
-				break;
-			case 6:
-				addVertexToSurface(0, index + w_1);
-				break;
-			case 7:
-				addVertexToSurface(0, index + w_1 + w_1xh_1);
-				break;
-			case 8:
-				addVertexToSurface(2, index + 1);
-				break;
-			case 9:
-				addVertexToSurface(1, index + 1);
-				break;
-			case 10:
-				addVertexToSurface(1, index + 1 + w_1xh_1);
-				break;
-			case 11:
-				addVertexToSurface(2, index + 1 + w_1);
-				break;
+		for(unsigned int i=1; i<=nedges; ++i){
+			switch(triStripPatterns[mask][counter+i]){
+#else
+		for(unsigned int i=1; i<nedges-1; ++i){
+			for(unsigned int j=0; j<3; ++j){
+				if((i % 2))
+					tri_ind = counter + i + j;
+				else
+					tri_ind = counter + i + (2 - j);
+				switch(triStripPatterns[mask][tri_ind]){
+#endif
+				// generate vertex position and normal data
+				case 0:
+					addVertexToSurface(2, index);
+					break;
+				case 1:
+					addVertexToSurface(1, index);
+					break;
+				case 2:
+					addVertexToSurface(1, index + w_1xh_1);
+					break;
+				case 3:
+					addVertexToSurface(2, index + w_1);
+					break;
+				case 4:
+					addVertexToSurface(0, index);
+					break;
+				case 5:
+					addVertexToSurface(0, index + w_1xh_1);
+					break;
+				case 6:
+					addVertexToSurface(0, index + w_1);
+					break;
+				case 7:
+					addVertexToSurface(0, index + w_1 + w_1xh_1);
+					break;
+				case 8:
+					addVertexToSurface(2, index + 1);
+					break;
+				case 9:
+					addVertexToSurface(1, index + 1);
+					break;
+				case 10:
+					addVertexToSurface(1, index + 1 + w_1xh_1);
+					break;
+				case 11:
+					addVertexToSurface(2, index + 1 + w_1);
+					break;
+				}
+#if USE_TRIANGLE_STRIPS
+#else
 			}
+#endif
 		}
 		counter += (nedges + 1);
 		nedges = triStripPatterns[mask][counter];

@@ -77,7 +77,11 @@ void impSurface::addIndex(unsigned int index){
 	if(index_offset == datasize)
 		indices.resize(datasize + 1000);
 
+#if USE_UNSIGNED_SHORT
+	indices[index_offset++] = static_cast<unsigned short>(index);
+#else
 	indices[index_offset++] = index;
+#endif
 }
 
 
@@ -143,8 +147,10 @@ void impSurface::calculateNormals(){
 }
 
 
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
 void impSurface::draw(){
-	if(num_tristrips == 0)
+	if(index_offset == 0)
 		return;
 
 #if IMM_DRAW
@@ -189,11 +195,23 @@ void impSurface::draw(){
 		glNewList(mDisplayList, GL_COMPILE_AND_EXECUTE);*/
 
 	glInterleavedArrays(GL_N3F_V3F, 0, &(vertices[0]));
+#if USE_TRIANGLE_STRIPS
 	int start_vert = 0;
 	for(unsigned int i=0; i<num_tristrips; ++i){
+	#if USE_UNSIGNED_SHORT
+		glDrawElements(GL_TRIANGLE_STRIP, triStripLengths[i], GL_UNSIGNED_SHORT, &(indices[start_vert]));
+	#else
 		glDrawElements(GL_TRIANGLE_STRIP, triStripLengths[i], GL_UNSIGNED_INT, &(indices[start_vert]));
+	#endif
 		start_vert += triStripLengths[i];
 	}
+#else
+	#if USE_UNSIGNED_SHORT
+	glDrawElements(GL_TRIANGLES, index_offset, GL_UNSIGNED_SHORT, &(indices[0]));
+	#else
+	glDrawElements(GL_TRIANGLES, index_offset, GL_UNSIGNED_INT, &(indices[0]));
+	#endif
+#endif
 
 /*		glEndList();
 		mCompile = false;
@@ -204,18 +222,24 @@ void impSurface::draw(){
 
 #if VBO_DRAW
 	// Draw using Vertex Buffer Objects
+#if USE_TRIANGLE_STRIPS
 	if(mCompile){
 		if(vbo_index_offsets.size() < triStripLengths.size())
 			vbo_index_offsets.resize(triStripLengths.size());
 
 		unsigned int offset = 0;
+#if USE_UNSIGNED_SHORT
+		const unsigned int index_size(sizeof(GLushort));
+#else
 		const unsigned int index_size(sizeof(GLuint));
+#endif
 		for(unsigned int i=0; i<triStripLengths.size(); ++i){
 			vbo_index_offsets[i] = (GLvoid*)(offset * index_size);
 			//vbo_index_offsets[i] = (GLvoid*)(&(indices[offset]));
 			offset += triStripLengths[i];
 		}
 	}
+#endif
 
 	// create a data store for vertex information and fill it with the vertices
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_array_id);
@@ -229,8 +253,21 @@ void impSurface::draw(){
 
 	glEnableClientState(GL_NORMAL_ARRAY);
 	glEnableClientState(GL_VERTEX_ARRAY);
+#if USE_TRIANGLE_STRIPS
+	#if USE_UNSIGNED_SHORT
+		glMultiDrawElements(GL_TRIANGLE_STRIP, (const GLsizei*)(&(triStripLengths[0])),
+			GL_UNSIGNED_SHORT, (const GLvoid**)(&(vbo_index_offsets[0])), num_tristrips);
+	#else
    	glMultiDrawElements(GL_TRIANGLE_STRIP, (const GLsizei*)(&(triStripLengths[0])),
 			GL_UNSIGNED_INT, (const GLvoid**)(&(vbo_index_offsets[0])), num_tristrips);
+	#endif
+#else
+	#if USE_UNSIGNED_SHORT
+		glDrawElements(GL_TRIANGLES, index_offset, GL_UNSIGNED_SHORT, BUFFER_OFFSET(0));
+	#else
+		glDrawElements(GL_TRIANGLES, index_offset, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+	#endif
+#endif
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
 

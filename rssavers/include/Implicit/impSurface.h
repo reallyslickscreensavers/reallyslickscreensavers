@@ -32,8 +32,12 @@
 
 // set only one of these to 1 to specify draw method
 #define IMM_DRAW 0  // immediate mode
-#define DRAWARRAY_DRAW 1  // draw arrays
-#define VBO_DRAW 0  // Vertex Buffer Objects (won't work in Windows without initializing glGenBuffersARB)
+#define DRAWARRAY_DRAW 0  // draw arrays
+#define VBO_DRAW 1  // Vertex Buffer Objects (won't work in Windows without initializing glGenBuffersARB)
+
+#define USE_UNSIGNED_SHORT 0  // use short instead of int when passing indices to draw calls
+
+#define USE_TRIANGLE_STRIPS 0  // use triangle strips instead of triangles
 
 
 class impSurface{
@@ -42,7 +46,11 @@ private:
 	unsigned int index_offset;
 	unsigned int vertex_offset;
 	std::vector<unsigned int> triStripLengths;
+#if USE_UNSIGNED_SHORT
+	std::vector<unsigned short> indices;
+#else
 	std::vector<unsigned int> indices;
+#endif
 	std::vector<float> vertices;
 	size_t vertex_data_size;
 
