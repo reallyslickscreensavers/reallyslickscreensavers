@@ -71,8 +71,10 @@ public:
 	impSurface();
 	~impSurface();
 
+#ifdef WIN32
 	int queryExtension(char* name);
 	void* getProcAddr(char* name);
+#endif
 
 	// Set data counts to 0
 	void reset();

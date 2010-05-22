@@ -26,11 +26,13 @@
 #include <GL/glext.h>
 
 
+#ifdef WIN32
 PFNGLMULTIDRAWELEMENTSPROC impSurface::glMultiDrawElements = NULL;
 PFNGLGENBUFFERSPROC impSurface::glGenBuffers = NULL;
 PFNGLDELETEBUFFERSPROC impSurface::glDeleteBuffers = NULL;
 PFNGLBINDBUFFERPROC impSurface::glBindBuffer = NULL;
 PFNGLBUFFERDATAPROC impSurface::glBufferData = NULL;
+#endif
 
 
 impSurface::impSurface(){
@@ -82,6 +84,7 @@ impSurface::~impSurface(){
 }
 
 
+#ifdef WIN32
 int impSurface::queryExtension(char* name){
 	char* extensions = (char *)glGetString(GL_EXTENSIONS);
 	char* start = extensions;
@@ -109,14 +112,12 @@ int impSurface::queryExtension(char* name){
 
 
 void* impSurface::getProcAddr(char* name){
-#ifdef WIN32
 	void *addr = (void *)wglGetProcAddress(name);
 	return addr;
-#else
-	void *addr = (void *)glXGetProcAddressARB((char *)name);
-	return addr;
-#endif
+	//void *addr = (void *)glXGetProcAddressARB((char *)name);
+	//return addr;
 }
+#endif
 
 
 void impSurface::reset(){
