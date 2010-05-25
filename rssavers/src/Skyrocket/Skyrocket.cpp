@@ -58,6 +58,8 @@ float frameTime = 0.0f;
 // Window variables
 int xsize, ysize, centerx, centery;
 float aspectRatio;
+float gWidth, gHeight;
+float gFov, gHFov;
 // Camera variables
 static rsVec lookFrom[3];  // 3 = position, target position, last position
 static rsVec lookAt[3]  // 3 = position, target position, last position
@@ -375,9 +377,18 @@ void randomLookFrom(int n){
 
 
 void randomLookAt(int n){
-	lookAt[n][0] = rsRandf(1600.0f) - 800.0f;
+	// look left or right some amount within HFov.  This way, if there is a really
+	// wide FOV due to a wide screen or multiple monitors, the action will appear off
+	// to the sides sometimes.
+	float shift_angle = (gHFov * 0.5f) - 15.0f;
+	if(shift_angle < 0.0f)
+		shift_angle = 0.0f;
+	const float shift = tanf(shift_angle / RS_RAD2DEG);
+	const float shift_x = -lookFrom[n][2] * shift;
+	const float shift_z = lookFrom[n][0] * shift;
+	lookAt[n][0] = rsRandf(shift_x * 2.0f) - shift_x;
 	lookAt[n][1] = rsRandf(800.0f) + 200.0f;
-	lookAt[n][2] = rsRandf(1600.0f) - 800.0f;
+	lookAt[n][2] = rsRandf(shift_z * 2.0f) - shift_z;
 }
 
 
@@ -391,6 +402,22 @@ void findHeadingAndPitch(rsVec lookFrom, rsVec lookAt, float& heading, float& pi
 }
 
 
+void reshape(){
+	// build viewing matrix
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	if(aspectRatio > 1.0f){
+		gHFov = 2.0f * RS_RAD2DEG * atanf(tanf(gFov * 0.5f / RS_RAD2DEG) * aspectRatio);
+		gluPerspective(gFov, aspectRatio, 1.0f, 40000.0f);
+	}
+	else{
+		gHFov = gFov;
+		gluPerspective(2.0f * RS_RAD2DEG * atanf(tanf(gFov * 0.5f / RS_RAD2DEG) / aspectRatio), aspectRatio, 1.0f, 40000.0f);
+	}
+	glGetDoublev(GL_PROJECTION_MATRIX, projMat);
+}
+
+
 void draw(){
 	static float cameraAngle = 0.0f;
 	static const float firstHeading = rsRandf(2.0f * PIx2);
@@ -398,7 +425,6 @@ void draw(){
 	static int lastCameraMode = kCamera;
 	static float cameraTime[3]  // time, elapsed time, step (1.0 - 0.0)
 		= {20.0f, 0.0f, 0.0f};
-	static float fov = 60.0f;
 	static float zoom = 0.0f;  // For interpolating from regular camera view to zoomed in view
 	static float zoomTime[2] = {300.0f, 0.0f};  // time until next zoom, duration of zoom
 	static float heading, pitch;
@@ -423,8 +449,10 @@ void draw(){
 	static int first = 1;
 	if(first){
 		randomLookFrom(1);  // new target position
+		randomLookAt(1);
 		// starting camera view is very far away
 		lookFrom[2] = rsVec(rsRandf(1000.0f) + 6000.0f, 5.0f, rsRandf(4000.0f) - 2000.0f);
+		randomLookAt(2);
 		textwriter = new rsText;
 		first = 0;
 	}
@@ -468,7 +496,7 @@ void draw(){
 			randomLookAt(1);  // new target position
 			if(!rsRandi(4) && zoom == 0.0f){  // possibly cut to new view if camera isn't zoomed in
 				randomLookFrom(2);  // new last position
-				randomLookFrom(2);  // new last position
+				randomLookAt(2);
 			}
 		}
 		// change camera position and angle
@@ -580,15 +608,11 @@ void draw(){
 	// Interpolate fov, heading, and pitch using zoom value
 	// zoom of {0,1} maps to fov of {60,6}
 	const float t(0.5f * (1.0f - cosf(RS_PI * zoom)));
-	fov = 60.0f - 54.0f * t;
+	gFov = 60.0f - 54.0f * t;
 	heading = zoomHeading * t + heading * (1.0f - t);
 	pitch = zoomPitch * t + pitch * (1.0f - t);
 
-	// build viewing matrix
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(fov, aspectRatio, 1.0f, 40000.0f);
-	glGetDoublev(GL_PROJECTION_MATRIX, projMat);
+	reshape();
 
 	// Build modelview matrix
 	glMatrixMode(GL_MODELVIEW);
@@ -904,7 +928,11 @@ void initSaver(HWND hwnd){
 	centery = rect.top + ysize / 2;
 	glViewport(rect.left, rect.top, xsize, ysize);
 	glGetIntegerv(GL_VIEWPORT, viewport);
+
+	glViewport(0, 0, rect.right, rect.bottom);
 	aspectRatio = float(rect.right) / float(rect.bottom);
+	gFov = 60.0;
+	reshape();
 
 	// Set OpenGL state
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
