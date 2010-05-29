@@ -30,5 +30,5 @@ float impSphere::value(float* position){
 	// Use thickness instead of relying on scale to be in the matrix
 	// because the value computation for a sphere is simplified by
 	// using an incomplete matrix.
-	return(thicknessSquared / (tx*tx + ty*ty + tz*tz));
+	return thicknessSquared / (tx*tx + ty*ty + tz*tz);
 }

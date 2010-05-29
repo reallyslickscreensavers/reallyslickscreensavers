@@ -48,9 +48,9 @@ float impTorus::value(float* position){
 	add = _mm_add_ps(_mm_shuffle_ps(sszz_sq, sszz_sq, _MM_SHUFFLE(2,2,2,2)), _mm_shuffle_ps(sszz_sq, sszz_sq, _MM_SHUFFLE(0,0,0,0)));
 	return _mm_cvtss_f32(_mm_div_ps(_mm_set1_ps(thicknessSquared), add));
 #else*/
-	const float x(position[0]);
-	const float y(position[1]);
-	const float z(position[2]);
+	const float& x(position[0]);
+	const float& y(position[1]);
+	const float& z(position[2]);
 
 	const float tx(x * invtrmat[0] + y * invtrmat[1] + z * invtrmat[2] + invtrmat[3]);
 	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);

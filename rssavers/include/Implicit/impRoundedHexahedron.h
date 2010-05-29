@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2010  Terence M. Welsh
+ * Copyright (C) 2010  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -19,18 +19,29 @@
  */
 
 
-#include <Implicit/impEllipsoid.h>
+#ifndef IMPROUNDEDHEXAHEDRON_H
+#define IMPROUNDEDHEXAHEDRON_H
 
 
 
-float impEllipsoid::value(float* position){
-	const float& x(position[0]);
-	const float& y(position[1]);
-	const float& z(position[2]);
+#include <Implicit/impShape.h>
 
-	const float tx(x * invtrmat[0] + y * invtrmat[1] + z * invtrmat[2] + invtrmat[3]);
-	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
-	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
-	return(thicknessSquared / (tx*tx + ty*ty + tz*tz));
-}
+
+// An impRoundedHexahedron is a rectangular solid with rounded corners.
+// It is defined as the inverse square falloff from a rectangular solid.
+class impRoundedHexahedron : public impShape{
+	float width, height, length;  // dimension on x-, y-, and z-axes
+
+public:
+	impRoundedHexahedron(){
+		width = height = length = 1.0f;
+	};
+	~impRoundedHexahedron(){};
+	void setSize(float w, float h, float l){ width = w; height = h; length = l; }
+	virtual float value(float* position);
+};
+
+
+
+#endif

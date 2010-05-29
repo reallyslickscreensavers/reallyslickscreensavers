@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2010  Terence M. Welsh
+ * Copyright (C) 2010  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -19,11 +19,11 @@
  */
 
 
-#include <Implicit/impEllipsoid.h>
+#include <Implicit/impRoundedHexahedron.h>
 
 
 
-float impEllipsoid::value(float* position){
+float impRoundedHexahedron::value(float* position){
 	const float& x(position[0]);
 	const float& y(position[1]);
 	const float& z(position[2]);
@@ -32,5 +32,14 @@ float impEllipsoid::value(float* position){
 	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
 	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
-	return(thicknessSquared / (tx*tx + ty*ty + tz*tz));
+	// Compute shrunken values.
+	// Use 0.001 instead of 0.0 to avoid divide-by-zero.
+	const float xx(fabsf(tx) - width);
+	const float sx((xx < 0.001f) ? 0.001f : xx);
+	const float yy(fabsf(ty) - height);
+	const float sy((yy < 0.001f) ? 0.001f : yy);
+	const float zz(fabsf(tz) - length);
+	const float sz((zz < 0.001f) ? 0.001f : zz);
+
+	return thicknessSquared / (sx*sx + sy*sy + sz*sz);
 }

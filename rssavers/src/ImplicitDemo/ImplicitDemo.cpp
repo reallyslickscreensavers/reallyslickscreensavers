@@ -30,6 +30,7 @@
 #include <Implicit/impCrawlPoint.h>
 #include <Implicit/impEllipsoid.h>
 #include <Implicit/impHexahedron.h>
+#include <Implicit/impRoundedHexahedron.h>
 #include <Implicit/impKnot.h>
 #include <Implicit/impSphere.h>
 #include <Implicit/impTorus.h>
@@ -45,6 +46,7 @@ impSphere sphere;
 impEllipsoid ellipsoid;
 impTorus torus1, torus2;
 impHexahedron hexa;
+impRoundedHexahedron roundhexa;
 impKnot knot;
 
 
@@ -174,6 +176,16 @@ void display(){
 	mat1.get(matrix);
 	hexa.setMatrix(matrix);
 
+	mat1.makeRotate(move[7], 1.0f, 0.0f, 0.0f);
+	mat2.makeRotate(move[5], 0.0f, 1.0f, 0.0f);
+	mat1.postMult(mat2);
+	mat2.makeTranslate(cosf(move[6]), sinf(move[4]), sinf(move[3]));
+	mat1.postMult(mat2);
+	mat1.get(matrix);
+	roundhexa.setMatrix(matrix);
+	roundhexa.setThickness(0.15f);
+	roundhexa.setSize(0.2f + 0.1f * cosf(move[1]), 0.2f + 0.1f * cosf(move[0]), 0.2f);
+
 	mat1.makeRotate(move[1], 1.0f, 0.0f, 0.0f);
 	mat2.makeRotate(move[2], 0.0f, 1.0f, 0.0f);
 	mat1.preMult(mat2);
@@ -188,6 +200,7 @@ void display(){
 	torus1.addCrawlPoint(cpv);
 	torus2.addCrawlPoint(cpv);
 	hexa.addCrawlPoint(cpv);
+	roundhexa.addCrawlPoint(cpv);
 	knot.addCrawlPoint(cpv);
 
 	surface->reset();
@@ -240,7 +253,8 @@ float function(float* position){
 		+ ellipsoid.value(position)
 		+ torus1.value(position)
 		+ torus2.value(position)
-		+ hexa.value(position)
+		//+ hexa.value(position)
+		+ roundhexa.value(position)
 		//+ knot.value(position)
 	);
 }

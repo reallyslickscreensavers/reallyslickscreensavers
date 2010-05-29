@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of Implicit.
  *
@@ -24,9 +24,9 @@
 
 
 float impKnot::value(float* position){
-	const float x(position[0]);
-	const float y(position[1]);
-	const float z(position[2]);
+	const float& x(position[0]);
+	const float& y(position[1]);
+	const float& z(position[2]);
 
 	const float tx(x * invtrmat[0] + y * invtrmat[1] + z * invtrmat[2] + invtrmat[3]);
 	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
