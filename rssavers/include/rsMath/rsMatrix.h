@@ -78,6 +78,7 @@ public:
 	void rotationInvert(const rsMatrix &mat);  // rotation matrix inversion
 	void fromQuat(const rsQuat &q);
 
+	float & operator [] (int i){return m[i];}
 	const float & operator [] (int i) const {return m[i];}
 	rsMatrix & operator = (const rsMatrix &mat);
 	std::ostream & operator << (std::ostream &os);

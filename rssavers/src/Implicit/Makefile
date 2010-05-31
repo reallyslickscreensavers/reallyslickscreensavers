@@ -9,6 +9,7 @@ OBJECTS = impCubeTables.o \
 	impTorus.o \
 	impHexahedron.o \
 	impRoundedHexahedron.o \
+	impCapsule.o \
 	impKnot.o
 
 
