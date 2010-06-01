@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="Implicit"
 	ProjectGUID="{83954EA0-9BE5-42AA-8B35-6D78D3F73938}"
+	RootNamespace="Implicit"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -155,6 +156,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\src\Implicit\impCapsule.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\Implicit\impCubeTables.cpp"
 				>
 			</File>
@@ -172,6 +177,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\Implicit\impKnot.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\Implicit\impRoundedHexahedron.cpp"
 				>
 			</File>
 			<File
@@ -197,6 +206,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\include\Implicit\impCapsule.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\include\Implicit\impCrawlPoint.h"
 				>
 			</File>
@@ -218,6 +231,10 @@
 			</File>
 			<File
 				RelativePath="..\..\include\Implicit\impKnot.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\Implicit\impRoundedHexahedron.h"
 				>
 			</File>
 			<File
