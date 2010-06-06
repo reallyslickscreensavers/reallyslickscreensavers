@@ -36,7 +36,7 @@ BEGIN
     PUSHBUTTON      "About",ABOUT,129,141,50,14
     LTEXT           "Resolution of geometry",IDC_STATIC,7,115,73,8
     LTEXT           "Number of stars",IDC_STATIC,7,55,50,8
-    LTEXT           "Speed",Speek,7,25,22,8
+    LTEXT           "Speed",IDC_STATIC,7,25,22,8
     LTEXT           "Size of stars",IDC_STATIC,7,85,39,8
     LTEXT           "View depth",IDC_STATIC,190,25,36,8
     LTEXT           "Field of view",IDC_STATIC,190,55,40,8
@@ -50,19 +50,23 @@ BEGIN
                     TBS_NOTICKS | WS_TABSTOP,190,10,172,15
     CONTROL         "Slider1",FOV,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
                     WS_TABSTOP,190,40,172,15
-    PUSHBUTTON      "Defaults",DEFAULTS,190,141,50,14
+    PUSHBUTTON      "Defaults",DEFAULTS,300,141,50,14
     RTEXT           "#",STARSIZETEXT,102,85,13,8
     RTEXT           "#",RESOLUTIONTEXT,102,115,13,8
     RTEXT           "#",SPEEDTEXT,102,25,13,8
     RTEXT           "#",DEPTHTEXT,251,25,13,8
     RTEXT           "#",FOVTEXT,251,55,13,8
-    LTEXT           "( This will eat your CPU in a bad way )",IDC_STATIC,7,
+    LTEXT           "(This will eat your CPU in a bad way.)",IDC_STATIC,7,
                     125,120,8
     CONTROL         "Slider1",STARS,"msctls_trackbar32",TBS_BOTH | 
                     TBS_NOTICKS | WS_TABSTOP,7,40,172,15
     RTEXT           "#",STARSTEXT,82,55,33,8
-    CONTROL         "Use shaders (if they are available)",SHADERS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,190,105,122,10
+	CONTROL         "Tunnels",USETUNNELS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,190,105,50,10
+	CONTROL         "Cosmic goo",USEGOO,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,190,120,50,10
+    CONTROL         "Use shaders (if available)",USESHADERS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,260,105,100,10
     LTEXT           "Frame rate limit",IDC_STATIC,190,85,48,8
     CONTROL         "",FRAMERATELIMIT,"msctls_trackbar32",TBS_BOTH | 
                     TBS_NOTICKS | WS_TABSTOP,190,70,172,15

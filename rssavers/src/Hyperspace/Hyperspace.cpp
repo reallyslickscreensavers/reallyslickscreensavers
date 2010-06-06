@@ -38,7 +38,6 @@
 #include <commctrl.h>
 #include <rsMath/rsMath.h>
 #include <resource.h>
-//#include <Hyperspace/extgl.h>
 #include <Hyperspace/extensions.h>
 #include <Hyperspace/flare.h>
 #include <Hyperspace/causticTextures.h>
@@ -72,6 +71,8 @@ int dStarSize;
 int dResolution;
 int dDepth;
 int dFov;
+bool dUseTunnels;
+bool dUseGoo;
 bool dShaders;
 
 
@@ -139,16 +140,18 @@ void draw(){
 
 	static int first = 1;
 	if(first){
-		glDisable(GL_FOG);
-		// Caustic textures can only be created after rendering context has been created
-		// because they have to be drawn and then read back from the framebuffer.
+		if(dUseTunnels){  // only tunnels use caustic textures
+			glDisable(GL_FOG);
+			// Caustic textures can only be created after rendering context has been created
+			// because they have to be drawn and then read back from the framebuffer.
 #ifdef WIN32
-		if(doingPreview) // super fast for Windows previewer
-			theCausticTextures = new causticTextures(8, numAnimTexFrames, 32, 32, 1.0f, 0.01f, 10.0f);
-		else  // normal
+			if(doingPreview) // super fast for Windows previewer
+				theCausticTextures = new causticTextures(8, numAnimTexFrames, 32, 32, 1.0f, 0.01f, 10.0f);
+			else  // normal
 #endif
-			theCausticTextures = new causticTextures(8, numAnimTexFrames, 100, 256, 1.0f, 0.01f, 20.0f);
-		glEnable(GL_FOG);
+				theCausticTextures = new causticTextures(8, numAnimTexFrames, 100, 256, 1.0f, 0.01f, 20.0f);
+			glEnable(GL_FOG);
+		}
 		if(dShaders){
 #ifdef WIN32
 			if(doingPreview) // super fast for Windows previewer
@@ -233,12 +236,14 @@ void draw(){
 	glGetDoublev(GL_MODELVIEW_MATRIX, modelMat);
 	unroll = camRoll[0] * RS_RAD2DEG;
 
-	// calculate diagonal fov
-	float diagFov = 0.5f * float(dFov) / RS_RAD2DEG;
-	diagFov = tanf(diagFov);
-	diagFov = sqrtf(diagFov * diagFov + (diagFov * aspectRatio * diagFov * aspectRatio));
-	diagFov = 2.0f * atanf(diagFov);
-	theGoo->update(camPos[0], camPos[2], pathAngle + camHeading[0], diagFov);
+	if(dUseGoo){
+		// calculate diagonal fov
+		float diagFov = 0.5f * float(dFov) / RS_RAD2DEG;
+		diagFov = tanf(diagFov);
+		diagFov = sqrtf(diagFov * diagFov + (diagFov * aspectRatio * diagFov * aspectRatio));
+		diagFov = 2.0f * atanf(diagFov);
+		theGoo->update(camPos[0], camPos[2], pathAngle + camHeading[0], diagFov);
+	}
 
 	// measure compute time
 	computeTime += computeTimer.tick();
@@ -260,7 +265,7 @@ void draw(){
 			stars[i]->pos[0] -= depth * 2.0f;
 			stars[i]->lastPos[0] -= depth * 2.0f;
 		}
-		if(temppos[0] < -depth){
+		else if(temppos[0] < -depth){
 			stars[i]->pos[0] += depth * 2.0f;
 			stars[i]->lastPos[0] += depth * 2.0f;
 		}
@@ -268,7 +273,7 @@ void draw(){
 			stars[i]->pos[2] -= depth * 2.0f;
 			stars[i]->lastPos[2] -= depth * 2.0f;
 		}
-		if(temppos[1] < -depth){
+		else if(temppos[1] < -depth){
 			stars[i]->pos[2] += depth * 2.0f;
 			stars[i]->lastPos[2] += depth * 2.0f;
 		}
@@ -287,60 +292,63 @@ void draw(){
 	while(whichTexture >= numAnimTexFrames)
 		whichTexture -= numAnimTexFrames;
 
-	// draw goo
-	// calculate color
-	static float goo_rgb_phase[3] = {-0.1f, -0.1f, -0.1f};
-	static float goo_rgb_speed[3] = {rsRandf(0.02f) + 0.02f, rsRandf(0.02f) + 0.02f, rsRandf(0.02f) + 0.02f};
-	float goo_rgb[4];
-	for(i=0; i<3; i++){
-		goo_rgb_phase[i] += goo_rgb_speed[i] * frameTime;
-		if(goo_rgb_phase[i] >= RS_PIx2)
-			goo_rgb_phase[i] -= RS_PIx2;
-		goo_rgb[i] = sinf(goo_rgb_phase[i]);
-		if(goo_rgb[i] < 0.0f)
-			goo_rgb[i] = 0.0f;
-	}
 	// alpha component gets normalmap lerp value
-	float lerp = textureTime / texFrameTime;
-	// setup textures
-	if(dShaders){
-		goo_rgb[3] = lerp;
-		glDisable(GL_TEXTURE_2D);
-		glEnable(GL_TEXTURE_CUBE_MAP_ARB);
-		glActiveTextureARB(GL_TEXTURE2_ARB);
-		glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, nebulatex);
-		glActiveTextureARB(GL_TEXTURE1_ARB);
-		glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, theWNCM->texture[(whichTexture + 1) % numAnimTexFrames]);
-		glActiveTextureARB(GL_TEXTURE0_ARB);
-		glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, theWNCM->texture[whichTexture]);
-		glBindProgramARB(GL_VERTEX_PROGRAM_ARB, goo_vp);
-		glEnable(GL_VERTEX_PROGRAM_ARB);
-		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, goo_fp);
-		glEnable(GL_FRAGMENT_PROGRAM_ARB);
-	}
-	else{
-		goo_rgb[3] = 1.0f;
-		glBindTexture(GL_TEXTURE_2D, nebulatex);
-		glEnable(GL_TEXTURE_2D);
-		glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
-		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
-		glEnable(GL_TEXTURE_GEN_S);
-		glEnable(GL_TEXTURE_GEN_T);
-	}
-	// draw it
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	glEnable(GL_BLEND);
-	glColor4fv(goo_rgb);
-	theGoo->draw();
-	if(dShaders){
-		glDisable(GL_VERTEX_PROGRAM_ARB);
-		glDisable(GL_FRAGMENT_PROGRAM_ARB);
-		glDisable(GL_TEXTURE_CUBE_MAP_ARB);
-	}
-	else{
-		glDisable(GL_TEXTURE_GEN_S);
-		glDisable(GL_TEXTURE_GEN_T);
+	const float lerp = textureTime / texFrameTime;
+
+	// draw goo
+	if(dUseGoo){
+		// calculate color
+		static float goo_rgb_phase[3] = {-0.1f, -0.1f, -0.1f};
+		static float goo_rgb_speed[3] = {rsRandf(0.02f) + 0.02f, rsRandf(0.02f) + 0.02f, rsRandf(0.02f) + 0.02f};
+		float goo_rgb[4];
+		for(i=0; i<3; i++){
+			goo_rgb_phase[i] += goo_rgb_speed[i] * frameTime;
+			if(goo_rgb_phase[i] >= RS_PIx2)
+				goo_rgb_phase[i] -= RS_PIx2;
+			goo_rgb[i] = sinf(goo_rgb_phase[i]);
+			if(goo_rgb[i] < 0.0f)
+				goo_rgb[i] = 0.0f;
+		}
+		// setup textures
+		if(dShaders){
+			goo_rgb[3] = lerp;
+			glDisable(GL_TEXTURE_2D);
+			glEnable(GL_TEXTURE_CUBE_MAP_ARB);
+			glActiveTextureARB(GL_TEXTURE2_ARB);
+			glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, nebulatex);
+			glActiveTextureARB(GL_TEXTURE1_ARB);
+			glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, theWNCM->texture[(whichTexture + 1) % numAnimTexFrames]);
+			glActiveTextureARB(GL_TEXTURE0_ARB);
+			glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, theWNCM->texture[whichTexture]);
+			glBindProgramARB(GL_VERTEX_PROGRAM_ARB, goo_vp);
+			glEnable(GL_VERTEX_PROGRAM_ARB);
+			glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, goo_fp);
+			glEnable(GL_FRAGMENT_PROGRAM_ARB);
+		}
+		else{
+			goo_rgb[3] = 1.0f;
+			glBindTexture(GL_TEXTURE_2D, nebulatex);
+			glEnable(GL_TEXTURE_2D);
+			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+			glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+			glEnable(GL_TEXTURE_GEN_S);
+			glEnable(GL_TEXTURE_GEN_T);
+		}
+		// draw it
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glEnable(GL_BLEND);
+		glColor4fv(goo_rgb);
+		theGoo->draw();
+		if(dShaders){
+			glDisable(GL_VERTEX_PROGRAM_ARB);
+			glDisable(GL_FRAGMENT_PROGRAM_ARB);
+			glDisable(GL_TEXTURE_CUBE_MAP_ARB);
+		}
+		else{
+			glDisable(GL_TEXTURE_GEN_S);
+			glDisable(GL_TEXTURE_GEN_T);
+		}
 	}
 
 	// update starburst
@@ -359,26 +367,28 @@ void draw(){
 		theStarBurst->draw();
 
 	// draw tunnel
-	theTunnel->make(frameTime);
-	glEnable(GL_TEXTURE_2D);
-	if(dShaders){
-		glActiveTextureARB(GL_TEXTURE1_ARB);
-		glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[(whichTexture + 1) % numAnimTexFrames]);
-		glActiveTextureARB(GL_TEXTURE0_ARB);
-		glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[whichTexture]);
-		glBindProgramARB(GL_VERTEX_PROGRAM_ARB, tunnel_vp);
-		glEnable(GL_VERTEX_PROGRAM_ARB);
-		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tunnel_fp);
-		glEnable(GL_FRAGMENT_PROGRAM_ARB);
-		theTunnel->draw(lerp);
-	}
-	else{
-		glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[whichTexture]);
-		theTunnel->draw();
-	}
-	if(dShaders){
-		glDisable(GL_VERTEX_PROGRAM_ARB);
-		glDisable(GL_FRAGMENT_PROGRAM_ARB);
+	if(dUseTunnels){
+		theTunnel->make(frameTime);
+		glEnable(GL_TEXTURE_2D);
+		if(dShaders){
+			glActiveTextureARB(GL_TEXTURE1_ARB);
+			glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[(whichTexture + 1) % numAnimTexFrames]);
+			glActiveTextureARB(GL_TEXTURE0_ARB);
+			glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[whichTexture]);
+			glBindProgramARB(GL_VERTEX_PROGRAM_ARB, tunnel_vp);
+			glEnable(GL_VERTEX_PROGRAM_ARB);
+			glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tunnel_fp);
+			glEnable(GL_FRAGMENT_PROGRAM_ARB);
+			theTunnel->draw(lerp);
+		}
+		else{
+			glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[whichTexture]);
+			theTunnel->draw();
+		}
+		if(dShaders){
+			glDisable(GL_VERTEX_PROGRAM_ARB);
+			glDisable(GL_FRAGMENT_PROGRAM_ARB);
+		}
 	}
 
 	// draw sun with lens flare
@@ -496,13 +506,15 @@ void initSaver(HWND hwnd){
 
 	thePath = new splinePath((dDepth * 2) + 6);
 
-	theTunnel = new tunnel(thePath, 20);
+	if(dUseTunnels)
+		theTunnel = new tunnel(thePath, 20);
 
 	// To avoid popping, depth, which will be used for fogging, is set to
 	// dDepth * goo grid size - size of one goo cubelet
 	depth = float(dDepth) * 2.0f - 2.0f / float(dResolution);
 
-	theGoo = new goo(dResolution, depth);
+	if(dUseGoo)
+		theGoo = new goo(dResolution, depth);
 
 	stars = new stretchedParticle*[dStars];
 	for(i=0; i<dStars; i++){
@@ -604,10 +616,13 @@ void initSaver(HWND hwnd){
 
 void cleanUp(HWND hwnd){
 	// Free memory
-	delete theGoo;
-	delete theTunnel;
+	if(dUseGoo)
+		delete theGoo;
+	if(dUseTunnels){
+		delete theTunnel;
+		delete theCausticTextures;
+	}
 	delete thePath;
-	delete theCausticTextures;
 	delete theWNCM;
 
 	// Kill device context
@@ -624,6 +639,8 @@ void setDefaults(){
 	dResolution = 10;
 	dDepth = 5;
 	dFov = 50;
+	dUseTunnels = true;
+	dUseGoo = true;
 	dShaders = true;
 }
 
@@ -660,6 +677,12 @@ void readRegistry(){
 	result = RegQueryValueEx(skey, "Fov", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
 		dFov = val;
+	result = RegQueryValueEx(skey, "UseTunnels", 0, &valtype, (LPBYTE)&val, &valsize);
+	if(result == ERROR_SUCCESS)
+		dUseTunnels = val;
+	result = RegQueryValueEx(skey, "UseGoo", 0, &valtype, (LPBYTE)&val, &valsize);
+	if(result == ERROR_SUCCESS)
+		dUseGoo = val;
 	result = RegQueryValueEx(skey, "Shaders", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
 		dShaders = val;
@@ -693,6 +716,10 @@ void writeRegistry(){
 	RegSetValueEx(skey, "Depth", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
 	val = dFov;
 	RegSetValueEx(skey, "Fov", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
+	val = dUseTunnels;
+	RegSetValueEx(skey, "UseTunnels", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
+	val = dUseGoo;
+	RegSetValueEx(skey, "UseGoo", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
 	val = dShaders;
 	RegSetValueEx(skey, "Shaders", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
 	val = dFrameRateLimit;
@@ -770,7 +797,9 @@ void initControls(HWND hdlg){
 	sprintf(cval, "%d", dFov);
 	SendDlgItemMessage(hdlg, FOVTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
-	CheckDlgButton(hdlg, SHADERS, dShaders);
+	CheckDlgButton(hdlg, USETUNNELS, dUseTunnels);
+	CheckDlgButton(hdlg, USEGOO, dUseGoo);
+	CheckDlgButton(hdlg, USESHADERS, dShaders);
 
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
 }
@@ -795,7 +824,9 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 			dResolution = SendDlgItemMessage(hdlg, RESOLUTION, TBM_GETPOS, 0, 0);
 			dDepth = SendDlgItemMessage(hdlg, DEPTH, TBM_GETPOS, 0, 0);
 			dFov = SendDlgItemMessage(hdlg, FOV, TBM_GETPOS, 0, 0);
-			dShaders = (IsDlgButtonChecked(hdlg, SHADERS) == BST_CHECKED);
+			dUseTunnels = (IsDlgButtonChecked(hdlg, USETUNNELS) == BST_CHECKED);
+			dUseGoo = (IsDlgButtonChecked(hdlg, USEGOO) == BST_CHECKED);
+			dShaders = (IsDlgButtonChecked(hdlg, USESHADERS) == BST_CHECKED);
 			dFrameRateLimit = SendDlgItemMessage(hdlg, FRAMERATELIMIT, TBM_GETPOS, 0, 0);
 			writeRegistry();
             // Fall through
