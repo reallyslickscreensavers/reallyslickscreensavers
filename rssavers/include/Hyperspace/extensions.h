@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of Hyperspace.
  *
@@ -23,7 +23,6 @@
 #define EXTENSIONS_H
 
 
-
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -32,16 +31,19 @@
 #include <GL/glext.h>
 
 
-
 extern PFNGLACTIVETEXTUREARBPROC glActiveTextureARB;
-extern PFNGLGENPROGRAMSARBPROC glGenProgramsARB;
-extern PFNGLBINDPROGRAMARBPROC glBindProgramARB;
-extern PFNGLPROGRAMSTRINGARBPROC glProgramStringARB;
-
+extern PFNGLCREATESHADEROBJECTARBPROC glCreateShaderObjectARB;
+extern PFNGLSHADERSOURCEARBPROC glShaderSourceARB;
+extern PFNGLCOMPILESHADERARBPROC glCompileShaderARB;
+extern PFNGLCREATEPROGRAMOBJECTARBPROC glCreateProgramObjectARB;
+extern PFNGLATTACHOBJECTARBPROC glAttachObjectARB;
+extern PFNGLLINKPROGRAMARBPROC glLinkProgramARB;
+extern PFNGLUSEPROGRAMOBJECTARBPROC glUseProgramObjectARB;
+extern PFNGLGETUNIFORMLOCATIONARBPROC glGetUniformLocationARB;
+extern PFNGLUNIFORM1IARBPROC glUniform1iARB;
 
 
 int initExtensions();
-
 
 
 #endif

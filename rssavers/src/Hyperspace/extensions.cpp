@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of Hyperspace.
  *
@@ -24,9 +24,15 @@
 
 
 PFNGLACTIVETEXTUREARBPROC glActiveTextureARB;
-PFNGLGENPROGRAMSARBPROC glGenProgramsARB;
-PFNGLBINDPROGRAMARBPROC glBindProgramARB;
-PFNGLPROGRAMSTRINGARBPROC glProgramStringARB;
+PFNGLCREATESHADEROBJECTARBPROC glCreateShaderObjectARB;
+PFNGLSHADERSOURCEARBPROC glShaderSourceARB;
+PFNGLCOMPILESHADERARBPROC glCompileShaderARB;
+PFNGLCREATEPROGRAMOBJECTARBPROC glCreateProgramObjectARB;
+PFNGLATTACHOBJECTARBPROC glAttachObjectARB;
+PFNGLLINKPROGRAMARBPROC glLinkProgramARB;
+PFNGLUSEPROGRAMOBJECTARBPROC glUseProgramObjectARB;
+PFNGLGETUNIFORMLOCATIONARBPROC glGetUniformLocationARB;
+PFNGLUNIFORM1IARBPROC glUniform1iARB;
 
 
 
@@ -68,12 +74,17 @@ void* getProcAddr(char* name){
 
 
 int initExtensions(){
-	if(queryExtension("GL_ARB_multitexture") && queryExtension("GL_ARB_texture_cube_map")
-		&& queryExtension("GL_ARB_vertex_program") && queryExtension("GL_ARB_fragment_program")){
+	if(queryExtension("GL_ARB_multitexture") && queryExtension("GL_ARB_texture_cube_map") && queryExtension("GL_ARB_shader_objects")){
 		glActiveTextureARB = (PFNGLACTIVETEXTUREARBPROC)getProcAddr("glActiveTextureARB");
-		glGenProgramsARB = (PFNGLGENPROGRAMSARBPROC)getProcAddr("glGenProgramsARB");
-		glBindProgramARB = (PFNGLBINDPROGRAMARBPROC)getProcAddr("glBindProgramARB");
-		glProgramStringARB = (PFNGLPROGRAMSTRINGARBPROC)getProcAddr("glProgramStringARB");
+		glCreateShaderObjectARB = (PFNGLCREATESHADEROBJECTARBPROC)getProcAddr("glCreateShaderObjectARB");
+		glShaderSourceARB = (PFNGLSHADERSOURCEARBPROC)getProcAddr("glShaderSourceARB");
+		glCompileShaderARB = (PFNGLCOMPILESHADERARBPROC)getProcAddr("glCompileShaderARB");
+		glCreateProgramObjectARB = (PFNGLCREATEPROGRAMOBJECTARBPROC)getProcAddr("glCreateProgramObjectARB");
+		glAttachObjectARB = (PFNGLATTACHOBJECTARBPROC)getProcAddr("glAttachObjectARB");
+		glLinkProgramARB = (PFNGLLINKPROGRAMARBPROC)getProcAddr("glLinkProgramARB");
+		glUseProgramObjectARB = (PFNGLUSEPROGRAMOBJECTARBPROC)getProcAddr("glUseProgramObjectARB");
+		glGetUniformLocationARB = (PFNGLGETUNIFORMLOCATIONARBPROC)getProcAddr("glGetUniformLocationARB");
+		glUniform1iARB = (PFNGLUNIFORM1IARBPROC)getProcAddr("glUniform1iARB");
 		return 1;
 	}
 

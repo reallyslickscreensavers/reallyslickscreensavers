@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of Hyperspace.
  *
@@ -99,42 +99,6 @@ stretchedParticle* sunStar;
 starBurst* theStarBurst;
 
 
-
-// read in vertex/fragment program and store into a string.
-unsigned char* readShaderFile(const char* name){
-	FILE *in = fopen(name, "r");
-   
-	if (!in)
-		return 0;
- 
-	unsigned char *b = 0;
-   
-	// get file size
-	long size = 0, curpos;
-	curpos = ftell(in);
-	fseek(in, 0L, SEEK_END);
-	size = ftell(in);
-	fseek(in, curpos, SEEK_SET);
-   
-	if (!size)
-		return 0;
-   
-	if (!(b = new unsigned char[size + 1]))
-		return 0;
-
-	memset(b, '\0', size + 1);
-
-	if (!b)
-		return 0;
-   
-	fread(b, 1, size, in); // check return with size?
-
-	fclose(in);
-   
-	return b;
-}
-
-
 void draw(){
 	int i;
 
@@ -219,7 +183,7 @@ void draw(){
 	camRoll[0] = camRoll[1] * t + camRoll[2] * (1.0f - t);
 
 	static float pathDir[3] = {0.0f, 0.0f, -1.0f};
-	thePath->moveAlongPath(float(dSpeed) * frameTime * 0.03f);
+	thePath->moveAlongPath(float(dSpeed) * frameTime * 0.05f);
 	thePath->update(frameTime);
 	thePath->getPoint(dDepth + 2, thePath->step, camPos);
 	thePath->getBaseDirection(dDepth + 2, thePath->step, pathDir);
@@ -255,6 +219,8 @@ void draw(){
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// draw stars
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, flaretex[0]);
 	static float temppos[2];
@@ -279,6 +245,7 @@ void draw(){
 		}
 		stars[i]->draw(camPos);
 	}
+	glDisable(GL_CULL_FACE);
 
 	// pick animated texture frame
 	static float textureTime = 0.0f;
@@ -320,10 +287,7 @@ void draw(){
 			glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, theWNCM->texture[(whichTexture + 1) % numAnimTexFrames]);
 			glActiveTextureARB(GL_TEXTURE0_ARB);
 			glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, theWNCM->texture[whichTexture]);
-			glBindProgramARB(GL_VERTEX_PROGRAM_ARB, goo_vp);
-			glEnable(GL_VERTEX_PROGRAM_ARB);
-			glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, goo_fp);
-			glEnable(GL_FRAGMENT_PROGRAM_ARB);
+			glUseProgramObjectARB(gooProgram);
 		}
 		else{
 			goo_rgb[3] = 1.0f;
@@ -341,9 +305,8 @@ void draw(){
 		glColor4fv(goo_rgb);
 		theGoo->draw();
 		if(dShaders){
-			glDisable(GL_VERTEX_PROGRAM_ARB);
-			glDisable(GL_FRAGMENT_PROGRAM_ARB);
 			glDisable(GL_TEXTURE_CUBE_MAP_ARB);
+			glUseProgramObjectARB(0);
 		}
 		else{
 			glDisable(GL_TEXTURE_GEN_S);
@@ -369,26 +332,23 @@ void draw(){
 	// draw tunnel
 	if(dUseTunnels){
 		theTunnel->make(frameTime);
+		glCullFace(GL_BACK);
+		glEnable(GL_CULL_FACE);
 		glEnable(GL_TEXTURE_2D);
 		if(dShaders){
 			glActiveTextureARB(GL_TEXTURE1_ARB);
 			glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[(whichTexture + 1) % numAnimTexFrames]);
 			glActiveTextureARB(GL_TEXTURE0_ARB);
 			glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[whichTexture]);
-			glBindProgramARB(GL_VERTEX_PROGRAM_ARB, tunnel_vp);
-			glEnable(GL_VERTEX_PROGRAM_ARB);
-			glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tunnel_fp);
-			glEnable(GL_FRAGMENT_PROGRAM_ARB);
+			glUseProgramObjectARB(tunnelProgram);
 			theTunnel->draw(lerp);
+			glUseProgramObjectARB(0);
 		}
 		else{
 			glBindTexture(GL_TEXTURE_2D, theCausticTextures->caustictex[whichTexture]);
 			theTunnel->draw();
 		}
-		if(dShaders){
-			glDisable(GL_VERTEX_PROGRAM_ARB);
-			glDisable(GL_FRAGMENT_PROGRAM_ARB);
-		}
+		glDisable(GL_CULL_FACE);
 	}
 
 	// draw sun with lens flare
@@ -519,10 +479,18 @@ void initSaver(HWND hwnd){
 	stars = new stretchedParticle*[dStars];
 	for(i=0; i<dStars; i++){
 		stars[i] = new stretchedParticle;
-		stars[i]->radius = rsRandf(float(dStarSize) * 0.001f) + float(dStarSize) * 0.001f;
-		stars[i]->color[0] = 0.5f + rsRandf(0.5f);
-		stars[i]->color[1] = 0.5f + rsRandf(0.5f);
-		stars[i]->color[2] = 0.5f + rsRandf(0.5f);
+		stars[i]->radius = rsRandf(float(dStarSize) * 0.0005f) + float(dStarSize) * 0.0005f;
+		if(i % 10){  // usually bland stars
+			stars[i]->color[0] = 0.85f + rsRandf(0.15f);
+			stars[i]->color[1] = 0.85f + rsRandf(0.15f);
+			stars[i]->color[2] = 0.85f + rsRandf(0.15f);
+		}
+		else{  // occasionally a colorful one
+			stars[i]->color[0] = 0.3f + rsRandf(0.7f);
+			stars[i]->color[1] = 0.3f + rsRandf(0.7f);
+			stars[i]->color[2] = 0.3f + rsRandf(0.7f);
+			stars[i]->color[rsRandi(3)] = 1.0f;
+		}
 		stars[i]->color[rsRandi(3)] = 1.0f;
 		stars[i]->pos[0] = rsRandf(2.0f * depth) - depth;
 		stars[i]->pos[1] = rsRandf(4.0f) - 2.0f;
@@ -543,23 +511,8 @@ void initSaver(HWND hwnd){
 
 	glGenTextures(1, &nebulatex);
 	if(dShaders){
+		initShaders();
 		numAnimTexFrames = 20;
-		//unsigned char* goo_vp_asm = readShaderFile("goo.vp");
-		glGenProgramsARB(1, &goo_vp);
-		glBindProgramARB(GL_VERTEX_PROGRAM_ARB, goo_vp);
-		glProgramStringARB(GL_VERTEX_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, strlen((const char *)goo_vp_asm), goo_vp_asm);
-		//unsigned char* ggoo_fp_asm = readShaderFile("goo.fp");
-		glGenProgramsARB(1, &goo_fp);
-		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, goo_fp);
-		glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, strlen((const char *)goo_fp_asm), goo_fp_asm);
-		//unsigned char* tunnel_vp_asm = readShaderFile("tunnel.vp");
-		glGenProgramsARB(1, &tunnel_vp);
-		glBindProgramARB(GL_VERTEX_PROGRAM_ARB, tunnel_vp);
-		glProgramStringARB(GL_VERTEX_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, strlen((const char *)tunnel_vp_asm), tunnel_vp_asm);
-		//unsigned char* ttunnel_fp_asm = readShaderFile("tunnel.fp");
-		glGenProgramsARB(1, &tunnel_fp);
-		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, tunnel_fp);
-		glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, strlen((const char *)tunnel_fp_asm), tunnel_fp_asm);
 		glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, nebulatex);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -634,7 +587,7 @@ void cleanUp(HWND hwnd){
 
 void setDefaults(){
 	dSpeed = 10;
-	dStars = 1000;
+	dStars = 2000;
 	dStarSize = 10;
 	dResolution = 10;
 	dDepth = 5;

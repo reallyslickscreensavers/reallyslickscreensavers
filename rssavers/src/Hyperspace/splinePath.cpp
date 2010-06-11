@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of Hyperspace.
  *
@@ -228,7 +228,7 @@ void splinePath::makeNewPoint(){
 	basexyz[lastPoint][2] += basexyz[lastPoint-1][2];
 
 	// make new phase and movement rate
-	phase[lastPoint] = rsRandf(6.28318530718f);
+	phase[lastPoint] = rsRandf(RS_PIx2);
 	rate[lastPoint] = rsRandf(1.0f);
 
 	// reset base direction vectors

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of Hyperspace.
  *
@@ -41,7 +41,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 	float vec[3];
 	float norm[3];
 	float offset = -0.5f * float(texSize) + 0.5f;
-	float mult = 0.5f / float(texSize);
+	float mult = 0.8f;  // steepness of normals (lower value makes bumps more pronounced)
 	for(g=0; g<numFrames; g++){
 		glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, texture[g]);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -53,7 +53,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 		// left
 		for(i=0; i<texSize; i++){
 			for(j=0; j<texSize; j++){
-				vec[0] = -0.5f;
+				vec[0] = -mult;
 				vec[1] = -(float(j) + offset) / float(texSize);
 				vec[2] = (float(i) + offset) / float(texSize);
 				normalize(vec);
@@ -69,7 +69,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 		// right
 		for(i=0; i<texSize; i++){
 			for(j=0; j<texSize; j++){
-				vec[0] = 0.5f;
+				vec[0] = mult;
 				vec[1] = -(float(j) + offset) / float(texSize);
 				vec[2] = -(float(i) + offset) / float(texSize);
 				normalize(vec);
@@ -87,7 +87,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 			for(j=0; j<texSize; j++){
 				vec[0] = -(float(i) + offset) / float(texSize);
 				vec[1] = -(float(j) + offset) / float(texSize);
-				vec[2] = -0.5f;
+				vec[2] = -mult;
 				normalize(vec);
 				wavyfunc(vec, norm);
 				map[(i + j * texSize) * 3] = GLubyte(norm[0] * 127.999f + 128.0f);
@@ -103,7 +103,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 			for(j=0; j<texSize; j++){
 				vec[0] = (float(i) + offset) / float(texSize);
 				vec[1] = -(float(j) + offset) / float(texSize);
-				vec[2] = 0.5f;
+				vec[2] = mult;
 				normalize(vec);
 				wavyfunc(vec, norm);
 				map[(i + j * texSize) * 3] = GLubyte(norm[0] * 127.999f + 128.0f);
@@ -118,7 +118,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 		for(i=0; i<texSize; i++){
 			for(j=0; j<texSize; j++){
 				vec[0] = (float(i) + offset) / float(texSize);
-				vec[1] = -0.5f;
+				vec[1] = -mult;
 				vec[2] = -(float(j) + offset) / float(texSize);
 				normalize(vec);
 				wavyfunc(vec, norm);
@@ -134,7 +134,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 		for(i=0; i<texSize; i++){
 			for(j=0; j<texSize; j++){
 				vec[0] = (float(i) + offset) / float(texSize);
-				vec[1] = 0.5f;
+				vec[1] = mult;
 				vec[2] = (float(j) + offset) / float(texSize);
 				normalize(vec);
 				wavyfunc(vec, norm);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of Hyperspace.
  *
@@ -97,7 +97,7 @@ void stretchedParticle::draw(float* eyepoint){
 		glMultMatrixf(bbMat);
 		glRotatef(57.2957795131f * atan2f(sd[1], sd[0]) + unroll, 0, 0, 1);
 		glScalef(stretch, 1.0f, 1.0f);
-		float darkener = stretch * 0.5f;
+		float darkener = stretch * 0.3f;
 		if(darkener < 1.0f)
 			darkener = 1.0f;
 		// draw colored aura
