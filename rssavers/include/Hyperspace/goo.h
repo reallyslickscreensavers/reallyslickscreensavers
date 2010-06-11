@@ -28,8 +28,7 @@
 	#include <windows.h>
 #endif
 #include <GL/gl.h>
-#include <math.h>
-#include <rsmath/rsMath.h>
+#include <rsMath/rsMath.h>
 #include <list>
 #include <Implicit/impCubeVolume.h>
 #include <Implicit/impCrawlPoint.h>

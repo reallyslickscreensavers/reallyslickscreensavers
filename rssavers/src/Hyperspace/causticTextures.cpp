@@ -21,6 +21,10 @@
 
 #ifdef WIN32
 	#include <windows.h>
+	extern HDC hdc;
+#endif
+#ifdef RS_XSCREENSAVER
+#include <rsXScreenSaver/rsXScreenSaver.h>
 #endif
 #include <iostream>
 #include <Hyperspace/causticTextures.h>
@@ -28,9 +32,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <rsMath/rsMath.h>
-
-
-extern HDC hdc;
 
 
 causticTextures::causticTextures(int keys, int frames, int res, int size, float depth, float wa, float rm){
@@ -202,8 +203,13 @@ causticTextures::causticTextures(int keys, int frames, int res, int size, float 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		gluBuild2DMipmaps(GL_TEXTURE_2D, 3, texSize, texSize, GL_RGB,
 			GL_UNSIGNED_BYTE, bitmap);
-
+		
+#ifdef WIN32
 		wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+#endif
+#ifdef RS_XSCREENSAVER
+		glXSwapBuffers(xdisplay, xwindow);
+#endif
 	}
 
 	// restore matrix stack

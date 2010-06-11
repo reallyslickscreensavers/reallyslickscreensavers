@@ -48,7 +48,7 @@ goo::goo(int res, float rad){
 	volume->init(resolution, resolution, resolution, unitSize);
 	// Using exact normals instead of fast normals.  This should be slower, but it is faster
 	// in this case because the surface function is so ridiculously fast.
-	volume->useFastNormals(false);
+	volume->useFastNormals(true);
 	volume->function = function;
 	volume->setSurfaceValue(0.4f);
 	surface = new impSurface**[arraySize];

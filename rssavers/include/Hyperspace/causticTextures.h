@@ -23,12 +23,10 @@
 #define CAUSTICS_H
 
 
-
 #ifdef WIN32
-	#include <windows.h>
+#include <windows.h>
 #endif
-#include "GL/gl.h"
-
+#include <GL/gl.h>
 
 
 class causticTextures{
@@ -69,7 +67,6 @@ private:
 	float myFabs(float x){if(x<0) return -x; return x;};
 	float interpolate(float a, float b, float c, float d, float where);
 };
-
 
 
 #endif

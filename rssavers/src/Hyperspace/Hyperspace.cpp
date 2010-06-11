@@ -25,27 +25,31 @@
 // enough to run it at a decent frame rate.  Finally released it in 2005.
 
 #ifdef WIN32
-	#include <windows.h>
-#endif
-#include <stdio.h>
+#include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <regstr.h>
+#include <commctrl.h>
+#include <resource.h>
+#include <Hyperspace/extensions.h>
+#endif
+#ifdef RS_XSCREENSAVER
+#include <rsXScreenSaver/rsXScreenSaver.h>
+#endif
+
+#include <stdio.h>
 #include <rsText/rsText.h>
 #include <math.h>
 #include <time.h>
-#include <gl/gl.h>
-#include <gl/glu.h>
-#include <regstr.h>
-#include <commctrl.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include <rsMath/rsMath.h>
-#include <resource.h>
-#include <Hyperspace/extensions.h>
 #include <Hyperspace/flare.h>
 #include <Hyperspace/causticTextures.h>
 #include <Hyperspace/wavyNormalCubeMaps.h>
-#include <Hyperspace/splinepath.h>
+#include <Hyperspace/splinePath.h>
 #include <Hyperspace/tunnel.h>
 #include <Hyperspace/goo.h>
-#include <Hyperspace/stretchedparticle.h>
+#include <Hyperspace/stretchedParticle.h>
 #include <Hyperspace/starBurst.h>
 #include <Hyperspace/nebulamap.h>
 #include <Hyperspace/shaders.h>
@@ -54,10 +58,11 @@
 //std::ofstream outfile;
 
 
-
+#ifdef WIN32
 LPCTSTR registryPath = ("Software\\Really Slick\\Hyperspace");
 HGLRC hglrc;
 HDC hdc;
+#endif
 int readyToDraw = 0;
 int xsize, ysize;
 float aspectRatio;
@@ -71,9 +76,9 @@ int dStarSize;
 int dResolution;
 int dDepth;
 int dFov;
-bool dUseTunnels;
-bool dUseGoo;
-bool dShaders;
+int dUseTunnels;
+int dUseGoo;
+int dShaders;
 
 
 float unroll;
@@ -100,8 +105,6 @@ starBurst* theStarBurst;
 
 
 void draw(){
-	int i;
-
 	static int first = 1;
 	if(first){
 		if(dUseTunnels){  // only tunnels use caustic textures
@@ -224,7 +227,7 @@ void draw(){
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, flaretex[0]);
 	static float temppos[2];
-	for(i=0; i<dStars; i++){
+	for(int i=0; i<dStars; i++){
 		temppos[0] = stars[i]->pos[0] - camPos[0];
 		temppos[1] = stars[i]->pos[2] - camPos[2];
 		if(temppos[0] > depth){
@@ -268,7 +271,7 @@ void draw(){
 		static float goo_rgb_phase[3] = {-0.1f, -0.1f, -0.1f};
 		static float goo_rgb_speed[3] = {rsRandf(0.02f) + 0.02f, rsRandf(0.02f) + 0.02f, rsRandf(0.02f) + 0.02f};
 		float goo_rgb[4];
-		for(i=0; i<3; i++){
+		for(int i=0; i<3; i++){
 			goo_rgb_phase[i] += goo_rgb_speed[i] * frameTime;
 			if(goo_rgb_phase[i] >= RS_PIx2)
 				goo_rgb_phase[i] -= RS_PIx2;
@@ -371,13 +374,13 @@ void draw(){
 	static std::vector<std::string> strvec;
 	static int frames = 0;
 	++frames;
-	if(frames == 20){
+	if(frames == 60){
 		strvec.clear();
-		std::string str1 = "         FPS = " + to_string(20.0f / totalTime);
+		std::string str1 = "         FPS = " + to_string(60.0f / totalTime);
 		strvec.push_back(str1);
-		std::string str2 = "compute time = " + to_string(computeTime / 20.0f);
+		std::string str2 = "compute time = " + to_string(computeTime / 60.0f);
 		strvec.push_back(str2);
-		std::string str3 = "   draw time = " + to_string(drawTime / 20.0f);
+		std::string str3 = "   draw time = " + to_string(drawTime / 60.0f);
 		strvec.push_back(str3);
 		totalTime = 0.0f;
 		computeTime = 0.0f;
@@ -402,8 +405,13 @@ void draw(){
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 	}
-
+	
+#ifdef WIN32
 	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+#endif
+#ifdef RS_XSCREENSAVER
+	glXSwapBuffers(xdisplay, xwindow);
+#endif
 }
 
 
@@ -417,10 +425,82 @@ void idleProc(){
 }
 
 
+void setDefaults(){
+	dSpeed = 10;
+	dStars = 2000;
+	dStarSize = 10;
+	dResolution = 10;
+	dDepth = 5;
+	dFov = 50;
+	dUseTunnels = 1;
+	dUseGoo = 1;
+	dShaders = 1;
+}
+
+
+#ifdef RS_XSCREENSAVER
+void handleCommandLine(int argc, char* argv[]){
+	setDefaults();
+	getArgumentsValue(argc, argv, std::string("-speed"), dSpeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-stars"), dStars, 0, 10000);
+	getArgumentsValue(argc, argv, std::string("-starsize"), dStarSize, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-resolution"), dResolution, 4, 20);
+	getArgumentsValue(argc, argv, std::string("-depth"), dDepth, 1, 10);
+	getArgumentsValue(argc, argv, std::string("-fov"), dFov, 10, 150);
+	getArgumentsValue(argc, argv, std::string("-usetunnels"), dUseTunnels, 0, 1);
+	getArgumentsValue(argc, argv, std::string("-usegoo"), dUseGoo, 0, 1);
+	getArgumentsValue(argc, argv, std::string("-shaders"), dShaders, 0, 1);
+}
+#endif
+
+
+void reshape(int width, int height){
+	glViewport(0, 0, width, height);
+	aspectRatio = float(width) / float(height);
+
+	xsize = width;
+	ysize = height;
+
+	viewport[0] = 0;
+	viewport[1] = 0;
+	viewport[2] = width;
+	viewport[3] = height;
+
+	// setup projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(float(dFov), aspectRatio, 0.001f, 200.0f);
+	glGetDoublev(GL_PROJECTION_MATRIX, projMat);
+	glMatrixMode(GL_MODELVIEW);
+}
+
+
+#ifdef WIN32
 void initSaver(HWND hwnd){
-	int i, j;
 	RECT rect;
 
+	// Window initialization
+	hdc = GetDC(hwnd);
+	setBestPixelFormat(hdc);
+	hglrc = wglCreateContext(hdc);
+	GetClientRect(hwnd, &rect);
+	wglMakeCurrent(hdc, hglrc);
+
+	// setup viewport
+	//viewport[0] = rect.left;
+	//viewport[1] = rect.top;
+	//viewport[2] = rect.right - rect.left;
+	//viewport[3] = rect.bottom - rect.top;
+
+	// initialize extensions
+	if(!initExtensions())
+		dShaders = 0;
+
+	reshape(rect.right, rect.bottom);
+#endif
+#ifdef RS_XSCREENSAVER
+void initSaver(){
+#endif
 	// Seed random number generator
 	srand((unsigned)time(NULL));
 
@@ -430,33 +510,6 @@ void initSaver(HWND hwnd){
 		if(dDepth > 3)
 			dDepth = 3;
 	};
-
-	// Window initialization
-	hdc = GetDC(hwnd);
-	setBestPixelFormat(hdc);
-	hglrc = wglCreateContext(hdc);
-	GetClientRect(hwnd, &rect);
-	wglMakeCurrent(hdc, hglrc);
-	xsize = rect.right;
-	ysize = rect.bottom;
-	aspectRatio = float(xsize) / float(ysize);
-
-	// setup viewport
-	viewport[0] = rect.left;
-	viewport[1] = rect.top;
-	viewport[2] = rect.right - rect.left;
-	viewport[3] = rect.bottom - rect.top;
-
-	// setup projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(float(dFov), aspectRatio, 0.001f, 200.0f);
-	glGetDoublev(GL_PROJECTION_MATRIX, projMat);
-	glMatrixMode(GL_MODELVIEW);
-
-	// initialize extensions
-	if(!initExtensions())
-		dShaders = false;
 
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -477,7 +530,7 @@ void initSaver(HWND hwnd){
 		theGoo = new goo(dResolution, depth);
 
 	stars = new stretchedParticle*[dStars];
-	for(i=0; i<dStars; i++){
+	for(int i=0; i<dStars; i++){
 		stars[i] = new stretchedParticle;
 		stars[i]->radius = rsRandf(float(dStarSize) * 0.0005f) + float(dStarSize) * 0.0005f;
 		if(i % 10){  // usually bland stars
@@ -506,7 +559,7 @@ void initSaver(HWND hwnd){
 	sunStar->fov = float(dFov);
 
 	theStarBurst = new starBurst;
-	for(i=0; i<SB_NUM_STARS; i++)
+	for(int i=0; i<SB_NUM_STARS; i++)
 		theStarBurst->stars[i]->radius = rsRandf(float(dStarSize) * 0.001f) + float(dStarSize) * 0.001f;
 
 	glGenTextures(1, &nebulatex);
@@ -530,8 +583,8 @@ void initSaver(HWND hwnd){
 		numAnimTexFrames = 60;
 		float x, y, temp;
 		const int halfsize(NEBULAMAPSIZE / 2);
-		for(i=0; i<NEBULAMAPSIZE; ++i){
-			for(j=0; j<NEBULAMAPSIZE; ++j){
+		for(int i=0; i<NEBULAMAPSIZE; ++i){
+			for(int j=0; j<NEBULAMAPSIZE; ++j){
 				x = float(i - halfsize) / float(halfsize);
 				y = float(j - halfsize) / float(halfsize);
 				temp = (x * x) + (y * y);
@@ -541,9 +594,9 @@ void initSaver(HWND hwnd){
 					temp = 0.0f;
 				temp = temp * temp;
 				temp = temp * temp;
-				nebulamap[i][j][0] = unsigned char(float(nebulamap[i][j][0]) * temp);
-				nebulamap[i][j][1] = unsigned char(float(nebulamap[i][j][1]) * temp);
-				nebulamap[i][j][2] = unsigned char(float(nebulamap[i][j][2]) * temp);
+				nebulamap[i][j][0] = (unsigned char)(float(nebulamap[i][j][0]) * temp);
+				nebulamap[i][j][1] = (unsigned char)(float(nebulamap[i][j][1]) * temp);
+				nebulamap[i][j][2] = (unsigned char)(float(nebulamap[i][j][2]) * temp);
 			}
 		}
 		glEnable(GL_NORMALIZE);
@@ -564,9 +617,27 @@ void initSaver(HWND hwnd){
 	textwriter = new rsText;
 
 	//outfile.open("outfile");
+
+	readyToDraw = 1;
 }
 
 
+#ifdef RS_XSCREENSAVER
+void cleanUp(){
+	// Free memory
+	if(dUseGoo)
+		delete theGoo;
+	if(dUseTunnels){
+		delete theTunnel;
+		delete theCausticTextures;
+	}
+	delete thePath;
+	delete theWNCM;
+}
+#endif
+
+
+#ifdef WIN32
 void cleanUp(HWND hwnd){
 	// Free memory
 	if(dUseGoo)
@@ -582,19 +653,6 @@ void cleanUp(HWND hwnd){
 	ReleaseDC(hwnd, hdc);
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
-}
-
-
-void setDefaults(){
-	dSpeed = 10;
-	dStars = 2000;
-	dStarSize = 10;
-	dResolution = 10;
-	dDepth = 5;
-	dFov = 50;
-	dUseTunnels = true;
-	dUseGoo = true;
-	dShaders = true;
 }
 
 
@@ -839,7 +897,6 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	case WM_CREATE:
 		readRegistry();
 		initSaver(hwnd);
-		readyToDraw = 1;
 		break;
 	case WM_DESTROY:
 		readyToDraw = 0;
@@ -848,3 +905,4 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	}
 	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }
+#endif

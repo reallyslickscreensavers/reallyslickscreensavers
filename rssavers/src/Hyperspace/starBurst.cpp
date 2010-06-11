@@ -20,14 +20,14 @@
 
 
 #ifdef WIN32
-	#include <windows.h>
+#include <windows.h>
+#include <Hyperspace/extensions.h>
 #endif
+
 #include <Hyperspace/starBurst.h>
 #include <Hyperspace/wavyNormalCubeMaps.h>
 #include <Hyperspace/flare.h>
-#include <Hyperspace/extensions.h>
 #include <rsMath/rsMath.h>
-#include <math.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 
