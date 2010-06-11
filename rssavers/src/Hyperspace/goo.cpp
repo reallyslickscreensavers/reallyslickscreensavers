@@ -49,6 +49,7 @@ goo::goo(int res, float rad){
 	// Using exact normals instead of fast normals.  This should be slower, but it is faster
 	// in this case because the surface function is so ridiculously fast.
 	volume->useFastNormals(true);
+	volume->setCrawlFromSides(true);
 	volume->function = function;
 	volume->setSurfaceValue(0.4f);
 	surface = new impSurface**[arraySize];
@@ -96,6 +97,10 @@ void goo::update(float x, float z, float heading, float fov){
 	clip[2][0] = sinf(heading);
 	clip[2][1] = -cosf(heading);
 
+	// Empty crawl point vector.
+	// This is only needed so that the right version of impCubeVolume::makeSurface() is called.
+	impCrawlPointVector cpv;
+
 	for(i=0; i<arraySize; i++){
 		for(j=0; j<arraySize; j++){
 			shiftx = volumeSize * (0.5f + float(i - arraySize / 2));
@@ -107,7 +112,7 @@ void goo::update(float x, float z, float heading, float fov){
 						shiftz += centerz;
 						volume->setSurface(surface[i][j]);
 						surface[i][j]->reset();
-						volume->makeSurface();
+						volume->makeSurface(cpv);
 						useSurface[i][j] = true;
 					}
 				}

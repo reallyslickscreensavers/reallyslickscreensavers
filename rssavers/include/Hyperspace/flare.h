@@ -49,7 +49,9 @@ void initFlares();
 void flare(double *pos, float red, float green, float blue, float alpha);
 
 
+#ifndef WIN32
 inline const float max(const float& a, const float& b){ return (a > b) ? a : b; }
+#endif
 
 
 #endif  // FLARE_H
