@@ -186,7 +186,7 @@ void draw(){
 	camRoll[0] = camRoll[1] * t + camRoll[2] * (1.0f - t);
 
 	static float pathDir[3] = {0.0f, 0.0f, -1.0f};
-	thePath->moveAlongPath(float(dSpeed) * frameTime * 0.05f);
+	thePath->moveAlongPath(float(dSpeed) * frameTime * 0.04f);
 	thePath->update(frameTime);
 	thePath->getPoint(dDepth + 2, thePath->step, camPos);
 	thePath->getBaseDirection(dDepth + 2, thePath->step, pathDir);
@@ -766,6 +766,10 @@ BOOL aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 void initControls(HWND hdlg){
 	char cval[16];
 
+	CheckDlgButton(hdlg, USETUNNELS, dUseTunnels);
+	CheckDlgButton(hdlg, USEGOO, dUseGoo);
+	CheckDlgButton(hdlg, USESHADERS, dShaders);
+
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
@@ -791,6 +795,10 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPOS, 1, LPARAM(dResolution));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPAGESIZE, 0, LPARAM(2));
+	if(dUseGoo)
+		EnableWindow(GetDlgItem(hdlg, RESOLUTION), TRUE);
+	else
+		EnableWindow(GetDlgItem(hdlg, RESOLUTION), FALSE);
 	sprintf(cval, "%d", dResolution);
 	SendDlgItemMessage(hdlg, RESOLUTIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
@@ -807,10 +815,6 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, FOV, TBM_SETPAGESIZE, 0, LPARAM(5));
 	sprintf(cval, "%d", dFov);
 	SendDlgItemMessage(hdlg, FOVTEXT, WM_SETTEXT, 0, LPARAM(cval));
-
-	CheckDlgButton(hdlg, USETUNNELS, dUseTunnels);
-	CheckDlgButton(hdlg, USEGOO, dUseGoo);
-	CheckDlgButton(hdlg, USESHADERS, dShaders);
 
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
 }
@@ -850,6 +854,12 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 			break;
 		case ABOUT:
 			DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, DLGPROC(aboutProc));
+			break;
+		case USEGOO:
+			if(IsDlgButtonChecked(hdlg, USEGOO) == BST_CHECKED)
+				EnableWindow(GetDlgItem(hdlg, RESOLUTION), TRUE);
+			else
+				EnableWindow(GetDlgItem(hdlg, RESOLUTION), FALSE);
 			break;
 		}
         return TRUE;
