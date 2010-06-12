@@ -321,11 +321,11 @@ void draw(){
 	static float starBurstTime = 300.0f;  // burst after 5 minutes
 	starBurstTime -= frameTime;
 	if(starBurstTime <= 0.0f){
-		float pos[] = {camPos[0] + (pathDir[0] * depth * 0.5f) + rsRandf(depth * 0.5f) - depth * 0.25f,
+		float pos[] = {camPos[0] + (pathDir[0] * depth * (0.5f + rsRandf(0.5f))),
 			rsRandf(2.0f) - 1.0f,
-			camPos[2] + (pathDir[2] * depth * 0.5f) + rsRandf(depth * 0.5f) - depth * 0.25f};
+			camPos[2] + (pathDir[2] * depth * (0.5f + rsRandf(0.5f)))};
 		theStarBurst->restart(pos);  // it won't actually restart unless it's ready to
-		starBurstTime = rsRandf(540.0f) + 60.0f;  // burst again within 1-10 minutes
+		starBurstTime = rsRandf(240.0f) + 60.0f;  // burst again within 1-5 minutes
 	}
 	if(dShaders)
 		theStarBurst->draw(lerp);

@@ -41,7 +41,6 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 	float vec[3];
 	float norm[3];
 	float offset = -0.5f * float(texSize) + 0.5f;
-	float mult = 0.8f;  // steepness of normals (lower value makes bumps more pronounced)
 	for(g=0; g<numFrames; g++){
 		glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, texture[g]);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -53,7 +52,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 		// left
 		for(i=0; i<texSize; i++){
 			for(j=0; j<texSize; j++){
-				vec[0] = -mult;
+				vec[0] = -0.5f;
 				vec[1] = -(float(j) + offset) / float(texSize);
 				vec[2] = (float(i) + offset) / float(texSize);
 				normalize(vec);
@@ -69,7 +68,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 		// right
 		for(i=0; i<texSize; i++){
 			for(j=0; j<texSize; j++){
-				vec[0] = mult;
+				vec[0] = 0.5f;
 				vec[1] = -(float(j) + offset) / float(texSize);
 				vec[2] = -(float(i) + offset) / float(texSize);
 				normalize(vec);
@@ -87,7 +86,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 			for(j=0; j<texSize; j++){
 				vec[0] = -(float(i) + offset) / float(texSize);
 				vec[1] = -(float(j) + offset) / float(texSize);
-				vec[2] = -mult;
+				vec[2] = -0.5f;
 				normalize(vec);
 				wavyfunc(vec, norm);
 				map[(i + j * texSize) * 3] = GLubyte(norm[0] * 127.999f + 128.0f);
@@ -103,7 +102,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 			for(j=0; j<texSize; j++){
 				vec[0] = (float(i) + offset) / float(texSize);
 				vec[1] = -(float(j) + offset) / float(texSize);
-				vec[2] = mult;
+				vec[2] = 0.5f;
 				normalize(vec);
 				wavyfunc(vec, norm);
 				map[(i + j * texSize) * 3] = GLubyte(norm[0] * 127.999f + 128.0f);
@@ -118,7 +117,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 		for(i=0; i<texSize; i++){
 			for(j=0; j<texSize; j++){
 				vec[0] = (float(i) + offset) / float(texSize);
-				vec[1] = -mult;
+				vec[1] = -0.5f;
 				vec[2] = -(float(j) + offset) / float(texSize);
 				normalize(vec);
 				wavyfunc(vec, norm);
@@ -134,7 +133,7 @@ wavyNormalCubeMaps::wavyNormalCubeMaps(int frames, int size){
 		for(i=0; i<texSize; i++){
 			for(j=0; j<texSize; j++){
 				vec[0] = (float(i) + offset) / float(texSize);
-				vec[1] = mult;
+				vec[1] = 0.5f;
 				vec[2] = (float(j) + offset) / float(texSize);
 				normalize(vec);
 				wavyfunc(vec, norm);
@@ -155,12 +154,12 @@ void wavyNormalCubeMaps::wavyfunc(float* point, float* normal){
 	for(int i=0; i<3; i++)
 		normal[i] = point[i];
 
-	normal[0] += 0.3f * rsCosf((1.0f * point[0] + 4.0f * point[1]) * RS_PI + phase)
-		+ 0.15f * rsCosf((3.0f * point[1] + 13.0f * point[2]) * RS_PI - phase);
-	normal[1] += 0.3f * rsCosf((2.0f * point[1] - 5.0f * point[2]) * RS_PI + phase)
-		+ 0.15f * rsCosf((2.0f * point[2] + 12.0f * point[0]) * RS_PI - phase);
-	normal[2] += 0.3f * rsCosf((1.0f * point[2] + 6.0f * point[0]) * RS_PI + phase)
-		+ 0.15f * rsCosf((1.0f * point[0] - 11.0f * point[1]) * RS_PI - phase);
+	normal[0] += 0.2f * rsCosf((1.0f * point[0] + 4.0f * point[1]) * RS_PI + phase)
+		+ 0.1f * rsCosf((3.0f * point[1] + 13.0f * point[2]) * RS_PI - phase);
+	normal[1] += 0.2f * rsCosf((2.0f * point[1] - 5.0f * point[2]) * RS_PI + phase)
+		+ 0.1f * rsCosf((2.0f * point[2] + 12.0f * point[0]) * RS_PI - phase);
+	normal[2] += 0.2f * rsCosf((1.0f * point[2] + 6.0f * point[0]) * RS_PI + phase)
+		+ 0.1f * rsCosf((1.0f * point[0] - 11.0f * point[1]) * RS_PI - phase);
 
 	normalize(normal);
 }
