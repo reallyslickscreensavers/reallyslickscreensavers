@@ -34,7 +34,9 @@ float impCapsule::value(float* position){
 	// Compute shrunken value.
 	// Use 0.001 instead of 0.0 to avoid divide-by-zero.
 	const float zz(fabsf(tz) - length);
-	const float sz((zz < 0.001f) ? 0.001f : zz);
+	//const float sz((zz < 0.001f) ? 0.001f : zz);
+	// rewritten with fewer conditionals
+	const float sz(zz * (zz > 0.0f));
 
 	return thicknessSquared / (tx*tx + ty*ty + sz*sz);
 }
