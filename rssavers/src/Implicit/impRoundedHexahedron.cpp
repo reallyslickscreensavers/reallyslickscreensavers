@@ -33,13 +33,12 @@ float impRoundedHexahedron::value(float* position){
 	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
 	// Compute shrunken values.
-	// Use 0.001 instead of 0.0 to avoid divide-by-zero.
 	/*const float xx(fabsf(tx) - width);
-	const float sx((xx < 0.001f) ? 0.001f : xx);
+	const float sx((xx < 0.0f) ? 0.0f : xx);
 	const float yy(fabsf(ty) - height);
-	const float sy((yy < 0.001f) ? 0.001f : yy);
+	const float sy((yy < 0.0f) ? 0.0f : yy);
 	const float zz(fabsf(tz) - length);
-	const float sz((zz < 0.001f) ? 0.001f : zz);*/
+	const float sz((zz < 0.0f) ? 0.0f : zz);*/
 	// rewritten with fewer conditionals
 	const float xx(fabsf(tx) - width);
 	const float yy(fabsf(ty) - height);
@@ -48,5 +47,5 @@ float impRoundedHexahedron::value(float* position){
 	const float sy(yy * (yy > 0.0f));
 	const float sz(zz * (zz > 0.0f));
 
-	return thicknessSquared / (sx*sx + sy*sy + sz*sz);
+	return thicknessSquared / (sx*sx + sy*sy + sz*sz + IMP_MIN_DIVISOR);
 }

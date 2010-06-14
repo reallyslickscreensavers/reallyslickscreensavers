@@ -39,7 +39,7 @@ float impKnot::value(float* position){
 		const float lon(lat + lat_offset * float(i));
 		const float hor(temp - rsCosf(lon) * radius2);
 		const float ver(tz - rsSinf(lon) * radius2);
-		retval += thicknessSquared / (hor * hor + ver * ver);
+		retval += thicknessSquared / (hor * hor + ver * ver + IMP_MIN_DIVISOR);
 	}
 	return retval;
 }

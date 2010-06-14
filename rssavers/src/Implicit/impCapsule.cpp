@@ -38,5 +38,5 @@ float impCapsule::value(float* position){
 	// rewritten with fewer conditionals
 	const float sz(zz * (zz > 0.0f));
 
-	return thicknessSquared / (tx*tx + ty*ty + sz*sz);
+	return thicknessSquared / (tx*tx + ty*ty + sz*sz + IMP_MIN_DIVISOR);
 }

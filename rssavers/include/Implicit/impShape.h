@@ -36,6 +36,10 @@
 #endif
 
 
+// Minimum divisor to be used when computing inverse square falloffs in various impShapes.
+#define IMP_MIN_DIVISOR 0.0001f
+
+
 class impShape{
 public:
 #ifdef __SSE__

@@ -32,5 +32,5 @@ float impEllipsoid::value(float* position){
 	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
 	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
-	return(thicknessSquared / (tx*tx + ty*ty + tz*tz));
+	return thicknessSquared / (tx*tx + ty*ty + tz*tz + IMP_MIN_DIVISOR);
 }

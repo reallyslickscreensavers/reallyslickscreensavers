@@ -57,7 +57,7 @@ float impTorus::value(float* position){
 	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
 	const float temp(sqrtf(tx*tx + ty*ty) - radius);
-	return thicknessSquared / (temp * temp + tz * tz);
+	return thicknessSquared / (temp * temp + tz * tz + IMP_MIN_DIVISOR);
 //#endif
 }
 

@@ -32,9 +32,9 @@ float impHexahedron::value(float* position){
 	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
 	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
-	const float xx(1.0f / (tx * tx));
-	const float yy(1.0f / (ty * ty));
-	const float zz(1.0f / (tz * tz));
+	const float xx(1.0f / (tx * tx + IMP_MIN_DIVISOR));
+	const float yy(1.0f / (ty * ty + IMP_MIN_DIVISOR));
+	const float zz(1.0f / (tz * tz + IMP_MIN_DIVISOR));
 	if(xx < yy)
 		return (xx < zz) ? xx : zz;
 	else
