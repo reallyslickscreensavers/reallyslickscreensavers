@@ -19,9 +19,8 @@
  */
 
 
-
 #include <Rgbhsl/Rgbhsl.h>
-
+#include <math.h>
 
 
 void rgb2hsl(float r, float g, float b, float &h, float &s, float &l){
@@ -124,6 +123,7 @@ void rgb2hsl(float r, float g, float b, float &h, float &s, float &l){
 
 void hsl2rgb(float h, float s, float l, float &r, float &g, float &b){
 	// hue influence
+	h = fmodf(h, 1.0f);
 	if(h < 0.166667){  // full red, some green
 		r = 1.0;
 		g = h * 6.0f;
