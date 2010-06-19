@@ -88,8 +88,8 @@ FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,128,143,50,14,WS_GROUP
     CTEXT           "Flocks",IDC_STATIC,7,6,171,9
-    CTEXT           "version 4.0   March 20, 2005",IDC_STATIC,7,17,171,8
-    CTEXT           "Copyright (C) 1999-2005 Terence M. Welsh",IDC_STATIC,7,
+    CTEXT           "version 5.0   June 18, 2010",IDC_STATIC,7,17,171,8
+    CTEXT           "Copyright (C) 1999-2010 Terence M. Welsh",IDC_STATIC,7,
                     27,171,8
     LTEXT           "   There are plenty of screensavers out there with swarms of dots, but I hadn't found a good 3D version.  So here it is.  For a really nice 3D effect, you can turn on the ChromaDepth option and try using some of the ChromaDepth glasses from Chromatek.",
                     IDC_STATIC,7,55,171,42

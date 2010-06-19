@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2000-2005  Terence M. Welsh
+ * Copyright (C) 2000-2010  Terence M. Welsh
  *
  * This file is part of Euphoria.
  *

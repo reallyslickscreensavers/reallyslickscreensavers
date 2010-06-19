@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2006  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of rsText.
  *
@@ -48,10 +48,10 @@ public:
 
 
 
-template< class T> inline std::string to_string( const T & Value){
-    std::stringstream streamOut;
-    streamOut << Value;
-    return streamOut.str( );
+template<class T> inline std::string to_string(const T & Value){
+    std::stringstream ss;
+    ss << Value;
+    return ss.str();
 }
 
 

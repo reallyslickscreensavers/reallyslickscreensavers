@@ -65,8 +65,8 @@ FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,129,122,50,14,WS_GROUP
     CTEXT           "Plasma",IDC_STATIC,7,6,172,9
-    CTEXT           "version 4.0   March 20, 2005",IDC_STATIC,7,17,172,8
-    CTEXT           "Copyright (C) 1999-2005 Terence M. Welsh",IDC_STATIC,7,
+    CTEXT           "version 5.0   June 18, 2010",IDC_STATIC,7,17,172,8
+    CTEXT           "Copyright (C) 1999-2010 Terence M. Welsh",IDC_STATIC,7,
                     27,172,8
     CTEXT           "http://www.reallyslick.com",WEBPAGE,7,37,172,8,
                     SS_NOTIFY | NOT WS_GROUP

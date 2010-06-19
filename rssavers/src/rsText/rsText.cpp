@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2006  Terence M. Welsh
+ * Copyright (C) 2005-2010  Terence M. Welsh
  *
  * This file is part of rsText.
  *
