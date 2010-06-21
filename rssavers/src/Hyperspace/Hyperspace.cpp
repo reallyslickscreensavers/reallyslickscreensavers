@@ -224,7 +224,15 @@ void draw(){
 	// draw stars
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glEnable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
+	glActiveTextureARB(GL_TEXTURE2_ARB);
+	glBindTexture(GL_TEXTURE_2D, NULL);
+	glActiveTextureARB(GL_TEXTURE1_ARB);
+	glBindTexture(GL_TEXTURE_2D, NULL);
+	glActiveTextureARB(GL_TEXTURE0_ARB);
 	glBindTexture(GL_TEXTURE_2D, flaretex[0]);
 	static float temppos[2];
 	for(int i=0; i<dStars; i++){
@@ -302,7 +310,7 @@ void draw(){
 			glEnable(GL_TEXTURE_GEN_T);
 		}
 		// draw it
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		glEnable(GL_BLEND);
 		glColor4fv(goo_rgb);
@@ -534,9 +542,9 @@ void initSaver(){
 		stars[i] = new stretchedParticle;
 		stars[i]->radius = rsRandf(float(dStarSize) * 0.0005f) + float(dStarSize) * 0.0005f;
 		if(i % 10){  // usually bland stars
-			stars[i]->color[0] = 0.85f + rsRandf(0.15f);
-			stars[i]->color[1] = 0.85f + rsRandf(0.15f);
-			stars[i]->color[2] = 0.85f + rsRandf(0.15f);
+			stars[i]->color[0] = 0.8f + rsRandf(0.2f);
+			stars[i]->color[1] = 0.8f + rsRandf(0.2f);
+			stars[i]->color[2] = 0.8f + rsRandf(0.2f);
 		}
 		else{  // occasionally a colorful one
 			stars[i]->color[0] = 0.3f + rsRandf(0.7f);

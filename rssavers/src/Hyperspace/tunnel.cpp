@@ -29,6 +29,8 @@
 #include <Rgbhsl/Rgbhsl.h>
 
 
+extern int dShaders;
+
 
 tunnel::tunnel(splinePath* sp, int res){
 	int i, j, k;
@@ -110,6 +112,8 @@ void tunnel::make(float frameTime){
 	rsVec vert;
 	rsMatrix rotMat;
 	float hsl[3];
+	const float texcoordmult = (dShaders > 0) ? 1.0f : 2.0f;
+	const float max_saturation = (dShaders > 0) ? 0.1f : 0.4f;
 	for(k=0; k<numSections; k++){
 		// create new vertex data for this section
 		for(i=0; i<=resolution; i++){
@@ -140,8 +144,8 @@ void tunnel::make(float frameTime){
 				v[k][i][j][1] = pos[1] + vert[1];
 				v[k][i][j][2] = pos[2] + vert[2];
 				// set texture coordinates
-				t[k][i][j][0] = 1.0f * float(i) / float(resolution);
-				t[k][i][j][1] = float(j) / float(resolution) + rsCosf(texSpin);
+				t[k][i][j][0] = texcoordmult * float(i) / float(resolution);
+				t[k][i][j][1] = texcoordmult * float(j) / float(resolution) + rsCosf(texSpin);
 				// set colors
 				hsl[0] = 2.0f * rsCosf(0.1f * v[k][i][j][0] + huelo) - 1.0f;
 				hsl[1] = 0.25f * (rsCosf(0.013f * v[k][i][j][1] - satlo)
@@ -155,8 +159,8 @@ void tunnel::make(float frameTime){
 					hsl[0] -= 1.0f;
 				if(hsl[1] < 0.0f)
 					hsl[1] = 0.0f;
-				if(hsl[1] > 0.1f)
-					hsl[1] = 0.1f;
+				if(hsl[1] > max_saturation)
+					hsl[1] = max_saturation;
 				if(hsl[2] < 0.0f)
 					hsl[2] = 0.0f;
 				if(hsl[2] > 1.0f)
