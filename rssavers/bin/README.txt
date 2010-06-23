@@ -53,9 +53,9 @@ gizmo.
 
 * Skyrocket controls:
 
-f - Pause the fireworks (particle physics stops updating)
-g - Slow motion fireworks (slows down the particle physics)
-c - Pause the camera (camera stops moving)
+f - Pause/resume the fireworks' particles
+g - Toggle slow motion fireworks
+c - Pause/resume the camera movement
 n - New camera view
 m - Toggle mouse camera control
     Left mouse button = accelerate
