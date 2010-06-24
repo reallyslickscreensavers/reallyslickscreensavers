@@ -1,0 +1,5 @@
+[DEFAULT]
+BASEURL=http://www.reallyslick.com/instructions.html
+[InternetShortcut]
+URL=http://www.reallyslick.com/instructions.html
+IconFile=http://www.reallyslick.com/favicon.ico

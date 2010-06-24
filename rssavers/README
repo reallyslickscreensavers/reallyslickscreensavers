@@ -6,7 +6,7 @@ All the savers in this distribution are licensed under the Gnu GPL version 2.
 The supporting libraries are licensed under the Gnu LGPL version 2.1.  Any
 copying, modifying, or redistribution must follow the terms of these licenses.
 
-Contact information is available on my website.
+Contact information is available on the website.
 
 
 Dependencies:
@@ -15,8 +15,29 @@ OpenAL - www.openal.org - Required for Skyrocket.
 GLUT - Required for ImplicitDemo
 
 
-Compiling:
+Compiling notes:
 
-Windows - The project files were built using Visual Studio .NET 2003.  You
-are on your own if you want to compile using a different version of Visual
-Studio.
+Version 0.2 - The current project files for Visual Studio 2008 (9) Express
+Edition are up to date.
+
+Version 0.1 - Project files for Visual Studio .NET 2003 were used for verion
+0.1 were used, but they are no longer maintain.  They are missing a project
+file for Microcosm and other updates.
+
+There are bits of X Windowing System (X11) code among the rssavers source code.
+However, the code in this project has never been fully converted to work as
+*nix screensavers.  Hyperspace and Microcosm were actually written in Linux
+originally and then ported to Windows.  This is because gdb and ddd tend to work
+much better than the Visual Studio debuggers and because Microcosm required
+much performance profiling with gprof, which cannot be done with the Express
+Edition of Visual Studio.  Perhaps the paid versions of VS have decent
+profilers.
+
+
+Distribution notes:
+
+NullSoft Installer is used to build bin/installer.nsi.
+
+bin/GPL.txt and bin/README.txt do not appear to maintain their DOS-style
+carriage returns when stored in svn.  They must be repaired with unix2dos
+before being distributed.
