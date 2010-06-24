@@ -77,7 +77,7 @@ FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,129,162,50,14,WS_GROUP
     CTEXT           "Cyclone",IDC_STATIC,7,6,172,9
-    CTEXT           "version 4.0   June 18, 2010",IDC_STATIC,7,17,172,8
+    CTEXT           "version 4.0   June 23, 2010",IDC_STATIC,7,17,172,8
     CTEXT           "Copyright (C) 1999-2010 Terence M. Welsh",IDC_STATIC,7,
                     27,172,8
     LTEXT           "   Cyclone uses simple Bezier curves to control the path of each twister.  You can view the curves by flipping the ""Show Curves"" switch.",
@@ -175,7 +175,7 @@ ID_APP                  ICON                    "icon1.ico"
 
 STRINGTABLE 
 BEGIN
-    IDS_DESCRIPTION         "Cyclone (OpenGL)"
+    IDS_DESCRIPTION         "Cyclone"
 END
 
 #endif    // English (U.S.) resources
