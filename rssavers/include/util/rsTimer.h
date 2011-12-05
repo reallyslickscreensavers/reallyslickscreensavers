@@ -23,13 +23,11 @@
 #define RS_TIMER_H
 
 
-
 #ifdef WIN32
 #include <windows.h>
 #else
-#include <stdlib.h>
-#include <sys/time.h>
-#include <iostream>
+#include <unistd.h>
+#include <time.h>
 #endif
 
 
@@ -49,8 +47,8 @@ public:
 	// for low res timer if high res is unavailable
 	DWORD lowResCurr, lowResPrev;
 #else
-	struct timeval curr_tv;
-	struct timeval prev_tv;
+	struct timespec curr_ts;
+	struct timespec prev_ts;
 #endif
 
 	rsTimer(){
@@ -68,7 +66,7 @@ public:
 		curr = n[0].QuadPart;
 		lowResCurr = timeGetTime();
 #else
-		gettimeofday(&prev_tv, NULL);
+		clock_gettime(CLOCK_REALTIME, &prev_ts);
 #endif
 	}
 
@@ -94,10 +92,9 @@ public:
 			// else use time from last frame
 		}
 #else
-		gettimeofday(&curr_tv, NULL);
-		elapsed_time = (curr_tv.tv_sec - prev_tv.tv_sec)
-			+ ((curr_tv.tv_usec - prev_tv.tv_usec) * 0.000001);
-		prev_tv = curr_tv;
+		clock_gettime(CLOCK_REALTIME, &curr_ts);
+		elapsed_time = (curr_ts.tv_sec - prev_ts.tv_sec) + ((curr_ts.tv_nsec - prev_ts.tv_nsec) * 0.000000001);
+		prev_ts = curr_ts;
 #endif
 		return elapsed_time;
 	}
@@ -112,7 +109,7 @@ public:
 			wait_function_overhead = -target_time;
 		if(wait_function_overhead > target_time)
 			wait_function_overhead = target_time;
-	
+
 		waited_time = tick();
 		const double actual_waited_time(waited_time + wait_function_overhead);
 		if(actual_waited_time < target_time){
