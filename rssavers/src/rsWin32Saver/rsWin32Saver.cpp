@@ -401,19 +401,9 @@ outfile.close();*/
 				if(isSuspended)  // don't waste cycles if saver is suspended
 					Sleep(1);
 				if(dFrameRateLimit){  // frame rate is limited
-					timeRemaining -= timer.tick();
-					// don't allow underflow
-					if(timeRemaining < -1000.0f)
-						timeRemaining = 0.0f;
-					if(timeRemaining > 0.0f){
-						// wait some more
-						if(timeRemaining > 0.001f)
-							Sleep(1);
-					}
-					else{
-						idleProc();  // do idle processing (i.e. draw frames)
-						timeRemaining += desiredTimeStep;
-					}
+					timer.wait(1.0f / float(dFrameRateLimit));
+					idleProc();  // do idle processing (i.e. draw frames)
+					Sleep(0);
 				}
 				else{  // frame rate is unbound (draw as fast as possible)
 					idleProc();  // do idle processing (i.e. draw frames)
