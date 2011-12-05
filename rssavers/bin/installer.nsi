@@ -60,6 +60,7 @@ Section "Installing Really Slick Screensavers 0.2"
   ; Put file there
   File "Online instructions.url"
   File "Really Slick website.url"
+  File "installer.ico"
   File "urlicon.ico"
   File "GPL.txt"
   
@@ -68,6 +69,7 @@ Section "Installing Really Slick Screensavers 0.2"
   
   ; Write the uninstall keys for Windows
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ReallySlickScreensavers" "DisplayName" "Really Slick Screensavers 0.2"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ReallyslickScreensavers" "DisplayIcon" "$INSTDIR\installer.ico"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ReallySlickScreensavers" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ReallySlickScreensavers" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ReallySlickScreensavers" "NoRepair" 1
@@ -149,6 +151,7 @@ Section "Uninstall"
   Delete $SYSDIR\SolarWinds.scr
   Delete "$INSTDIR\Online instructions.url"
   Delete "$INSTDIR\Really Slick website.url"
+  Delete $INSTDIR\installer.ico
   Delete $INSTDIR\urlicon.ico
   Delete $INSTDIR\GPL.txt
   Delete $INSTDIR\uninstall.exe
