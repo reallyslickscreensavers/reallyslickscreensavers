@@ -36,31 +36,32 @@
 class rsTimer{
 public:
 	// Time since last call to tick()
-	float elapsed_time;
+	double elapsed_time;
 	// Time waited so far by wait()
-	float waited_time;
+	double waited_time;
 	// Wait() would take a hair too long, if we didn't keep track of the
 	// extra time it was spending.  That's what wait_overhead is for.
-	float wait_function_overhead;
+	double wait_function_overhead;
 #ifdef WIN32
 	BOOL highResCounterSupported;
-	float freq;  // high frequency system counts per second
+	double freq;  // high frequency system counts per second
 	LONGLONG curr, prev;
 	// for low res timer if high res is unavailable
 	DWORD lowResCurr, lowResPrev;
 #else
+	struct timeval curr_tv;
 	struct timeval prev_tv;
 #endif
 
 	rsTimer(){
-		elapsed_time = 0.0f;
-		waited_time = 0.0f;
-		wait_function_overhead = 0.0f;
+		elapsed_time = 0.0;
+		waited_time = 0.0;
+		wait_function_overhead = 0.0;
 #ifdef WIN32
 		// init high- and low-res timers
 		LARGE_INTEGER n[1];
 		highResCounterSupported = QueryPerformanceFrequency(n);
-		freq = 1.0f / float(n[0].QuadPart);
+		freq = 1.0 / double(n[0].QuadPart);
 		timeBeginPeriod(1);  // make Sleep() and timeGetTime() more accurate
 		// get first tick for high- and low-res timers
 		QueryPerformanceCounter(n);
@@ -74,7 +75,7 @@ public:
 	~rsTimer(){}
 
 	// return time elapsed since last call to tick()
-	inline float tick(){
+	inline double tick(){
 #ifdef WIN32
 		if(highResCounterSupported){
 			prev = curr;
@@ -82,21 +83,20 @@ public:
 			QueryPerformanceCounter(n);
 			curr = n[0].QuadPart;
 			if(curr >= prev) 
-				elapsed_time = float(curr - prev) * freq;
+				elapsed_time = double(curr - prev) * freq;
 			// else use time from last frame
 		}
 		else{
 			lowResPrev = lowResCurr;
 			lowResCurr = timeGetTime();
 			if(lowResCurr >= lowResPrev) 
-				elapsed_time = float(lowResCurr - lowResPrev) * 0.001f;
+				elapsed_time = double(lowResCurr - lowResPrev) * 0.001;
 			// else use time from last frame
 		}
 #else
-		struct timeval curr_tv;
 		gettimeofday(&curr_tv, NULL);
-		float elapsed_time = (curr_tv.tv_sec - prev_tv.tv_sec)
-			+ ((curr_tv.tv_usec - prev_tv.tv_usec) * 0.000001f);
+		elapsed_time = (curr_tv.tv_sec - prev_tv.tv_sec)
+			+ ((curr_tv.tv_usec - prev_tv.tv_usec) * 0.000001);
 		prev_tv = curr_tv;
 #endif
 		return elapsed_time;
@@ -107,18 +107,23 @@ public:
 	// it will return immediately.  Think of target_time as a lower limit
 	// on frame time.
 	// Returns actual time elapsed since last call to wait().
-	inline float wait(float target_time){
+	inline double wait(double target_time){
+		if(wait_function_overhead < -target_time)
+			wait_function_overhead = -target_time;
+		if(wait_function_overhead > target_time)
+			wait_function_overhead = target_time;
+	
 		waited_time = tick();
-		float actual_waited_time(waited_time + wait_function_overhead);
+		const double actual_waited_time(waited_time + wait_function_overhead);
 		if(actual_waited_time < target_time){
-#ifdef WIN32
-			Sleep(DWORD(1000.0f * (target_time - actual_waited_time)));
+#if WIN32
+			Sleep(long(1000.0 * (target_time - actual_waited_time)));
 #else
-			usleep(long(1000000.0f * (target_time - actual_waited_time)));
+			usleep(long(1000000.0 * (target_time - actual_waited_time)));
 #endif
 			waited_time += tick();
 		}
-		wait_function_overhead += 0.05f * (waited_time - target_time);
+		wait_function_overhead += waited_time - target_time;
 		return waited_time;
 	}
 };
