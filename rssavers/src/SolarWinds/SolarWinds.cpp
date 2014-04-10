@@ -264,9 +264,9 @@ void wind::update(){
 			temp = particles[i][2] + 40.0f;
 			if(temp < 0.01f)
 				temp = 0.01f;
-			glLineWidth(linesize * temp);
-			glBegin(GL_LINES);
-				if(linelist[i][1] >= 0){
+			if(linelist[i][1] >= 0){
+				glLineWidth(linesize * temp);
+				glBegin(GL_LINES);
 					glColor3fv(&particles[i][3]);
 					if(linelist[i][0] == -1)
 						glColor3f(0.0f, 0.0f, 0.0f);
@@ -275,8 +275,8 @@ void wind::update(){
 					if(linelist[linelist[i][1]][1] == -1)
 						glColor3f(0.0f, 0.0f, 0.0f);
 					glVertex3fv(particles[linelist[i][1]]);
-				}
-			glEnd();
+				glEnd();
+			}
 		}
 	}
 }
