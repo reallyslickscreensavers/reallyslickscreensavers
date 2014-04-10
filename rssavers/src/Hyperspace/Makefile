@@ -1,5 +1,5 @@
 INCLUDE = -I. -I../../include
-LIBRARY = -lm -lGL -lGLU ../../lib/rsXScreenSaver.a ../../lib/rsMath.a ../../lib/Implicit.a ../../lib/rsText.a  ../../lib/Rgbhsl.a
+LIBRARY = -lm -lGL -lGLU -lX11 -lstdc++ ../../lib/rsXScreenSaver.a ../../lib/rsMath.a ../../lib/Implicit.a ../../lib/rsText.a  ../../lib/Rgbhsl.a
 CFLAGS = -O3 -DRS_XSCREENSAVER -DGL_GLEXT_PROTOTYPES $(INCLUDE)
 
 OBJECTS = Hyperspace.o \

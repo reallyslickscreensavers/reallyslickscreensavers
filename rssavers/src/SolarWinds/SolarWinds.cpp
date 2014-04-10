@@ -20,18 +20,23 @@
 
 // Solar Winds screen saver
 
-
+#ifdef WIN32
 #include <windows.h>
-#include <stdio.h>
 #include <rsWin32Saver/rsWin32Saver.h>
-#include <rsText/rsText.h>
-#include <math.h>
-#include <time.h>
-#include <gl/gl.h>
-#include <gl/glu.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include <resource.h>
+#endif
+#ifdef RS_XSCREENSAVER
+#include <rsXScreenSaver/rsXScreenSaver.h>
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <rsText/rsText.h>
+#include <math.h>
+#include <time.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 
 #define NUMCONSTS 9
@@ -44,10 +49,11 @@ class wind;
 
 
 // Global variables
+#ifdef WIN32
 LPCTSTR registryPath = ("Software\\Really Slick\\Solar Winds");
-UINT timerID;
 HGLRC hglrc;
 HDC hdc;
+#endif
 float aspectRatio;
 float frameTime = 0.0f;
 int readyToDraw = 0;
@@ -66,6 +72,16 @@ int dParticlespeed;
 int dEmitterspeed;
 int dWindspeed;
 int dBlur;
+#ifdef RS_XSCREENSAVER
+enum{
+	DEFAULTS1,
+	DEFAULTS2,
+	DEFAULTS3,
+	DEFAULTS4,
+	DEFAULTS5,
+	DEFAULTS6
+};
+#endif
 
 
 // Useful random number function
@@ -340,7 +356,12 @@ void draw(){
 		glPopMatrix();
 	}
 
+#ifdef WIN32
 	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+#endif
+#ifdef RS_XSCREENSAVER
+	glXSwapBuffers(xdisplay, xwindow);
+#endif
 }
 
 
@@ -351,100 +372,6 @@ void idleProc(){
 
 	if(readyToDraw && !isSuspended && !checkingPassword)
 		draw();
-}
-
-
-void doSaver(HWND hwnd){
-	RECT rect;
-	int i, j;
-	float x, y, temp;
-
-	// Seed random number generator
-	srand((unsigned)time(NULL));
-
-	// Window initialization
-	hdc = GetDC(hwnd);
-	setBestPixelFormat(hdc);
-	hglrc = wglCreateContext(hdc);
-	GetClientRect(hwnd, &rect);
-	wglMakeCurrent(hdc, hglrc);
-	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	aspectRatio = float(rect.right) / float(rect.bottom);
-	gluPerspective(90.0, aspectRatio, 1.0, 10000.0);
-
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	if(!dGeometry)
-		glBlendFunc(GL_ONE, GL_ONE);
-	else
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Necessary for point and line smoothing (I don't know why)
-	glEnable(GL_BLEND);
-
-	if(!dGeometry){  // Init lights
-		for(i=0; i<LIGHTSIZE; i++){
-			for(j=0; j<LIGHTSIZE; j++){
-				x = float(i - LIGHTSIZE / 2) / float(LIGHTSIZE / 2);
-				y = float(j - LIGHTSIZE / 2) / float(LIGHTSIZE / 2);
-				temp = 1.0f - float(sqrt((x * x) + (y * y)));
-				if(temp > 1.0f)
-					temp = 1.0f;
-				if(temp < 0.0f)
-					temp = 0.0f;
-				lightTexture[i][j] = (unsigned char)(255.0f * temp);
-			}
-		}
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, 1);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, 1, LIGHTSIZE, LIGHTSIZE, 0,
-			GL_LUMINANCE, GL_UNSIGNED_BYTE, lightTexture);
-		temp = 0.02f * float(dSize);
-		glNewList(1, GL_COMPILE);
-			glBindTexture(GL_TEXTURE_2D, 1);
-			glBegin(GL_TRIANGLE_STRIP);
-				glTexCoord2f(0.0f, 0.0f);
-				glVertex3f(-temp, -temp, 0.0f);
-				glTexCoord2f(1.0f, 0.0f);
-				glVertex3f(temp, -temp, 0.0f);
-				glTexCoord2f(0.0f, 1.0f);
-				glVertex3f(-temp, temp, 0.0f);
-				glTexCoord2f(1.0f, 1.0f);
-				glVertex3f(temp, temp, 0.0f);
-			glEnd();
-		glEndList();
-	}
-
-	if(dGeometry == 1){  // init point smoothing
-		glEnable(GL_POINT_SMOOTH);
-		glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-	}
-
-	if(dGeometry == 2){  // init line smoothing
-		glEnable(GL_LINE_SMOOTH);
-		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	}
-	// Initialize surfaces
-	winds = new wind[dWinds];
-
-	// Initialize text
-	textwriter = new rsText;
-}
-
-
-void cleanUp(HWND hwnd){
-	// Free memory
-	delete[] winds;
-
-	// Kill device context
-	ReleaseDC(hwnd, hdc);
-	wglMakeCurrent(NULL, NULL);
-	wglDeleteContext(hglrc);
 }
 
 
@@ -522,6 +449,138 @@ void setDefaults(int which){
 		dBlur = 50;
 		dFrameRateLimit = 60;
 	}
+}
+
+
+#ifdef RS_XSCREENSAVER
+void handleCommandLine(int argc, char* argv[]){
+	setDefaults(DEFAULTS1);
+	getArgumentsValue(argc, argv, std::string("-winds"), dWinds, 1, 10);
+	getArgumentsValue(argc, argv, std::string("-emitters"), dEmitters, 1, 1000);
+	getArgumentsValue(argc, argv, std::string("-perticles"), dParticles, 1, 10000);
+	getArgumentsValue(argc, argv, std::string("-geometry"), dGeometry, 0, 2);
+	getArgumentsValue(argc, argv, std::string("-size"), dSize, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-windspeed"), dWindspeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-emitterspeed"), dEmitterspeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-particlespeed"), dParticlespeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-blur"), dBlur, 1, 100);
+}
+#endif
+
+
+void reshape(int width, int height){
+	glViewport(0, 0, width, height);
+	aspectRatio = float(width) / float(height);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(90.0, aspectRatio, 1.0, 10000.0);
+}
+
+
+#ifdef WIN32
+void initSaver(HWND hwnd){
+	RECT rect;
+
+	// Window initialization
+	hdc = GetDC(hwnd);
+	setBestPixelFormat(hdc);
+	hglrc = wglCreateContext(hdc);
+	GetClientRect(hwnd, &rect);
+	wglMakeCurrent(hdc, hglrc);
+
+	reshape(rect.right, rect.bottom);
+#endif
+#ifdef RS_XSCREENSAVER
+void initSaver(){
+#endif
+	int i, j;
+	float x, y, temp;
+
+	// Seed random number generator
+	srand((unsigned)time(NULL));
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	if(!dGeometry)
+		glBlendFunc(GL_ONE, GL_ONE);
+	else
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Necessary for point and line smoothing (I don't know why)
+	glEnable(GL_BLEND);
+
+	if(!dGeometry){  // Init lights
+		for(i=0; i<LIGHTSIZE; i++){
+			for(j=0; j<LIGHTSIZE; j++){
+				x = float(i - LIGHTSIZE / 2) / float(LIGHTSIZE / 2);
+				y = float(j - LIGHTSIZE / 2) / float(LIGHTSIZE / 2);
+				temp = 1.0f - float(sqrt((x * x) + (y * y)));
+				if(temp > 1.0f)
+					temp = 1.0f;
+				if(temp < 0.0f)
+					temp = 0.0f;
+				lightTexture[i][j] = (unsigned char)(255.0f * temp);
+			}
+		}
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, 1);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, 1, LIGHTSIZE, LIGHTSIZE, 0,
+			GL_LUMINANCE, GL_UNSIGNED_BYTE, lightTexture);
+		temp = 0.02f * float(dSize);
+		glNewList(1, GL_COMPILE);
+			glBindTexture(GL_TEXTURE_2D, 1);
+			glBegin(GL_TRIANGLE_STRIP);
+				glTexCoord2f(0.0f, 0.0f);
+				glVertex3f(-temp, -temp, 0.0f);
+				glTexCoord2f(1.0f, 0.0f);
+				glVertex3f(temp, -temp, 0.0f);
+				glTexCoord2f(0.0f, 1.0f);
+				glVertex3f(-temp, temp, 0.0f);
+				glTexCoord2f(1.0f, 1.0f);
+				glVertex3f(temp, temp, 0.0f);
+			glEnd();
+		glEndList();
+	}
+
+	if(dGeometry == 1){  // init point smoothing
+		glEnable(GL_POINT_SMOOTH);
+		glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+	}
+
+	if(dGeometry == 2){  // init line smoothing
+		glEnable(GL_LINE_SMOOTH);
+		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	}
+	// Initialize surfaces
+	winds = new wind[dWinds];
+
+	// Initialize text
+	textwriter = new rsText;
+
+	readyToDraw = 1;
+}
+
+
+#ifdef RS_XSCREENSAVER
+void cleanUp(){
+	// Free memory
+	delete[] winds;
+}
+#endif
+
+
+#ifdef WIN32
+void cleanUp(HWND hwnd){
+	// Free memory
+	delete[] winds;
+
+	// Kill device context
+	ReleaseDC(hwnd, hdc);
+	wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(hglrc);
 }
 
 
@@ -788,7 +847,7 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
-		doSaver(hwnd);
+		initSaver(hwnd);
 		readyToDraw = 1;
 		break;
 	case WM_DESTROY:
@@ -798,3 +857,4 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	}
 	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }
+#endif

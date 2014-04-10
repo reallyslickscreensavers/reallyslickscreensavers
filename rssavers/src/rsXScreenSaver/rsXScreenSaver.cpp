@@ -20,6 +20,7 @@
 
 
 #include <rsXScreenSaver/rsXScreenSaver.h>
+#include <stdlib.h>
 #include <iostream>
 #include <X11/keysym.h>
 #include <rsXScreenSaver/vroot.h>

@@ -1,6 +1,6 @@
 INCLUDE = -I../../include
 LIBRARY = -L/usr/X11R6/lib -L../../lib \
-	-lm -lGL -lGLU -lglut -lXmu -lXi ../../lib/Implicit.a ../../lib/rsMath.a
+	-lm -lGL -lGLU -lglut -lXmu -lXi -lstdc++ ../../lib/Implicit.a ../../lib/rsMath.a
 CFLAGS = -O3 $(INCLUDE) -msse -mfpmath=sse
 
 OBJECTS = ImplicitDemo.o

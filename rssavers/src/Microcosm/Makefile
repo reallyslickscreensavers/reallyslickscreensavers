@@ -1,5 +1,5 @@
 INCLUDE = -I. -I../../include
-LIBRARY = -lm -lGL -lGLU ../../lib/rsXScreenSaver.a ../../lib/rsMath.a ../../lib/Implicit.a ../../lib/Rgbhsl.a ../../lib/rsText.a -pthread
+LIBRARY = -lm -lGL -lGLU -lX11 -lstdc++ ../../lib/rsXScreenSaver.a ../../lib/rsMath.a ../../lib/Implicit.a ../../lib/Rgbhsl.a ../../lib/rsText.a -pthread
 CFLAGS = -O3 -DRS_XSCREENSAVER -DGL_GLEXT_PROTOTYPES $(INCLUDE) -msse -mfpmath=sse
 
 OBJECTS = Microcosm.o \
