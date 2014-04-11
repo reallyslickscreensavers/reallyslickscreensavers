@@ -81,6 +81,7 @@ static const char vroot_rcsid[] =
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
+#include <stdio.h>
 
 static Window
 #ifdef __STDC__ /* ANSIfication added by jwz, to avoid superfluous warnings. */
