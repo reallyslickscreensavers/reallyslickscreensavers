@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2F52D13B-EABC-4E4E-9E1F-EA8B372B2F5A}</ProjectGuid>
+    <RootNamespace>Microcosm</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>../../bin\</OutDir>
+    <IntDir>Debug\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>../../bin\</OutDir>
+    <IntDir>Release\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;winmm.lib;Opengl32.lib;glu32.lib;rsWin32SaverD.lib;rsMathD.lib;ImplicitD.lib;RgbhslD.lib;rsTextD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)MicrocosmD.scr</OutputFile>
+      <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <AdditionalIncludeDirectories>.;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;winmm.lib;Opengl32.lib;glu32.lib;rsWin32Saver.lib;rsMath.lib;Implicit.lib;Rgbhsl.lib;rsText.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)Microcosm.scr</OutputFile>
+      <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\Microcosm\extensions.cpp" />
+    <ClCompile Include="..\..\src\Microcosm\Gizmo.cpp" />
+    <ClCompile Include="..\..\src\Microcosm\Microcosm.cpp" />
+    <ClCompile Include="..\..\src\Microcosm\MirrorBox.cpp" />
+    <ClCompile Include="..\..\src\Microcosm\rsCamera.cpp" />
+    <ClCompile Include="..\..\src\Microcosm\Texture1D.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Microcosm.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\Microcosm\Blocks.h" />
+    <ClInclude Include="..\..\include\Microcosm\Brain.h" />
+    <ClInclude Include="..\..\include\Microcosm\Cube.h" />
+    <ClInclude Include="..\..\include\Microcosm\CubesAndCapsules.h" />
+    <ClInclude Include="..\..\include\Microcosm\Cylinder.h" />
+    <ClInclude Include="..\..\include\Microcosm\extensions.h" />
+    <ClInclude Include="..\..\include\Microcosm\Flower.h" />
+    <ClInclude Include="..\..\include\Microcosm\Gizmo.h" />
+    <ClInclude Include="..\..\include\Microcosm\Grinder.h" />
+    <ClInclude Include="..\..\include\Microcosm\KnotAndSphere.h" />
+    <ClInclude Include="..\..\include\Microcosm\KnotAndTorus.h" />
+    <ClInclude Include="..\..\include\Microcosm\Kube.h" />
+    <ClInclude Include="..\..\include\Microcosm\Kube2.h" />
+    <ClInclude Include="..\..\include\Microcosm\Kube3.h" />
+    <ClInclude Include="..\..\include\Microcosm\Metaballs.h" />
+    <ClInclude Include="..\..\include\Microcosm\MirrorBox.h" />
+    <ClInclude Include="..\..\include\Microcosm\Octahedron.h" />
+    <ClInclude Include="..\..\include\Microcosm\Orbit.h" />
+    <ClInclude Include="..\..\include\Microcosm\RingOfTori.h" />
+    <ClInclude Include="..\..\include\Microcosm\Rings.h" />
+    <ClInclude Include="..\..\include\Microcosm\rsCamera.h" />
+    <ClInclude Include="..\..\include\Microcosm\shaders.h" />
+    <ClInclude Include="..\..\include\Microcosm\SpheresAndCapsules.h" />
+    <ClInclude Include="..\..\include\Microcosm\StringOfEllipsoids.h" />
+    <ClInclude Include="..\..\include\Microcosm\Tennis.h" />
+    <ClInclude Include="..\..\include\Microcosm\Tetrahedron.h" />
+    <ClInclude Include="..\..\include\Microcosm\Texture1D.h" />
+    <ClInclude Include="..\..\include\Microcosm\TorusBox.h" />
+    <ClInclude Include="..\..\include\Microcosm\TriangleOfSpheres.h" />
+    <ClInclude Include="..\..\include\Microcosm\UFO.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Implicit\Implicit.vcxproj">
+      <Project>{83954ea0-9be5-42aa-8b35-6d78d3f73938}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\rsMath\rsMath.vcxproj">
+      <Project>{8cedd5ef-0615-4517-8845-054e44b17e3c}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\rsText\rsText.vcxproj">
+      <Project>{6fade693-c3ce-4183-b245-5f9878c5155c}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\rsWin32Saver\rsWin32Saver.vcxproj">
+      <Project>{f1af4dec-0ce1-4e47-b5af-3e86d1c0f293}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
