@@ -559,14 +559,14 @@ void initFrameRateLimitSlider(HWND hdlg, int sliderID, int textID){
 	SendDlgItemMessage(hdlg, sliderID, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, sliderID, TBM_SETPAGESIZE, 0, LPARAM(10));
 	char cval[16];
-	sprintf(cval, "%d", dFrameRateLimit);
+	sprintf_s(cval, "%d", dFrameRateLimit);
 	SendDlgItemMessage(hdlg, textID, WM_SETTEXT, 0, LPARAM(cval));
 }
 
 void updateFrameRateLimitSlider(HWND hdlg, int sliderID, int textID){
 	int ival = SendDlgItemMessage(hdlg, sliderID, TBM_GETPOS, 0, 0);
 	char cval[16];
-	sprintf(cval, "%d", ival);
+	sprintf_s(cval, "%d", ival);
 	SendDlgItemMessage(hdlg, textID, WM_SETTEXT, 0, LPARAM(cval));
 }
 
