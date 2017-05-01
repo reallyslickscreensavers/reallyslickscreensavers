@@ -62,6 +62,7 @@
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)rsMathD.lib</OutputFile>
+      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -78,6 +79,7 @@
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)rsMath.lib</OutputFile>
+      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
