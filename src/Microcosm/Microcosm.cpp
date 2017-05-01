@@ -1275,63 +1275,63 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, KALEIDOSCOPETIME, TBM_SETPOS, 1, LPARAM(dKaleidoscopeTime));
 	SendDlgItemMessage(hdlg, KALEIDOSCOPETIME, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, KALEIDOSCOPETIME, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d seconds", dKaleidoscopeTime);
+	sprintf_s(cval, "%d seconds", dKaleidoscopeTime);
 	SendDlgItemMessage(hdlg, KALEIDOSCOPETIMETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SINGLETIME, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(300))));
 	SendDlgItemMessage(hdlg, SINGLETIME, TBM_SETPOS, 1, LPARAM(dSingleTime));
 	SendDlgItemMessage(hdlg, SINGLETIME, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SINGLETIME, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d seconds", dSingleTime);
+	sprintf_s(cval, "%d seconds", dSingleTime);
 	SendDlgItemMessage(hdlg, SINGLETIMETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_SETPOS, 1, LPARAM(dBackground));
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d %", dBackground);
+	sprintf_s(cval, "%d %", dBackground);
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUNDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(20), DWORD(100))));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPOS, 1, LPARAM(dResolution));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dResolution);
+	sprintf_s(cval, "%d", dResolution);
 	SendDlgItemMessage(hdlg, RESOLUTIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, DEPTH, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(10))));
 	SendDlgItemMessage(hdlg, DEPTH, TBM_SETPOS, 1, LPARAM(dDepth));
 	SendDlgItemMessage(hdlg, DEPTH, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, DEPTH, TBM_SETPAGESIZE, 0, LPARAM(1));
-	sprintf(cval, "%d", dDepth);
+	sprintf_s(cval, "%d", dDepth);
 	SendDlgItemMessage(hdlg, DEPTHTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, FOV, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(10), DWORD(150))));
 	SendDlgItemMessage(hdlg, FOV, TBM_SETPOS, 1, LPARAM(dFov));
 	SendDlgItemMessage(hdlg, FOV, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FOV, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d", dFov);
+	sprintf_s(cval, "%d", dFov);
 	SendDlgItemMessage(hdlg, FOVTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, GIZMOSPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, GIZMOSPEED, TBM_SETPOS, 1, LPARAM(dGizmoSpeed));
 	SendDlgItemMessage(hdlg, GIZMOSPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, GIZMOSPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dGizmoSpeed);
+	sprintf_s(cval, "%d", dGizmoSpeed);
 	SendDlgItemMessage(hdlg, GIZMOSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, COLORSPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, COLORSPEED, TBM_SETPOS, 1, LPARAM(dColorSpeed));
 	SendDlgItemMessage(hdlg, COLORSPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, COLORSPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dColorSpeed);
+	sprintf_s(cval, "%d", dColorSpeed);
 	SendDlgItemMessage(hdlg, COLORSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, CAMERASPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, CAMERASPEED, TBM_SETPOS, 1, LPARAM(dCameraSpeed));
 	SendDlgItemMessage(hdlg, CAMERASPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, CAMERASPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dCameraSpeed);
+	sprintf_s(cval, "%d", dCameraSpeed);
 	SendDlgItemMessage(hdlg, CAMERASPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	CheckDlgButton(hdlg, SHADERS, dShaders);
@@ -1393,47 +1393,47 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 	case WM_HSCROLL:
 		if(HWND(lpm) == GetDlgItem(hdlg, KALEIDOSCOPETIME)){
 			ival = SendDlgItemMessage(hdlg, KALEIDOSCOPETIME, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d seconds", ival);
+			sprintf_s(cval, "%d seconds", ival);
 			SendDlgItemMessage(hdlg, KALEIDOSCOPETIMETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SINGLETIME)){
 			ival = SendDlgItemMessage(hdlg, SINGLETIME, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d seconds", ival);
+			sprintf_s(cval, "%d seconds", ival);
 			SendDlgItemMessage(hdlg, SINGLETIMETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SINGLEBACKGROUND)){
 			ival = SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d %", ival);
+			sprintf_s(cval, "%d %", ival);
 			SendDlgItemMessage(hdlg, SINGLEBACKGROUNDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, RESOLUTION)){
 			ival = SendDlgItemMessage(hdlg, RESOLUTION, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, RESOLUTIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, DEPTH)){
 			ival = SendDlgItemMessage(hdlg, DEPTH, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, DEPTHTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FOV)){
 			ival = SendDlgItemMessage(hdlg, FOV, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, FOVTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, GIZMOSPEED)){
 			ival = SendDlgItemMessage(hdlg, GIZMOSPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, GIZMOSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, COLORSPEED)){
 			ival = SendDlgItemMessage(hdlg, COLORSPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, COLORSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, CAMERASPEED)){
 			ival = SendDlgItemMessage(hdlg, CAMERASPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, CAMERASPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))

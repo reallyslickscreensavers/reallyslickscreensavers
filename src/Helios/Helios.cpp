@@ -1003,35 +1003,35 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETPOS, 1, LPARAM(dSize));
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dSize);
+	sprintf_s(cval, "%d", dSize);
 	SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, EMITTERS, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(10))));
 	SendDlgItemMessage(hdlg, EMITTERS, TBM_SETPOS, 1, LPARAM(dEmitters));
 	SendDlgItemMessage(hdlg, EMITTERS, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, EMITTERS, TBM_SETPAGESIZE, 0, LPARAM(2));
-	sprintf(cval, "%d", dEmitters);
+	sprintf_s(cval, "%d", dEmitters);
 	SendDlgItemMessage(hdlg, EMITTERTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, ATTRACTERS, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(10))));
 	SendDlgItemMessage(hdlg, ATTRACTERS, TBM_SETPOS, 1, LPARAM(dAttracters));
 	SendDlgItemMessage(hdlg, ATTRACTERS, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, ATTRACTERS, TBM_SETPAGESIZE, 0, LPARAM(2));
-	sprintf(cval, "%d", dAttracters);
+	sprintf_s(cval, "%d", dAttracters);
 	SendDlgItemMessage(hdlg, ATTRACTERTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dSpeed);
+	sprintf_s(cval, "%d", dSpeed);
 	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, CAMERASPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, CAMERASPEED, TBM_SETPOS, 1, LPARAM(dCameraspeed));
 	SendDlgItemMessage(hdlg, CAMERASPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, CAMERASPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dCameraspeed);
+	sprintf_s(cval, "%d", dCameraspeed);
 	SendDlgItemMessage(hdlg, CAMERASPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	CheckDlgButton(hdlg, SURFACE, dSurface);
@@ -1040,7 +1040,7 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETPOS, 1, LPARAM(dBlur));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dBlur);
+	sprintf_s(cval, "%d", dBlur);
 	SendDlgItemMessage(hdlg, BLURTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
@@ -1087,32 +1087,32 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 	case WM_HSCROLL:
 		if(HWND(lpm) == GetDlgItem(hdlg, SIZE)){
 			ival = SendDlgItemMessage(hdlg, SIZE, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, EMITTERS)){
 			ival = SendDlgItemMessage(hdlg, EMITTERS, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, EMITTERTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, ATTRACTERS)){
 			ival = SendDlgItemMessage(hdlg, ATTRACTERS, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, ATTRACTERTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SPEED)){
 			ival = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, CAMERASPEED)){
 			ival = SendDlgItemMessage(hdlg, CAMERASPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, CAMERASPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, BLUR)){
 			ival = SendDlgItemMessage(hdlg, BLUR, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, BLURTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))

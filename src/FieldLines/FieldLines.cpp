@@ -514,14 +514,14 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, WIDTH, TBM_SETPOS, 1, LPARAM(dWidth));
 	SendDlgItemMessage(hdlg, WIDTH, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, WIDTH, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d", dWidth);
+	sprintf_s(cval, "%d", dWidth);
 	SendDlgItemMessage(hdlg, WIDTHTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d", dSpeed);
+	sprintf_s(cval, "%d", dSpeed);
 	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	CheckDlgButton(hdlg, CONSTWIDTH, dConstwidth);
@@ -569,12 +569,12 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	case WM_HSCROLL:
 		if(HWND(lpm) == GetDlgItem(hdlg, WIDTH)){
 			ival = SendDlgItemMessage(hdlg, WIDTH, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, WIDTHTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SPEED)){
 			ival = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))

@@ -715,35 +715,35 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETPOS, 1, LPARAM(dSize));
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d", dSize);
+	sprintf_s(cval, "%d", dSize);
 	SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETPOS, 1, LPARAM(dWindspeed));
 	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d", dWindspeed);
+	sprintf_s(cval, "%d", dWindspeed);
 	SendDlgItemMessage(hdlg, WINDSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETPOS, 1, LPARAM(dEmitterspeed));
 	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d", dEmitterspeed);
+	sprintf_s(cval, "%d", dEmitterspeed);
 	SendDlgItemMessage(hdlg, EMITTERSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETPOS, 1, LPARAM(dParticlespeed));
 	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d", dParticlespeed);
+	sprintf_s(cval, "%d", dParticlespeed);
 	SendDlgItemMessage(hdlg, PARTICLESPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETPOS, 1, LPARAM(dBlur));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf(cval, "%d", dBlur);
+	sprintf_s(cval, "%d", dBlur);
 	SendDlgItemMessage(hdlg, BLURTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
@@ -810,27 +810,27 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 	case WM_HSCROLL:
 		if(HWND(lpm) == GetDlgItem(hdlg, SIZE)){
 			ival = SendDlgItemMessage(hdlg, SIZE, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, WINDSPEED)){
 			ival = SendDlgItemMessage(hdlg, WINDSPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, WINDSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, EMITTERSPEED)){
 			ival = SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, EMITTERSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, PARTICLESPEED)){
 			ival = SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, PARTICLESPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, BLUR)){
 			ival = SendDlgItemMessage(hdlg, BLUR, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, BLURTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))

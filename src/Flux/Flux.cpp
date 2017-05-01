@@ -915,7 +915,7 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETPOS, 1, LPARAM(dSize));
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dSize);
+	sprintf_s(cval, "%d", dSize);
 	SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, COMPLEXITY, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(10))));
@@ -926,49 +926,49 @@ void initControls(HWND hdlg){
 		EnableWindow(GetDlgItem(hdlg, COMPLEXITY), TRUE);
 	else
 		EnableWindow(GetDlgItem(hdlg, COMPLEXITY), FALSE);
-	sprintf(cval, "%d", dComplexity);
+	sprintf_s(cval, "%d", dComplexity);
 	SendDlgItemMessage(hdlg, COMPLEXITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, RANDOMIZE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, RANDOMIZE, TBM_SETPOS, 1, LPARAM(dRandomize));
 	SendDlgItemMessage(hdlg, RANDOMIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, RANDOMIZE, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dRandomize);
+	sprintf_s(cval, "%d", dRandomize);
 	SendDlgItemMessage(hdlg, RANDOMIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, EXPANSION, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, EXPANSION, TBM_SETPOS, 1, LPARAM(dExpansion));
 	SendDlgItemMessage(hdlg, EXPANSION, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, EXPANSION, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dExpansion);
+	sprintf_s(cval, "%d", dExpansion);
 	SendDlgItemMessage(hdlg, EXPANSIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, ROTATION, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, ROTATION, TBM_SETPOS, 1, LPARAM(dRotation));
 	SendDlgItemMessage(hdlg, ROTATION, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, ROTATION, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dRotation);
+	sprintf_s(cval, "%d", dRotation);
 	SendDlgItemMessage(hdlg, ROTATIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, WIND, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, WIND, TBM_SETPOS, 1, LPARAM(dWind));
 	SendDlgItemMessage(hdlg, WIND, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, WIND, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dWind);
+	sprintf_s(cval, "%d", dWind);
 	SendDlgItemMessage(hdlg, WINDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, INSTABILITY, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, INSTABILITY, TBM_SETPOS, 1, LPARAM(dInstability));
 	SendDlgItemMessage(hdlg, INSTABILITY, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, INSTABILITY, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dInstability);
+	sprintf_s(cval, "%d", dInstability);
 	SendDlgItemMessage(hdlg, INSTABILITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 	
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETPOS, 1, LPARAM(dBlur));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dBlur);
+	sprintf_s(cval, "%d", dBlur);
 	SendDlgItemMessage(hdlg, BLURTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
@@ -1043,42 +1043,42 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	case WM_HSCROLL:
 		if(HWND(lpm) == GetDlgItem(hdlg, SIZE)){
 			ival = SendDlgItemMessage(hdlg, SIZE, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, COMPLEXITY)){
 			ival = SendDlgItemMessage(hdlg, COMPLEXITY, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, COMPLEXITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, RANDOMIZE)){
 			ival = SendDlgItemMessage(hdlg, RANDOMIZE, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, RANDOMIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, EXPANSION)){
 			ival = SendDlgItemMessage(hdlg, EXPANSION, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, EXPANSIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, ROTATION)){
 			ival = SendDlgItemMessage(hdlg, ROTATION, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, ROTATIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, WIND)){
 			ival = SendDlgItemMessage(hdlg, WIND, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, WINDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, INSTABILITY)){
 			ival = SendDlgItemMessage(hdlg, INSTABILITY, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, INSTABILITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, BLUR)){
 			ival = SendDlgItemMessage(hdlg, BLUR, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, BLURTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))

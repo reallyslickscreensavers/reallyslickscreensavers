@@ -1123,63 +1123,63 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, MAXROCKETS, TBM_SETPOS, 1, LPARAM(dMaxrockets));
 	SendDlgItemMessage(hdlg, MAXROCKETS, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, MAXROCKETS, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dMaxrockets);
+	sprintf_s(cval, "%d", dMaxrockets);
 	SendDlgItemMessage(hdlg, MAXROCKETSTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SMOKELIFE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(60))));
 	SendDlgItemMessage(hdlg, SMOKELIFE, TBM_SETPOS, 1, LPARAM(dSmoke));
 	SendDlgItemMessage(hdlg, SMOKELIFE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SMOKELIFE, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dSmoke);
+	sprintf_s(cval, "%d", dSmoke);
 	SendDlgItemMessage(hdlg, SMOKELIFETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, EXPLOSIONSMOKE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(WHICHSMOKES))));
 	SendDlgItemMessage(hdlg, EXPLOSIONSMOKE, TBM_SETPOS, 1, LPARAM(dExplosionsmoke));
 	SendDlgItemMessage(hdlg, EXPLOSIONSMOKE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, EXPLOSIONSMOKE, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dExplosionsmoke);
+	sprintf_s(cval, "%d", dExplosionsmoke);
 	SendDlgItemMessage(hdlg, EXPLOSIONSMOKETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, WIND, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, WIND, TBM_SETPOS, 1, LPARAM(dWind));
 	SendDlgItemMessage(hdlg, WIND, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, WIND, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dWind);
+	sprintf_s(cval, "%d", dWind);
 	SendDlgItemMessage(hdlg, WINDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, AMBIENT, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, AMBIENT, TBM_SETPOS, 1, LPARAM(dAmbient));
 	SendDlgItemMessage(hdlg, AMBIENT, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, AMBIENT, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dAmbient);
+	sprintf_s(cval, "%d", dAmbient);
 	SendDlgItemMessage(hdlg, AMBIENTTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, STARDENSITY, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, STARDENSITY, TBM_SETPOS, 1, LPARAM(dStardensity));
 	SendDlgItemMessage(hdlg, STARDENSITY, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, STARDENSITY, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dStardensity);
+	sprintf_s(cval, "%d", dStardensity);
 	SendDlgItemMessage(hdlg, STARDENSITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, FLARE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, FLARE, TBM_SETPOS, 1, LPARAM(dFlare));
 	SendDlgItemMessage(hdlg, FLARE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FLARE, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dFlare);
+	sprintf_s(cval, "%d", dFlare);
 	SendDlgItemMessage(hdlg, FLARETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, MOONGLOW, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, MOONGLOW, TBM_SETPOS, 1, LPARAM(dMoonglow));
 	SendDlgItemMessage(hdlg, MOONGLOW, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, MOONGLOW, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dMoonglow);
+	sprintf_s(cval, "%d", dMoonglow);
 	SendDlgItemMessage(hdlg, MOONGLOWTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SOUND, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, SOUND, TBM_SETPOS, 1, LPARAM(dSound));
 	SendDlgItemMessage(hdlg, SOUND, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SOUND, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dSound);
+	sprintf_s(cval, "%d", dSound);
 	SendDlgItemMessage(hdlg, SOUNDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	CheckDlgButton(hdlg, MOON, dMoon);
@@ -1237,47 +1237,47 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	case WM_HSCROLL:
 		if(HWND(lpm) == GetDlgItem(hdlg, MAXROCKETS)){
 			ival = SendDlgItemMessage(hdlg, MAXROCKETS, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, MAXROCKETSTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SMOKELIFE)){
 			ival = SendDlgItemMessage(hdlg, SMOKELIFE, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SMOKELIFETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, EXPLOSIONSMOKE)){
 			ival = SendDlgItemMessage(hdlg, EXPLOSIONSMOKE, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, EXPLOSIONSMOKETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, WIND)){
 			ival = SendDlgItemMessage(hdlg, WIND, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, WINDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, AMBIENT)){
 			ival = SendDlgItemMessage(hdlg, AMBIENT, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, AMBIENTTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, STARDENSITY)){
 			ival = SendDlgItemMessage(hdlg, STARDENSITY, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, STARDENSITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FLARE)){
 			ival = SendDlgItemMessage(hdlg, FLARE, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, FLARETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, MOONGLOW)){
 			ival = SendDlgItemMessage(hdlg, MOONGLOW, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, MOONGLOWTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SOUND)){
 			ival = SendDlgItemMessage(hdlg, SOUND, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SOUNDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))

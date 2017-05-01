@@ -444,28 +444,28 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, ZOOM, TBM_SETPOS, 1, LPARAM(dZoom));
 	SendDlgItemMessage(hdlg, ZOOM, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, ZOOM, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dZoom);
+	sprintf_s(cval, "%d", dZoom);
 	SendDlgItemMessage(hdlg, ZOOMTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, FOCUS, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, FOCUS, TBM_SETPOS, 1, LPARAM(dFocus));
 	SendDlgItemMessage(hdlg, FOCUS, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FOCUS, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dFocus);
+	sprintf_s(cval, "%d", dFocus);
 	SendDlgItemMessage(hdlg, FOCUSTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dSpeed);
+	sprintf_s(cval, "%d", dSpeed);
 	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPOS, 1, LPARAM(dResolution));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dResolution);
+	sprintf_s(cval, "%d", dResolution);
 	SendDlgItemMessage(hdlg, RESOLUTIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
@@ -507,22 +507,22 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 	case WM_HSCROLL:
 		if(HWND(lpm) == GetDlgItem(hdlg, ZOOM)){
 			ival = SendDlgItemMessage(hdlg, ZOOM, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, ZOOMTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FOCUS)){
 			ival = SendDlgItemMessage(hdlg, FOCUS, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, FOCUSTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SPEED)){
 			ival = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, RESOLUTION)){
 			ival = SendDlgItemMessage(hdlg, RESOLUTION, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, RESOLUTIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))

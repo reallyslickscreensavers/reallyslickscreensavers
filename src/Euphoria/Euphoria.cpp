@@ -802,42 +802,42 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, DENSITY, TBM_SETPOS, 1, LPARAM(dDensity));
 	SendDlgItemMessage(hdlg, DENSITY, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, DENSITY, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dDensity);
+	sprintf_s(cval, "%d", dDensity);
 	SendDlgItemMessage(hdlg, DENSITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, VISIBILITY, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, VISIBILITY, TBM_SETPOS, 1, LPARAM(dVisibility));
 	SendDlgItemMessage(hdlg, VISIBILITY, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, VISIBILITY, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dVisibility);
+	sprintf_s(cval, "%d", dVisibility);
 	SendDlgItemMessage(hdlg, VISIBILITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dSpeed);
+	sprintf_s(cval, "%d", dSpeed);
 	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, FEEDBACK, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
 	SendDlgItemMessage(hdlg, FEEDBACK, TBM_SETPOS, 1, LPARAM(dFeedback));
 	SendDlgItemMessage(hdlg, FEEDBACK, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FEEDBACK, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dFeedback);
+	sprintf_s(cval, "%d", dFeedback);
 	SendDlgItemMessage(hdlg, FEEDBACKTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
 	SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_SETPOS, 1, LPARAM(dFeedbackspeed));
 	SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf(cval, "%d", dFeedbackspeed);
+	sprintf_s(cval, "%d", dFeedbackspeed);
 	SendDlgItemMessage(hdlg, FEEDBACKSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(10))));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPOS, 1, LPARAM(dFeedbacksize));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPAGESIZE, 0, LPARAM(1));
-	sprintf(cval, "%d", int(powf(2, dFeedbacksize)));
+	sprintf_s(cval, "%d", int(powf(2, dFeedbacksize)));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, TEXTURE, CB_DELETESTRING, WPARAM(4), 0);
@@ -914,32 +914,32 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	case WM_HSCROLL:
 		if(HWND(lpm) == GetDlgItem(hdlg, DENSITY)){
 			ival = SendDlgItemMessage(hdlg, DENSITY, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, DENSITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, VISIBILITY)){
 			ival = SendDlgItemMessage(hdlg, VISIBILITY, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, VISIBILITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SPEED)){
 			ival = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FEEDBACK)){
 			ival = SendDlgItemMessage(hdlg, FEEDBACK, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, FEEDBACKTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FEEDBACKSPEED)){
 			ival = SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", ival);
+			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, FEEDBACKSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FEEDBACKSIZE)){
 			ival = SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_GETPOS, 0, 0);
-			sprintf(cval, "%d", int(powf(2, ival)));
+			sprintf_s(cval, "%d", int(powf(2, ival)));
 			SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))
