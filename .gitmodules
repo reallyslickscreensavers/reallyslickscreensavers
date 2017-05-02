@@ -1,0 +1,3 @@
+[submodule "3rdparty/openal"]
+	path = 3rdparty/openal
+	url = https://github.com/dbelyaev/openal-redist.git
