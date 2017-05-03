@@ -24,18 +24,23 @@
 
 #include <windows.h>
 #include <stdio.h>
-#include <rsWin32Saver/rsWin32Saver.h>
-#include <rsText/rsText.h>
 #include <math.h>
 #include <time.h>
+
 #include <gl/gl.h>
 #include <gl/glu.h>
+
 #include <regstr.h>
 #include <commctrl.h>
+
 #include <rsMath/rsMath.h>
 #include <Rgbhsl/Rgbhsl.h>
+#include <rsWin32Saver/rsWin32Saver.h>
+#include <rsText/rsText.h>
+
 #include <resource.h>
-#include <Euphoria/texture.h>
+
+#include "texture.h"
 
 #define NUMCONSTS 9
 #define PIx2 6.28318530718f

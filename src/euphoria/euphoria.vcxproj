@@ -55,7 +55,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -84,7 +84,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>.;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
@@ -110,32 +110,32 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\Euphoria\Euphoria.cpp" />
+    <ClCompile Include="euphoria.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Euphoria.rc" />
+    <ResourceCompile Include="euphoria.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\Euphoria\texture.h" />
+    <ClInclude Include="texture.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Rgbhsl\Rgbhsl.vcxproj">
+    <ProjectReference Include="..\..\libs\Rgbhsl\Rgbhsl.vcxproj">
       <Project>{a7cc0f11-ced4-4697-bcff-ad8015e77fbe}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\rsMath\rsMath.vcxproj">
+    <ProjectReference Include="..\..\libs\rsMath\rsMath.vcxproj">
       <Project>{8cedd5ef-0615-4517-8845-054e44b17e3c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\rsText\rsText.vcxproj">
+    <ProjectReference Include="..\..\libs\rsText\rsText.vcxproj">
       <Project>{6fade693-c3ce-4183-b245-5f9878c5155c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\rsWin32Saver\rsWin32Saver.vcxproj">
+    <ProjectReference Include="..\..\libs\rsWin32Saver\rsWin32Saver.vcxproj">
       <Project>{f1af4dec-0ce1-4e47-b5af-3e86d1c0f293}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

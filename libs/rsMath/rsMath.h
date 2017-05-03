@@ -25,11 +25,11 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <rsMath/rsVec.h>
-#include <rsMath/rsVec4.h>
-#include <rsMath/rsMatrix.h>
-#include <rsMath/rsQuat.h>
-#include <rsMath/rsTrigonometry.h>
+#include "rsVec.h"
+#include "rsVec4.h"
+#include "rsMatrix.h"
+#include "rsQuat.h"
+#include "rsTrigonometry.h"
 #ifdef __SSE__
 #include <xmmintrin.h>
 #endif
