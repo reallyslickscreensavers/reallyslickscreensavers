@@ -1,3 +1,7 @@
 [submodule "3rdparty/openal"]
 	path = 3rdparty/openal
 	url = https://github.com/dbelyaev/openal-redist.git
+[submodule "3rdparty/freeglut"]
+	path = 3rdparty/freeglut
+	url = https://github.com/dbelyaev/freeglut-redist.git
+	branch = msvc2015
