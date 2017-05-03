@@ -323,7 +323,7 @@ void draw(){
 void idleProc(){
 	// update time
 	static rsTimer timer;
-	frameTime = timer.tick();
+	frameTime = float(timer.tick());
 
 	if(readyToDraw && !isSuspended && !checkingPassword)
 		draw();

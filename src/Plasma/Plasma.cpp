@@ -219,7 +219,7 @@ void draw(){
 void idleProc(){
 	// update time
 	static rsTimer timer;
-	frameTime = timer.tick();
+	frameTime = float(timer.tick());
 
 	if(readyToDraw && !isSuspended && !checkingPassword)
 		draw();
@@ -305,7 +305,7 @@ void initSaver(HWND hwnd){
 #ifdef RS_XSCREENSAVER
 void initSaver(){
 #endif
-	int i, j;
+	int i;
 
 	srand((unsigned)time(NULL));
 

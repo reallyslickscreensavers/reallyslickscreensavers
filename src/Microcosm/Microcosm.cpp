@@ -275,7 +275,7 @@ static unsigned __stdcall threadFunction0(void* arg){
 		// Compute surface
 		computeTimer.tick();
 		volume0->makeSurface(crawlpoints);
-		computeTime += computeTimer.tick();
+		computeTime += float(computeTimer.tick());
 		// Unlock mutex so draw() can start changing implicit surface definition again.
 		SetEvent(gT0End);
 	}
@@ -320,7 +320,7 @@ static unsigned __stdcall threadFunction1(void* arg){
 		computeTimer.tick();
 		volume1->makeSurface(crawlpoints);
 		volume2->makeSurface(crawlpoints);
-		computeTime += computeTimer.tick();
+		computeTime += float(computeTimer.tick());
 		// Unlock mutex so draw() can start changing implicit surface definition again.
 		SetEvent(gT1End);
 	}
@@ -409,7 +409,7 @@ void draw(){
 	// countdown to transition
 	static float transitionTime = 0.0f;
 	transitionTime += frameTime;
-	const float ttime = (gMode == 0) ? dSingleTime : dKaleidoscopeTime;
+	const float ttime = (gMode == 0) ? float(dSingleTime) : float(dKaleidoscopeTime);
 	if((gModeTransition > 1.0f && transitionTime > ttime) || gSpecificGizmo >= 0){
 		if(gModeTransition > 1.0f)
 			gModeTransition = 1.0f;
@@ -598,7 +598,7 @@ void draw(){
 			volume2->makeSurface(crawlpoints);
 		}
 
-		computeTime += computeTimer.tick();
+		computeTime += float(computeTimer.tick());
 	}
 
 	static rsTimer drawTimer;
@@ -745,7 +745,7 @@ void draw(){
 
 	gCamera.revoke();
 
-	drawTime += drawTimer.tick();
+	drawTime += float(drawTimer.tick());
 
 	// Pause here until worker threads are finished.  This prevents draw() from starting over
 	// and changing the surface parameters until the worker threads are done using them.
@@ -813,7 +813,7 @@ void draw(){
 void idleProc(){
 	// update time
 	static rsTimer timer;
-	frameTime = timer.tick();
+	frameTime = float(timer.tick());
 
 	if(readyToDraw && !isSuspended && !checkingPassword)
 		draw();

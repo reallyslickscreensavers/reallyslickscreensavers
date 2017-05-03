@@ -407,8 +407,8 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 	}
 
 	if(crawlfromsides){
-		for(j=0; j<=h; ++j){
-			for(i=j%2; i<=w; i+=2){
+		for(j=0; j<= int(h); ++j){
+			for(i=j%2; i<= int(w); i+=2){
 				// left side of volume
 				cubedata& cube0(cubes[cubeindex(i,j,0)]);
 				if(cube0.corner_frame != frame){
@@ -443,8 +443,8 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 				}
 			}
 		}
-		for(k=1; k<l; ++k){
-			for(i=k%2; i<=w; i+=2){
+		for(k=1; k< int(l); ++k){
+			for(i=k%2; i<= int(w); i+=2){
 				// bottom of volume
 				cubedata& cube0(cubes[cubeindex(i,0,k)]);
 				if(cube0.corner_frame != frame){
@@ -479,8 +479,8 @@ void impCubeVolume::makeSurface(float eyex, float eyey, float eyez, impCrawlPoin
 				}
 			}
 		}
-		for(k=1; k<l; ++k){
-			for(j=(k%2)+1; j<h; j+=2){
+		for(k=1; k< int(l); ++k){
+			for(j=(k%2)+1; j< int(h); j+=2){
 				// back of volume
 				cubedata& cube0(cubes[cubeindex(0,j,k)]);
 				if(cube0.corner_frame != frame){

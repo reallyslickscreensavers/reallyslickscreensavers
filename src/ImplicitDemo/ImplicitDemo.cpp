@@ -124,19 +124,19 @@ void display(){
 	computeTimer.tick();
 
 	static rsTimer timer;
-	frameTime = timer.tick();
+	frameTime = float(timer.tick());
 
-	move[0] += frameTime * 0.3;
-	move[1] += frameTime * 0.5;
-	move[2] += frameTime * 0.7;
-	move[3] += frameTime * 1.1;
-	move[4] += frameTime * 1.3;
-	move[5] += frameTime * 1.5;
-	move[6] += frameTime * 1.7;
-	move[7] += frameTime * 2.1;
+	move[0] += float(frameTime) * 0.3f;
+	move[1] += float(frameTime) * 0.5f;
+	move[2] += float(frameTime) * 0.7f;
+	move[3] += float(frameTime) * 1.1f;
+	move[4] += float(frameTime) * 1.3f;
+	move[5] += float(frameTime) * 1.5f;
+	move[6] += float(frameTime) * 1.7f;
+	move[7] += float(frameTime) * 2.1f;
 
 	sphere.setPosition(cosf(move[4]), sinf(move[5]), cosf(move[6]));
-	sphere.setThickness(0.3 + 0.15 * cosf(move[7]));
+	sphere.setThickness(0.3f + 0.15f * cosf(move[7]));
 
 	mat1.makeScale(3.0f + 1.5f * cosf(move[7] * 4.0f),
 		3.0f + 1.5f * cosf(move[7] * 4.0f),
@@ -166,7 +166,7 @@ void display(){
 	torus2.setRadius(1.5f);
 	torus2.setThickness(0.17f);
 
-	mat1.makeScale(0.25f, 0.25f, 0.25f + 0.15 * cosf(move[0]));
+	mat1.makeScale(0.25f, 0.25f, 0.25f + 0.15f * cosf(move[0]));
 	mat2.makeRotate(move[3], 1.0f, 0.0f, 0.0f);
 	mat1.postMult(mat2);
 	mat2.makeRotate(move[5], 0.0f, 1.0f, 0.0f);

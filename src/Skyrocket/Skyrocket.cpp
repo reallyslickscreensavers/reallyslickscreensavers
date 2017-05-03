@@ -818,7 +818,7 @@ void draw(){
 	}
 
 	// measure compute time
-	computeTime += computeTimer.tick();
+	computeTime += float(computeTimer.tick());
 	// start draw time timer
 	drawTimer.tick();
 
@@ -841,7 +841,7 @@ void draw(){
 	}
 
 	// measure draw time
-	drawTime += drawTimer.tick();
+	drawTime += float(drawTimer.tick());
 
 	// do sound stuff
 	if(soundengine){
@@ -903,7 +903,7 @@ void draw(){
 void idleProc(){
 	// update time
 	static rsTimer timer;
-	frameTime = timer.tick();
+	frameTime = float(timer.tick());
 
 	if(readyToDraw && !isSuspended && !checkingPassword)
 		draw();

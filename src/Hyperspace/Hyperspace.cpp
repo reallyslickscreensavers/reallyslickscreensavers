@@ -213,7 +213,7 @@ void draw(){
 	}
 
 	// measure compute time
-	computeTime += computeTimer.tick();
+	computeTime += float(computeTimer.tick());
 	// start draw time timer
 	drawTimer.tick();
 
@@ -374,7 +374,7 @@ void draw(){
 	glEnable(GL_FOG);
 
 	// measure draw time
-	drawTime += drawTimer.tick();
+	drawTime += float(drawTimer.tick());
 
 	// write text
 	static float totalTime = 0.0f;
@@ -426,7 +426,7 @@ void draw(){
 void idleProc(){
 	// update time
 	static rsTimer timer;
-	frameTime = timer.tick();
+	frameTime = float(timer.tick());
 
 	if(readyToDraw && !isSuspended && !checkingPassword)
 		draw();

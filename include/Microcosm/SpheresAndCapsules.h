@@ -68,7 +68,7 @@ public:
 		updateMatrix();
 
 		rsMatrix m;
-		for(unsigned int i=0; i<mCount; i++){
+		for(unsigned int i=0; i< (unsigned int)mCount; i++){
 			m.makeTranslate(0.4f * cosf(mCoeffPhase[0] * 5.0f), 0.0f, 0.0f);
 			m.rotate(RS_PIx2 / float(mCount) * float(i), 0.0f, 0.0f, 1.0f);
 			m.rotate(cosf(mCoeffPhase[1] * 4.0f), 1.0f, 0.0f, 0.0f);
@@ -77,7 +77,7 @@ public:
 			mShapes[i]->setPosition(&((m.get())[12]));
 		}
 
-		for(unsigned int i=0; i<mCount; i++){
+		for(unsigned int i=0; i< (unsigned int)mCount; i++){
 			impCapsule* cap = static_cast<impCapsule*>(mShapes[i+mCount]);
 			m.makeRotate(cosf(mCoeffPhase[3] * 4.0f), 1.0f, 0.0f, 0.0f);
 			m.rotate(cosf(mCoeffPhase[4] * 4.0f), 0.0f, 1.0f, 0.0f);
