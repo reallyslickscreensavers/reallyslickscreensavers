@@ -76,6 +76,10 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>powershell Copy-Item $(OutDir)$(TargetName)$(TargetExt) $(OutDir)$(TargetName).scr -Force</Command>
+      <Message>Output screensaver file from executable...</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -101,6 +105,10 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>powershell Copy-Item $(OutDir)$(TargetName)$(TargetExt) $(OutDir)$(TargetName).scr -Force</Command>
+      <Message>Output screensaver file from executable...</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\FieldLines\FieldLines.cpp" />
