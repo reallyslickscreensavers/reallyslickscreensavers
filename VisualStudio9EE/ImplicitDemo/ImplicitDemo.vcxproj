@@ -63,9 +63,9 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Opengl32.lib;glu32.lib;glut32.lib;ImplicitD.lib;rsMathD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Opengl32.lib;glu32.lib;freeglut_staticd.lib;ImplicitD.lib;rsMathD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)ImplicitDemoD.exe</OutputFile>
-      <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../lib;../../3rdparty/freeglut/libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)ImplicitDemo.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
@@ -89,9 +89,9 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Opengl32.lib;glu32.lib;glut32.lib;Implicit.lib;rsMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Opengl32.lib;glu32.lib;freeglut_static.lib;Implicit.lib;rsMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)ImplicitDemo.exe</OutputFile>
-      <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../lib;../../3rdparty/freeglut/libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
