@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cyclone", "cyclone\cyclone.vcxproj", "{0A79E717-8222-489E-922D-56BA82F72B21}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{69482F17-CE2C-4EEC-8D16-288EEB72ED94}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rsWin32Saver", "..\libs\rsWin32Saver\rsWin32Saver.vcxproj", "{F1AF4DEC-0CE1-4E47-B5AF-3E86D1C0F293}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Rgbhsl", "..\libs\Rgbhsl\Rgbhsl.vcxproj", "{A7CC0F11-CED4-4697-BCFF-AD8015E77FBE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rsText", "..\libs\rsText\rsText.vcxproj", "{6FADE693-C3CE-4183-B245-5F9878C5155C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0A79E717-8222-489E-922D-56BA82F72B21}.Debug|x86.ActiveCfg = Debug|Win32
+		{0A79E717-8222-489E-922D-56BA82F72B21}.Debug|x86.Build.0 = Debug|Win32
+		{0A79E717-8222-489E-922D-56BA82F72B21}.Release|x86.ActiveCfg = Release|Win32
+		{0A79E717-8222-489E-922D-56BA82F72B21}.Release|x86.Build.0 = Release|Win32
+		{F1AF4DEC-0CE1-4E47-B5AF-3E86D1C0F293}.Debug|x86.ActiveCfg = Debug|Win32
+		{F1AF4DEC-0CE1-4E47-B5AF-3E86D1C0F293}.Debug|x86.Build.0 = Debug|Win32
+		{F1AF4DEC-0CE1-4E47-B5AF-3E86D1C0F293}.Release|x86.ActiveCfg = Release|Win32
+		{F1AF4DEC-0CE1-4E47-B5AF-3E86D1C0F293}.Release|x86.Build.0 = Release|Win32
+		{A7CC0F11-CED4-4697-BCFF-AD8015E77FBE}.Debug|x86.ActiveCfg = Debug|Win32
+		{A7CC0F11-CED4-4697-BCFF-AD8015E77FBE}.Debug|x86.Build.0 = Debug|Win32
+		{A7CC0F11-CED4-4697-BCFF-AD8015E77FBE}.Release|x86.ActiveCfg = Release|Win32
+		{A7CC0F11-CED4-4697-BCFF-AD8015E77FBE}.Release|x86.Build.0 = Release|Win32
+		{6FADE693-C3CE-4183-B245-5F9878C5155C}.Debug|x86.ActiveCfg = Debug|Win32
+		{6FADE693-C3CE-4183-B245-5F9878C5155C}.Debug|x86.Build.0 = Debug|Win32
+		{6FADE693-C3CE-4183-B245-5F9878C5155C}.Release|x86.ActiveCfg = Release|Win32
+		{6FADE693-C3CE-4183-B245-5F9878C5155C}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F1AF4DEC-0CE1-4E47-B5AF-3E86D1C0F293} = {69482F17-CE2C-4EEC-8D16-288EEB72ED94}
+		{A7CC0F11-CED4-4697-BCFF-AD8015E77FBE} = {69482F17-CE2C-4EEC-8D16-288EEB72ED94}
+		{6FADE693-C3CE-4183-B245-5F9878C5155C} = {69482F17-CE2C-4EEC-8D16-288EEB72ED94}
+	EndGlobalSection
+EndGlobal
