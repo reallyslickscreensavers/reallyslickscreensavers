@@ -1,0 +1,12 @@
+version: 1.0.{build}
+pull_requests:
+  do_not_increment_build_number: true
+configuration:
+- Debug
+- Release
+platform: x86
+install:
+- cmd: git submodule update --init --recursive
+build:
+  project: VisualStudio9EE\rssavers.sln
+  verbosity: minimal
