@@ -11,36 +11,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\rsMath\rsMatrix.cpp">
+    <ClCompile Include="rsMatrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\rsMath\rsQuat.cpp">
+    <ClCompile Include="rsQuat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\rsMath\rsVec.cpp">
+    <ClCompile Include="rsVec.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\rsMath\rsVec4.cpp">
+    <ClCompile Include="rsVec4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\rsMath\rsMath.h">
+    <ClInclude Include="rsMath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\rsMath\rsMatrix.h">
+    <ClInclude Include="rsMatrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\rsMath\rsQuat.h">
+    <ClInclude Include="rsQuat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\rsMath\rsTrigonometry.h">
+    <ClInclude Include="rsTrigonometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\rsMath\rsVec.h">
+    <ClInclude Include="rsVec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\rsMath\rsVec4.h">
+    <ClInclude Include="rsVec4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

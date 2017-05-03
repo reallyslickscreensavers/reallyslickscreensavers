@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{6FADE693-C3CE-4183-B245-5F9878C5155C}</ProjectGuid>
+    <ProjectGuid>{8CEDD5EF-0615-4517-8845-054E44B17E3C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -53,7 +53,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -71,7 +71,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
@@ -85,11 +85,18 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\rsText\rsText.cpp" />
+    <ClCompile Include="rsMatrix.cpp" />
+    <ClCompile Include="rsQuat.cpp" />
+    <ClCompile Include="rsVec.cpp" />
+    <ClCompile Include="rsVec4.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\rsText\fontmap.h" />
-    <ClInclude Include="..\..\include\rsText\rsText.h" />
+    <ClInclude Include="rsMath.h" />
+    <ClInclude Include="rsMatrix.h" />
+    <ClInclude Include="rsQuat.h" />
+    <ClInclude Include="rsTrigonometry.h" />
+    <ClInclude Include="rsVec.h" />
+    <ClInclude Include="rsVec4.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

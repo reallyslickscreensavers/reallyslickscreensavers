@@ -18,10 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "rsText.h"
 
-#include <rsText/rsText.h>
-#include <rsText/fontmap.h>
-
+#include "fontmap.h"
 
 
 rsText::rsText(){

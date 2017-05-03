@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8CEDD5EF-0615-4517-8845-054E44B17E3C}</ProjectGuid>
+    <ProjectGuid>{F1AF4DEC-0CE1-4E47-B5AF-3E86D1C0F293}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -53,7 +53,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -70,11 +70,10 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <Optimization>Full</Optimization>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <FloatingPointModel>Fast</FloatingPointModel>
+      <FloatingPointModel>Precise</FloatingPointModel>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -85,18 +84,10 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\rsMath\rsMatrix.cpp" />
-    <ClCompile Include="..\..\src\rsMath\rsQuat.cpp" />
-    <ClCompile Include="..\..\src\rsMath\rsVec.cpp" />
-    <ClCompile Include="..\..\src\rsMath\rsVec4.cpp" />
+    <ClCompile Include="rsWin32Saver.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\rsMath\rsMath.h" />
-    <ClInclude Include="..\..\include\rsMath\rsMatrix.h" />
-    <ClInclude Include="..\..\include\rsMath\rsQuat.h" />
-    <ClInclude Include="..\..\include\rsMath\rsTrigonometry.h" />
-    <ClInclude Include="..\..\include\rsMath\rsVec.h" />
-    <ClInclude Include="..\..\include\rsMath\rsVec4.h" />
+    <ClInclude Include="rsWin32Saver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

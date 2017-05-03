@@ -22,7 +22,8 @@
 #include <windows.h>
 #include <stdio.h>
 #include <commctrl.h>
-#include <rsWin32Saver/rsWin32Saver.h>
+
+#include "rsWin32Saver.h"
 
 
 //#define WINVER 0x0500

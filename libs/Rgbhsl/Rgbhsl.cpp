@@ -19,8 +19,9 @@
  */
 
 
-#include <Rgbhsl/Rgbhsl.h>
 #include <math.h>
+
+#include "Rgbhsl.h"
 
 
 void rgb2hsl(float r, float g, float b, float &h, float &s, float &l){
