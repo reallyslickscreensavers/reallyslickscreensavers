@@ -15,12 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\FieldLines\FieldLines.cpp">
+    <ClCompile Include="fieldlines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="FieldLines.rc">
+    <ResourceCompile Include="fieldlines.rc">
       <Filter>Source Files</Filter>
     </ResourceCompile>
   </ItemGroup>

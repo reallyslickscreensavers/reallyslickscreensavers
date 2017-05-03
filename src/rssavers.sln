@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "euphoria", "euphoria\euphor
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rsMath", "..\libs\rsMath\rsMath.vcxproj", "{8CEDD5EF-0615-4517-8845-054E44B17E3C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fieldlines", "fieldlines\fieldlines.vcxproj", "{9E08A8F2-1A66-48BB-91E8-EA69D2ABB9C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -47,6 +49,10 @@ Global
 		{8CEDD5EF-0615-4517-8845-054E44B17E3C}.Debug|x86.Build.0 = Debug|Win32
 		{8CEDD5EF-0615-4517-8845-054E44B17E3C}.Release|x86.ActiveCfg = Release|Win32
 		{8CEDD5EF-0615-4517-8845-054E44B17E3C}.Release|x86.Build.0 = Release|Win32
+		{9E08A8F2-1A66-48BB-91E8-EA69D2ABB9C5}.Debug|x86.ActiveCfg = Debug|Win32
+		{9E08A8F2-1A66-48BB-91E8-EA69D2ABB9C5}.Debug|x86.Build.0 = Debug|Win32
+		{9E08A8F2-1A66-48BB-91E8-EA69D2ABB9C5}.Release|x86.ActiveCfg = Release|Win32
+		{9E08A8F2-1A66-48BB-91E8-EA69D2ABB9C5}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
