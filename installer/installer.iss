@@ -42,15 +42,15 @@ UninstallDisplayName={#ApplicationName}
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: ".\..\bin\cyclone.exe"; DestDir: "{app}\cyclone.scr"; Flags: ignoreversion
-Source: ".\..\bin\euphoria.exe"; DestDir: "{app}\euphoria.scr"; Flags: ignoreversion
-Source: ".\..\bin\fieldlines.exe"; DestDir: "{app}\fieldlines.scr"; Flags: ignoreversion
-Source: ".\..\bin\flocks.exe"; DestDir: "{app}\flocks.scr"; Flags: ignoreversion
-Source: ".\..\bin\flux.exe"; DestDir: "{app}\flux.scr"; Flags: ignoreversion
-Source: ".\..\bin\helios.exe"; DestDir: "{app}\helios.scr"; Flags: ignoreversion
-Source: ".\..\bin\hyperspace.exe"; DestDir: "{app}\hyperspace.scr"; Flags: ignoreversion
-Source: ".\..\bin\lattice.exe"; DestDir: "{app}\lattice.scr"; Flags: ignoreversion
-Source: ".\..\bin\microcosm.exe"; DestDir: "{app}\microcosm.scr"; Flags: ignoreversion
-Source: ".\..\bin\plasma.exe"; DestDir: "{app}\plasma.scr"; Flags: ignoreversion
-Source: ".\..\bin\skyrocket.exe"; DestDir: "{app}\skyrocket.scr"; Flags: ignoreversion
-Source: ".\..\bin\solarwinds.exe"; DestDir: "{app}\solarwinds.scr"; Flags: ignoreversion
+Source: ".\..\bin\cyclone.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\euphoria.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\fieldlines.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\flocks.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\flux.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\helios.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\hyperspace.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\lattice.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\microcosm.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\plasma.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\skyrocket.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\..\bin\solarwinds.scr"; DestDir: "{app}"; Flags: ignoreversion
