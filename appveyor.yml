@@ -6,7 +6,10 @@ configuration:
 - Release
 platform: x86
 install:
-- cmd: git submodule update --init --recursive
+- cmd: >-
+    git submodule update --init --recursive
+
+    SET PATH=%INNODIR%;%PATH%
 build:
   project: src\rssavers.sln
   verbosity: minimal
