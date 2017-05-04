@@ -19,7 +19,7 @@
  */
 
 
-#include <Hyperspace/wavyNormalCubeMaps.h>
+#include "wavyNormalCubeMaps.h"
 #include <rsMath/rsMath.h>
 #include <math.h>
 

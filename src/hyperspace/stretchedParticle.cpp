@@ -22,7 +22,7 @@
 #ifdef WIN32
 	#include <windows.h>
 #endif
-#include <Hyperspace/stretchedParticle.h>
+#include "stretchedParticle.h"
 #include <stdio.h>
 #include <math.h>
 #include <GL/gl.h>

@@ -19,7 +19,7 @@
  */
 
 
-#include <Hyperspace/splinePath.h>
+#include "splinePath.h"
 #include <rsMath/rsMath.h>
 #include <math.h>
 

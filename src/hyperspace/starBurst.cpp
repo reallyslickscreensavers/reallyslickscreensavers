@@ -21,12 +21,12 @@
 
 #ifdef WIN32
 #include <windows.h>
-#include <Hyperspace/extensions.h>
+#include "extensions.h"
 #endif
 
-#include <Hyperspace/starBurst.h>
-#include <Hyperspace/wavyNormalCubeMaps.h>
-#include <Hyperspace/flare.h>
+#include "starBurst.h"
+#include "wavyNormalCubeMaps.h"
+#include "flare.h"
 #include <rsMath/rsMath.h>
 #include <GL/gl.h>
 #include <GL/glu.h>

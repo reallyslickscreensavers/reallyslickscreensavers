@@ -27,12 +27,12 @@
 #include <rsXScreenSaver/rsXScreenSaver.h>
 #endif
 #include <iostream>
-#include <Hyperspace/causticTextures.h>
 #include <math.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <rsMath/rsMath.h>
 
+#include "causticTextures.h"
 
 causticTextures::causticTextures(int keys, int frames, int res, int size, float depth, float wa, float rm){
 	int i, j, k;

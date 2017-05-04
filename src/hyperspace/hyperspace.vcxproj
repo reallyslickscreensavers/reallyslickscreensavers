@@ -55,7 +55,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\..\libs;..\..\3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -87,7 +87,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>.;../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\..\libs;..\..\3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
@@ -116,55 +116,55 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\Hyperspace\causticTextures.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\extensions.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\flare.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\goo.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\Hyperspace.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\splinePath.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\starBurst.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\stretchedParticle.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\tunnel.cpp" />
-    <ClCompile Include="..\..\src\Hyperspace\wavyNormalCubeMaps.cpp" />
+    <ClCompile Include="causticTextures.cpp" />
+    <ClCompile Include="extensions.cpp" />
+    <ClCompile Include="flare.cpp" />
+    <ClCompile Include="goo.cpp" />
+    <ClCompile Include="hyperspace.cpp" />
+    <ClCompile Include="splinePath.cpp" />
+    <ClCompile Include="starBurst.cpp" />
+    <ClCompile Include="stretchedParticle.cpp" />
+    <ClCompile Include="tunnel.cpp" />
+    <ClCompile Include="wavyNormalCubeMaps.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Hyperspace.rc" />
+    <ResourceCompile Include="hyperspace.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\Hyperspace\causticTextures.h" />
-    <ClInclude Include="..\..\include\Hyperspace\extensions.h" />
-    <ClInclude Include="..\..\include\Hyperspace\flare.h" />
-    <ClInclude Include="..\..\include\Hyperspace\goo.h" />
-    <ClInclude Include="..\..\include\Hyperspace\nebulamap.h" />
-    <ClInclude Include="..\..\include\Hyperspace\shaders.h" />
-    <ClInclude Include="..\..\include\Hyperspace\splinePath.h" />
-    <ClInclude Include="..\..\include\Hyperspace\starBurst.h" />
-    <ClInclude Include="..\..\include\Hyperspace\stretchedParticle.h" />
-    <ClInclude Include="..\..\include\Hyperspace\tunnel.h" />
-    <ClInclude Include="..\..\include\Hyperspace\wavyNormalCubeMaps.h" />
+    <ClInclude Include="causticTextures.h" />
+    <ClInclude Include="extensions.h" />
+    <ClInclude Include="flare.h" />
+    <ClInclude Include="goo.h" />
+    <ClInclude Include="nebulamap.h" />
+    <ClInclude Include="shaders.h" />
+    <ClInclude Include="splinePath.h" />
+    <ClInclude Include="starBurst.h" />
+    <ClInclude Include="stretchedParticle.h" />
+    <ClInclude Include="tunnel.h" />
+    <ClInclude Include="wavyNormalCubeMaps.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Implicit\Implicit.vcxproj">
+    <ProjectReference Include="..\..\libs\Implicit\Implicit.vcxproj">
       <Project>{83954ea0-9be5-42aa-8b35-6d78d3f73938}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\Rgbhsl\Rgbhsl.vcxproj">
+    <ProjectReference Include="..\..\libs\Rgbhsl\Rgbhsl.vcxproj">
       <Project>{a7cc0f11-ced4-4697-bcff-ad8015e77fbe}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\rsMath\rsMath.vcxproj">
+    <ProjectReference Include="..\..\libs\rsMath\rsMath.vcxproj">
       <Project>{8cedd5ef-0615-4517-8845-054e44b17e3c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\rsText\rsText.vcxproj">
+    <ProjectReference Include="..\..\libs\rsText\rsText.vcxproj">
       <Project>{6fade693-c3ce-4183-b245-5f9878c5155c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\rsWin32Saver\rsWin32Saver.vcxproj">
+    <ProjectReference Include="..\..\libs\rsWin32Saver\rsWin32Saver.vcxproj">
       <Project>{f1af4dec-0ce1-4e47-b5af-3e86d1c0f293}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

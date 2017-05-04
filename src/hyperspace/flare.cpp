@@ -19,7 +19,7 @@
  */
 
 
-#include <Hyperspace/flare.h>
+#include "flare.h"
 
 
 

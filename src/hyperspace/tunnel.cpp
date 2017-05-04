@@ -22,7 +22,7 @@
 #ifdef WIN32
 	#include <windows.h>
 #endif
-#include <Hyperspace/tunnel.h>
+#include "tunnel.h"
 #include <math.h>
 #include <GL/gl.h>
 #include <rsMath/rsMath.h>

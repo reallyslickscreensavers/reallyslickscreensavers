@@ -30,7 +30,7 @@
 #include <regstr.h>
 #include <commctrl.h>
 #include <resource.h>
-#include <Hyperspace/extensions.h>
+#include "extensions.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -43,16 +43,16 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <rsMath/rsMath.h>
-#include <Hyperspace/flare.h>
-#include <Hyperspace/causticTextures.h>
-#include <Hyperspace/wavyNormalCubeMaps.h>
-#include <Hyperspace/splinePath.h>
-#include <Hyperspace/tunnel.h>
-#include <Hyperspace/goo.h>
-#include <Hyperspace/stretchedParticle.h>
-#include <Hyperspace/starBurst.h>
-#include <Hyperspace/nebulamap.h>
-#include <Hyperspace/shaders.h>
+#include "flare.h"
+#include "causticTextures.h"
+#include "wavyNormalCubeMaps.h"
+#include "splinePath.h"
+#include "tunnel.h"
+#include "goo.h"
+#include "stretchedParticle.h"
+#include "starBurst.h"
+#include "nebulamap.h"
+#include "shaders.h"
 
 //#include <fstream>
 //std::ofstream outfile;

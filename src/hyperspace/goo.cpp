@@ -19,7 +19,7 @@
  */
 
 
-#include <Hyperspace/goo.h>
+#include "goo.h"
 
 
 
