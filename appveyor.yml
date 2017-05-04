@@ -1,12 +1,22 @@
 version: 1.0.{build}
 pull_requests:
   do_not_increment_build_number: true
+skip_branch_with_pr: true
 configuration:
 - Debug
 - Release
+- Installer
 platform: x86
+environment:
+  INNODIR: C:\Program Files (x86)\Inno Setup 5
 install:
-- cmd: git submodule update --init --recursive
+- cmd: >-
+    git submodule update --init --recursive
+
+    set PATH=%INNODIR%;%PATH%
 build:
   project: src\rssavers.sln
   verbosity: minimal
+artifacts:
+- path: installer/output/*.exe
+  name: installer
