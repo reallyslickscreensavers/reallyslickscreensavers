@@ -176,11 +176,9 @@ Global
 		{9161C495-4A8A-4C15-8BB6-29A795EF882A}.Release|x86.ActiveCfg = Release|Win32
 		{9161C495-4A8A-4C15-8BB6-29A795EF882A}.Release|x86.Build.0 = Release|Win32
 		{1D429661-2ABB-4547-8DE6-336C49CC31B6}.Debug|x86.ActiveCfg = Installer|Win32
-		{1D429661-2ABB-4547-8DE6-336C49CC31B6}.Debug|x86.Build.0 = Installer|Win32
 		{1D429661-2ABB-4547-8DE6-336C49CC31B6}.Installer|x86.ActiveCfg = Installer|Win32
 		{1D429661-2ABB-4547-8DE6-336C49CC31B6}.Installer|x86.Build.0 = Installer|Win32
 		{1D429661-2ABB-4547-8DE6-336C49CC31B6}.Release|x86.ActiveCfg = Installer|Win32
-		{1D429661-2ABB-4547-8DE6-336C49CC31B6}.Release|x86.Build.0 = Installer|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
