@@ -30,27 +30,31 @@ DefaultGroupName={#ApplicationName}
 Compression=lzma
 SolidCompression=yes
 
+; root directory
+SourceDir=.\..\bin
+
 ; output dir is relative to SourceDir
-OutputDir=.\output
+OutputDir=.\..\installer\output
+
 ; output installer file name
 OutputBaseFilename={#ApplicationShortName + "_v" + ApplicationVersion}
 
-;UninstallDisplayIcon="installer.ico"
+UninstallDisplayIcon="installer.ico"
 UninstallDisplayName={#ApplicationName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: ".\..\bin\cyclone.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\euphoria.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\fieldlines.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\flocks.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\flux.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\helios.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\hyperspace.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\lattice.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\microcosm.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\plasma.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\skyrocket.scr"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\..\bin\solarwinds.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cyclone.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "euphoria.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "fieldlines.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "flocks.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "flux.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "helios.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "hyperspace.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "lattice.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "microcosm.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "plasma.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "skyrocket.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "solarwinds.scr"; DestDir: "{app}"; Flags: ignoreversion
