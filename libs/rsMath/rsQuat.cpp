@@ -18,58 +18,61 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 #include "rsMath.h"
+
 #include <math.h>
 
-
-
-rsQuat::rsQuat(){
+rsQuat::rsQuat()
+{
 	q[0] = 0.0f;
 	q[1] = 0.0f;
 	q[2] = 0.0f;
 	q[3] = 1.0f;
 }
 
-
-rsQuat::rsQuat(float x, float y, float z, float w){
+rsQuat::rsQuat(float x, float y, float z, float w)
+{
 	q[0] = x;
 	q[1] = y;
 	q[2] = z;
 	q[3] = w;
 }
 
-
-rsQuat::~rsQuat(){
+rsQuat::~rsQuat()
+{
 	return;
 }
 
-
-void rsQuat::set(float x, float y, float z, float w){
+void
+rsQuat::set(float x, float y, float z, float w)
+{
 	q[0] = x;
 	q[1] = y;
 	q[2] = z;
 	q[3] = w;
 }
 
-
-void rsQuat::copy(rsQuat copyquat){
+void
+rsQuat::copy(rsQuat copyquat)
+{
 	q[0] = copyquat[0];
 	q[1] = copyquat[1];
 	q[2] = copyquat[2];
 	q[3] = copyquat[3];
 }
 
-
-void rsQuat::make(float a, float x, float y, float z){
-	if(a < RS_EPSILON && a > -RS_EPSILON){
+void
+rsQuat::make(float a, float x, float y, float z)
+{
+	if (a < RS_EPSILON && a > -RS_EPSILON)
+	{
 		q[0] = 0.0f;
 		q[1] = 0.0f;
 		q[2] = 0.0f;
 		q[3] = 1.0f;
 	}
-	else{
+	else
+	{
 		a *= 0.5f;
 		float sintheta = sinf(a);
 		q[0] = sintheta * x;
@@ -79,15 +82,18 @@ void rsQuat::make(float a, float x, float y, float z){
 	}
 }
 
-
-void rsQuat::make(float a, const rsVec &v){
-	if(a < RS_EPSILON && a > -RS_EPSILON){
+void
+rsQuat::make(float a, const rsVec &v)
+{
+	if (a < RS_EPSILON && a > -RS_EPSILON)
+	{
 		q[0] = 0.0f;
 		q[1] = 0.0f;
 		q[2] = 0.0f;
 		q[3] = 1.0f;
 	}
-	else{
+	else
+	{
 		a *= 0.5f;
 		float sintheta = sinf(a);
 		q[0] = sintheta * v[0];
@@ -97,8 +103,9 @@ void rsQuat::make(float a, const rsVec &v){
 	}
 }
 
-
-void rsQuat::normalize(){
+void
+rsQuat::normalize()
+{
 	float length = float(sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]));
 
 	q[0] /= length;
@@ -107,8 +114,9 @@ void rsQuat::normalize(){
 	q[3] /= length;
 }
 
-
-void rsQuat::preMult(rsQuat &postQuat){
+void
+rsQuat::preMult(rsQuat &postQuat)
+{
 	// q1q2 = s1v2 + s2v1 + v1xv2, s1s2 - v1.v2
 	float tempx = q[0];
 	float tempy = q[1];
@@ -127,8 +135,9 @@ void rsQuat::preMult(rsQuat &postQuat){
 		- tempz * postQuat[2];
 }
 
-
-void rsQuat::postMult(rsQuat &preQuat){
+void
+rsQuat::postMult(rsQuat &preQuat)
+{
 	float tempx = q[0];
 	float tempy = q[1];
 	float tempz = q[2];
@@ -146,12 +155,14 @@ void rsQuat::postMult(rsQuat &preQuat){
 		- preQuat[2] * tempz;
 }
 
-
-void rsQuat::toMat(float *mat){
+void
+rsQuat::toMat(float *mat)
+{
 	float s, xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
 
 	// must have an axis
-	if(q[0] == 0.0f && q[1] == 0.0f && q[2] == 0.0f){
+	if (q[0] == 0.0f && q[1] == 0.0f && q[2] == 0.0f)
+	{
 		mat[0] = 1.0f;
 		mat[1] = 0.0f;
 		mat[2] = 0.0f;
@@ -203,13 +214,15 @@ void rsQuat::toMat(float *mat){
 	mat[15] = 1.0f;
 }
 
-
-void rsQuat::fromMat(float* mat){
+void
+rsQuat::fromMat(float* mat)
+{
 	float a, b;
 	int i;
 
 	a = mat[0] + mat[5] + mat[10];
-	if(a > 0.0){
+	if (a > 0.0)
+	{
 		b = float(sqrt(a + 1.0f));
 		q[3] = b * 0.5f;
 		b = 0.5f / b;
@@ -218,14 +231,16 @@ void rsQuat::fromMat(float* mat){
 		q[1] = (mat[8] - mat[2]) * b;
 		q[2] = (mat[1] - mat[4]) * b;
 	}
-	else{
+	else
+	{
 		i = 0;
-		if(mat[5] > mat[0])
+		if (mat[5] > mat[0])
 			i = 1;
-		if(mat[10] > mat[5])
+		if (mat[10] > mat[5])
 			i = 2;
-		
-		if(i==0){
+
+		if (i == 0)
+		{
 			b = float(sqrt(mat[0] - mat[5] - mat[10] + 1.0f));
 			q[0] *= 0.5f;
 			b = 0.5f / b;
@@ -233,7 +248,8 @@ void rsQuat::fromMat(float* mat){
 			q[1] = (mat[1] - mat[4]) * b;
 			q[2] = (mat[2] - mat[8]) * b;
 		}
-		if(i==1){
+		if (i == 1)
+		{
 			b = float(sqrt(mat[5] - mat[10] - mat[0] + 1.0f));
 			q[1] *= 0.5f;
 			b = 0.5f / b;
@@ -241,7 +257,8 @@ void rsQuat::fromMat(float* mat){
 			q[2] = (mat[6] - mat[9]) * b;
 			q[0] = (mat[4] - mat[1]) * b;
 		}
-		if(i==2){
+		if (i == 2)
+		{
 			b = float(sqrt(mat[10] - mat[0] - mat[5] + 1.0f));
 			q[2] *= 0.5f;
 			b = 0.5f / b;
@@ -252,8 +269,9 @@ void rsQuat::fromMat(float* mat){
 	}
 }
 
-
-void rsQuat::fromEuler(float yaw, float pitch, float roll){
+void
+rsQuat::fromEuler(float yaw, float pitch, float roll)
+{
 	float cy, cp, cr, sy, sp, sr, cpcy, spsy;
 
 	cy = cosf(yaw * 0.5f);
@@ -263,7 +281,7 @@ void rsQuat::fromEuler(float yaw, float pitch, float roll){
 	sy = sinf(yaw * 0.5f);
 	sp = sinf(pitch * 0.5f);
 	sr = sinf(roll * 0.5f);
-	
+
 	cpcy = cp * cy;
 	spsy = sp * sy;
 
@@ -273,19 +291,23 @@ void rsQuat::fromEuler(float yaw, float pitch, float roll){
 	q[2] = cr * cp * sy - sr * sp * cy;
 }
 
-
-void rsQuat::slerp(rsQuat a, rsQuat b, float t){
+void
+rsQuat::slerp(rsQuat a, rsQuat b, float t)
+{
 	float n, cn, sn, scalea, scaleb;
 
 	cn = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
-	if((1.0f + cn) > RS_EPSILON){
-		if((1.0f - cn) > RS_EPSILON){
+	if ((1.0f + cn) > RS_EPSILON)
+	{
+		if ((1.0f - cn) > RS_EPSILON)
+		{
 			n = acosf(cn);
 			sn = sinf(n);
 			scalea = sinf((1.0f - t) * n) / sn;
 			scaleb = sinf(t * n) / sn;
 		}
-		else{
+		else
+		{
 			scalea = 1.0f - t;
 			scaleb = t;
 		}
@@ -294,7 +316,8 @@ void rsQuat::slerp(rsQuat a, rsQuat b, float t){
 		q[2] = scalea * a[2] + scaleb * b[2];
 		q[3] = scalea * a[3] + scaleb * b[3];
 	}
-	else{
+	else
+	{
 		scalea = sinf((1.0f - t) * RS_PIo2);
 		scaleb = sinf(t * RS_PIo2);
 		q[0] = scalea * a[0] - scaleb * q[1];

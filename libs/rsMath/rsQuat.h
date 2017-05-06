@@ -18,23 +18,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef RSQUAT_H
 #define RSQUAT_H
 
-
-
 class rsVec;
 
-
-
-class rsQuat{
+class rsQuat
+{
 public:
 	float q[4];
 
 	rsQuat();
 	rsQuat(float x, float y, float z, float w);
 	~rsQuat();
+
 	void set(float x, float y, float z, float w);	// x, y, z, w
 	void copy(rsQuat);						// Copy another quaternion
 	void make(float a, float x, float y, float z);	// angle, normalized axis
@@ -53,10 +50,15 @@ public:
 											// to second using float from 0.0
 											// to 1.0
 
-	float & operator [] (int i) {return q[i];}
-	const float & operator [] (int i) const {return q[i];}
+	float & operator [] (int i)
+	{
+		return q[i];
+	}
+
+	const float & operator [] (int i) const
+	{
+		return q[i];
+	}
 };
-
-
 
 #endif
