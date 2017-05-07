@@ -18,9 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <commctrl.h>
-#include <stdio.h>
 #include <windows.h>
+#include <stdio.h>
+#include <commctrl.h>
 
 #include "rsWin32Saver.h"
 
