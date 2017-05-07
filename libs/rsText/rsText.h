@@ -18,42 +18,39 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef RSTEXT_H
 #define RSTEXT_H
 
-
-
 #ifdef WIN32
-	#include <windows.h>
+#include <windows.h>
 #endif
-#include <vector>
-#include <string>
+
 #include <sstream>
+#include <string>
+#include <vector>
+
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-
-
-class rsText{
+class rsText
+{
 public:
 	GLuint texture;  // texture object
 	GLuint listbase;  // first display list
 
 	rsText();
-	~rsText(){}
+	~rsText()
+	{
+	}
 	void draw(std::string &str);
 	void draw(std::vector<std::string> &strvec);
 };
 
-
-
-template<class T> inline std::string to_string(const T & Value){
-    std::stringstream ss;
-    ss << Value;
-    return ss.str();
+template<class T> inline std::string to_string(const T & Value)
+{
+	std::stringstream ss;
+	ss << Value;
+	return ss.str();
 }
-
-
 
 #endif

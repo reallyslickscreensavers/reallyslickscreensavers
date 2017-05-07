@@ -18,12 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include "impEllipsoid.h"
 
-
-
-float impEllipsoid::value(float* position){
+float
+impEllipsoid::value(float* position)
+{
 	const float& x(position[0]);
 	const float& y(position[1]);
 	const float& z(position[2]);
@@ -32,5 +31,5 @@ float impEllipsoid::value(float* position){
 	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
 	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
-	return thicknessSquared / (tx*tx + ty*ty + tz*tz + IMP_MIN_DIVISOR);
+	return thicknessSquared / (tx * tx + ty * ty + tz * tz + IMP_MIN_DIVISOR);
 }

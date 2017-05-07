@@ -18,17 +18,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include "impSphere.h"
 
-
-
-float impSphere::value(float* position){
+float
+impSphere::value(float* position)
+{
 	const float tx(invmat[12] + position[0]);
 	const float ty(invmat[13] + position[1]);
 	const float tz(invmat[14] + position[2]);
+
 	// Use thickness instead of relying on scale to be in the matrix
 	// because the value computation for a sphere is simplified by
 	// using an incomplete matrix.
-	return thicknessSquared / (tx*tx + ty*ty + tz*tz + IMP_MIN_DIVISOR);
+	return thicknessSquared / (tx * tx + ty * ty + tz * tz + IMP_MIN_DIVISOR);
 }

@@ -18,23 +18,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef RSVEC_H
 #define RSVEC_H
 
-
-
 class rsMatrix;
 
-
-
-class rsVec{
+class rsVec
+{
 public:
 	float v[3];
 
 	rsVec();
 	rsVec(float xx, float yy, float zz);
 	virtual ~rsVec();
+
 	void set(float xx, float yy, float zz);
 	float length();
 	float normalize();
@@ -45,28 +42,60 @@ public:
 	void transVec(const rsMatrix &m);
 	int almostEqual(rsVec vec, float tolerance);
 
-	float & operator [] (int i) {return v[i];}
-	const float & operator [] (int i) const {return v[i];}
+	float & operator [] (int i)
+	{
+		return v[i];
+	}
+
+	const float & operator [] (int i) const
+	{
+		return v[i];
+	}
+
 	rsVec & operator = (const rsVec &vec)
-		{v[0]=vec[0];v[1]=vec[1];v[2]=vec[2];return *this;}
+	{
+		v[0] = vec[0]; v[1] = vec[1]; v[2] = vec[2]; return *this;
+	}
+
 	rsVec operator + (const rsVec &vec)
-		{return(rsVec(v[0]+vec[0], v[1]+vec[1], v[2]+vec[2]));}
+	{
+		return(rsVec(v[0] + vec[0], v[1] + vec[1], v[2] + vec[2]));
+	}
+
 	rsVec operator - (const rsVec &vec)
-		{return(rsVec(v[0]-vec[0], v[1]-vec[1], v[2]-vec[2]));}
+	{
+		return(rsVec(v[0] - vec[0], v[1] - vec[1], v[2] - vec[2]));
+	}
+
 	rsVec operator * (const float &mul)
-		{return(rsVec(v[0]*mul, v[1]*mul, v[2]*mul));}
+	{
+		return(rsVec(v[0] * mul, v[1] * mul, v[2] * mul));
+	}
+
 	rsVec operator / (const float &div)
-		{float rec = 1.0f/div; return(rsVec(v[0]*rec, v[1]*rec, v[2]*rec));}
+	{
+		float rec = 1.0f / div; return(rsVec(v[0] * rec, v[1] * rec, v[2] * rec));
+	}
+
 	rsVec & operator += (const rsVec &vec)
-		{v[0]+=vec[0];v[1]+=vec[1];v[2]+=vec[2];return *this;}
+	{
+		v[0] += vec[0]; v[1] += vec[1]; v[2] += vec[2]; return *this;
+	}
+
 	rsVec & operator -= (const rsVec &vec)
-		{v[0]-=vec[0];v[1]-=vec[1];v[2]-=vec[2];return *this;}
+	{
+		v[0] -= vec[0]; v[1] -= vec[1]; v[2] -= vec[2]; return *this;
+	}
+
 	rsVec & operator *= (const rsVec &vec)
-		{v[0]*=vec[0];v[1]*=vec[1];v[2]*=vec[2];return *this;}
+	{
+		v[0] *= vec[0]; v[1] *= vec[1]; v[2] *= vec[2]; return *this;
+	}
+
 	rsVec & operator *= (const float &mul)
-		{v[0]*=mul;v[1]*=mul;v[2]*=mul;return *this;}
+	{
+		v[0] *= mul; v[1] *= mul; v[2] *= mul; return *this;
+	}
 };
-
-
 
 #endif

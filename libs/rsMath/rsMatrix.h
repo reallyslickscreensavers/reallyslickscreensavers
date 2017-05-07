@@ -18,22 +18,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef RSMATRIX_H
 #define RSMATRIX_H
 
-
-
 #include <ostream>
-
-
 
 class rsVec;
 class rsQuat;
 
-
-
-class rsMatrix{
+class rsMatrix
+{
 public:
 	float m[16];
 	// 1 0 0 x   0 4 8  12  <-- Column order matrix just like OpenGL
@@ -43,6 +37,7 @@ public:
 
 	rsMatrix();
 	~rsMatrix();
+
 	void identity();
 	void set(float* mat);
 	void get(float* mat);
@@ -78,13 +73,19 @@ public:
 	void rotationInvert(const rsMatrix &mat);  // rotation matrix inversion
 	void fromQuat(const rsQuat &q);
 
-	float & operator [] (int i){return m[i];}
-	const float & operator [] (int i) const {return m[i];}
+	float & operator [] (int i)
+	{
+		return m[i];
+	}
+
+	const float & operator [] (int i) const
+	{
+		return m[i];
+	}
+
 	rsMatrix & operator = (const rsMatrix &mat);
 	std::ostream & operator << (std::ostream &os);
-//	friend std::ostream & operator << (std::ostream& os, const rsMatrix& mat);
+	//	friend std::ostream & operator << (std::ostream& os, const rsMatrix& mat);
 };
-
-
 
 #endif

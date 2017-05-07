@@ -18,24 +18,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPHEXAHEDRON_H
 #define IMPHEXAHEDRON_H
 
-
-
 #include "impShape.h"
 
-
-
 // An impHexahedron is a simpe cube if the matrix has no nonuniform scale factor
-class impHexahedron : public impShape{
+class impHexahedron : public impShape
+{
 public:
-	impHexahedron(){};
-	~impHexahedron(){};
+	impHexahedron() {};
+	~impHexahedron() {};
+
 	virtual float value(float* position);
 };
-
-
 
 #endif

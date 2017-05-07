@@ -18,12 +18,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include "impKnot.h"
+
 #include <rsMath/rsMath.h>
 
-
-float impKnot::value(float* position){
+float
+impKnot::value(float* position)
+{
 	const float& x(position[0]);
 	const float& y(position[1]);
 	const float& z(position[2]);
@@ -32,35 +33,41 @@ float impKnot::value(float* position){
 	const float ty(x * invtrmat[4] + y * invtrmat[5] + z * invtrmat[6] + invtrmat[7]);
 	const float tz(x * invtrmat[8] + y * invtrmat[9] + z * invtrmat[10] + invtrmat[11]);
 
-	const float temp(rsSqrtf(tx*tx + ty*ty) - radius1);
+	const float temp(rsSqrtf(tx * tx + ty * ty) - radius1);
 	const float lat(rsAtan2f(ty, tx) * twistsOverCoils);
 	float retval(0.0f);
-	for(int i=0; i<coils; ++i){
+
+	for (int i = 0; i < coils; ++i)
+	{
 		const float lon(lat + lat_offset * float(i));
 		const float hor(temp - rsCosf(lon) * radius2);
 		const float ver(tz - rsSinf(lon) * radius2);
 		retval += thicknessSquared / (hor * hor + ver * ver + IMP_MIN_DIVISOR);
 	}
+
 	return retval;
 }
 
-
 // Finding a point inside a knot is trickier than
 // finding a point inside a sphere or ellipsoid.
-void impKnot::center(float* position){
-    position[0] = mat[0] * (radius1 + radius2) + mat[12];
-    position[1] = mat[1] * (radius1 + radius2) + mat[13];
-    position[2] = mat[2] * (radius1 + radius2) + mat[14];
+void
+impKnot::center(float* position)
+{
+	position[0] = mat[0] * (radius1 + radius2) + mat[12];
+	position[1] = mat[1] * (radius1 + radius2) + mat[13];
+	position[2] = mat[2] * (radius1 + radius2) + mat[14];
 }
 
-
-void impKnot::addCrawlPoint(impCrawlPointVector &cpv){
+void
+impKnot::addCrawlPoint(impCrawlPointVector& cpv)
+{
 	const float step(6.28318530718f / float(coils));
-	for(int i=0; i<coils; ++i){
+	for (int i = 0; i < coils; ++i)
+	{
 		const float x(radius1 + cosf(float(i) * step) * radius2);
 		const float z(sinf(float(i) * step) * radius2);
 		cpv.push_back(impCrawlPoint(mat[0] * x + mat[8] * z + mat[12],
-			mat[1] * x + mat[9] * z + mat[13],
-			mat[2] * x + mat[10] * z + mat[14]));
+		        mat[1] * x + mat[9] * z + mat[13],
+		        mat[2] * x + mat[10] * z + mat[14]));
 	}
 }

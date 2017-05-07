@@ -18,11 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include "impCapsule.h"
 
-
-float impCapsule::value(float* position){
+float
+impCapsule::value(float* position)
+{
 	const float& x(position[0]);
 	const float& y(position[1]);
 	const float& z(position[2]);
@@ -38,5 +38,5 @@ float impCapsule::value(float* position){
 	// rewritten with fewer conditionals
 	const float sz(zz * (zz > 0.0f));
 
-	return thicknessSquared / (tx*tx + ty*ty + sz*sz + IMP_MIN_DIVISOR);
+	return thicknessSquared / (tx * tx + ty * ty + sz * sz + IMP_MIN_DIVISOR);
 }

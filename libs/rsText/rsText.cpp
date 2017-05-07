@@ -22,8 +22,8 @@
 
 #include "fontmap.h"
 
-
-rsText::rsText(){
+rsText::rsText()
+{
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -35,21 +35,23 @@ rsText::rsText(){
 
 	float xorig, yorig;
 	listbase = glGenLists(128);
-	for(int i=0; i<128; ++i){
+
+	for (int i = 0; i < 128; ++i)
+	{
 		xorig = float(i % 16) * 0.0625f;
 		yorig = float(i / 16) * 0.125f;
 		glNewList(listbase + i, GL_COMPILE);
-			glBegin(GL_TRIANGLE_STRIP);
-				glTexCoord2f(xorig, yorig + 0.125f);
-				glVertex3f(0.0f, 0.0f, 0.0f);
-				glTexCoord2f(xorig + 0.0625f, yorig + 0.125f);
-				glVertex3f(1.0f, 0.0f, 0.0f);
-				glTexCoord2f(xorig, yorig);
-				glVertex3f(0.0f, 1.0f, 0.0f);
-				glTexCoord2f(xorig + 0.0625f, yorig);
-				glVertex3f(1.0f, 1.0f, 0.0f);
-			glEnd();
-			glTranslatef(1.0f, 0.0f, 0.0f);
+		glBegin(GL_TRIANGLE_STRIP);
+		glTexCoord2f(xorig, yorig + 0.125f);
+		glVertex3f(0.0f, 0.0f, 0.0f);
+		glTexCoord2f(xorig + 0.0625f, yorig + 0.125f);
+		glVertex3f(1.0f, 0.0f, 0.0f);
+		glTexCoord2f(xorig, yorig);
+		glVertex3f(0.0f, 1.0f, 0.0f);
+		glTexCoord2f(xorig + 0.0625f, yorig);
+		glVertex3f(1.0f, 1.0f, 0.0f);
+		glEnd();
+		glTranslatef(1.0f, 0.0f, 0.0f);
 		/*glBitmap(512, 256,
 			32.0f * float(i % 16), 32.0f * float(i / 16),
 			32.0f, 0.0, (const GLubyte *)fontmap);*/
@@ -57,50 +59,59 @@ rsText::rsText(){
 	}
 }
 
-
-void rsText::draw(std::string &str){
+void
+rsText::draw(std::string &str)
+{
 	int character;
 
 	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_BLEND);
-		glEnable(GL_TEXTURE_2D);
-		glDisable(GL_LIGHTING);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		for(unsigned int i=0; i<str.length(); ++i){
-			// Character set only includes 128 characters starting
-			// with ASCII number 32
-			character = int((str.c_str())[i]) - 32;
-			if(character >= 0 && character < 128)
-				glCallList(character + listbase);
-		}
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_LIGHTING);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	for (unsigned int i = 0; i < str.length(); ++i)
+	{
+		// Character set only includes 128 characters starting
+		// with ASCII number 32
+		character = int((str.c_str())[i]) - 32;
+		if (character >= 0 && character < 128)
+			glCallList(character + listbase);
+	}
+
 	glPopAttrib();
 }
 
-
-void rsText::draw(std::vector<std::string> &strvec){
+void
+rsText::draw(std::vector<std::string> &strvec)
+{
 	int character;
 	std::string* str;
 
 	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_BLEND);
-		glEnable(GL_TEXTURE_2D);
-		glDisable(GL_LIGHTING);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		for(unsigned int j=0; j<strvec.size(); ++j){
-			str = &(strvec[j]);
-			unsigned int i;
-			for(i=0; i<str->length(); ++i){
-				// Character set only includes 128 characters starting
-				// with ASCII number 32
-				character = int((str->c_str())[i]) - 32;
-				if(character >= 0 && character < 128)
-					glCallList(character + listbase);
-			}
-			glTranslatef(-float(i), -1.0f, 0.0f);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_LIGHTING);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	for (unsigned int j = 0; j < strvec.size(); ++j)
+	{
+		str = &(strvec[j]);
+		unsigned int i;
+		for (i = 0; i < str->length(); ++i)
+		{
+			// Character set only includes 128 characters starting
+			// with ASCII number 32
+			character = int((str->c_str())[i]) - 32;
+			if (character >= 0 && character < 128)
+				glCallList(character + listbase);
 		}
+		glTranslatef(-float(i), -1.0f, 0.0f);
+	}
+
 	glPopAttrib();
 }

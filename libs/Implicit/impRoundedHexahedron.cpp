@@ -18,12 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include "impRoundedHexahedron.h"
 
-
-
-float impRoundedHexahedron::value(float* position){
+float
+impRoundedHexahedron::value(float* position)
+{
 	const float& x(position[0]);
 	const float& y(position[1]);
 	const float& z(position[2]);
@@ -39,6 +38,7 @@ float impRoundedHexahedron::value(float* position){
 	const float sy((yy < 0.0f) ? 0.0f : yy);
 	const float zz(fabsf(tz) - length);
 	const float sz((zz < 0.0f) ? 0.0f : zz);*/
+
 	// rewritten with fewer conditionals
 	const float xx(fabsf(tx) - width);
 	const float yy(fabsf(ty) - height);
@@ -47,5 +47,5 @@ float impRoundedHexahedron::value(float* position){
 	const float sy(yy * (yy > 0.0f));
 	const float sz(zz * (zz > 0.0f));
 
-	return thicknessSquared / (sx*sx + sy*sy + sz*sz + IMP_MIN_DIVISOR);
+	return thicknessSquared / (sx * sx + sy * sy + sz * sz + IMP_MIN_DIVISOR);
 }

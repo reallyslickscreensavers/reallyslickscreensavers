@@ -19,46 +19,39 @@
  */
 
 
-/*
- * OpenGL screensaver library
- *
- * Library for handling standard OpenGL screensaver functionality, such
- * as opening windows, choosing pixel formats, setting video modes,
- * handling user input, etc...
- *
- * This library is functionally similar to Microsoft's scrnsave.lib.  The
- * most important extras are a routine for choosing an OpenGL video format
- * and routines for choosing a video mode.  So if you've ever written a saver
- * using scrnsave.lib and want to try writing an OpenGL saver, this library
- * should be simple for you to use.
- *
- * The best resources I've found for learning this Windows screensaver stuff are:
- * http://www.wischik.com/scr, which explains all the code in plain English, and
- * the scrnsave.lib example code found in the MSDN Library.
- * For the OpenGL part of this code, I can't name any good examples.
- */
-
-
+ /*
+  * OpenGL screensaver library
+  *
+  * Library for handling standard OpenGL screensaver functionality, such
+  * as opening windows, choosing pixel formats, setting video modes,
+  * handling user input, etc...
+  *
+  * This library is functionally similar to Microsoft's scrnsave.lib.  The
+  * most important extras are a routine for choosing an OpenGL video format
+  * and routines for choosing a video mode.  So if you've ever written a saver
+  * using scrnsave.lib and want to try writing an OpenGL saver, this library
+  * should be simple for you to use.
+  *
+  * The best resources I've found for learning this Windows screensaver stuff are:
+  * http://www.wischik.com/scr, which explains all the code in plain English, and
+  * the scrnsave.lib example code found in the MSDN Library.
+  * For the OpenGL part of this code, I can't name any good examples.
+  */
 
 #ifndef RSWIN32SAVER_H
 #define RSWIN32SAVER_H
 
-
-
 #include <rsUtility/rsTimer.h>
 
-
-
-// String required in the .rc file.
-// This will be the name displayed in the Screen Saver config window.
-// This doesn't seem to work under some versions of Windows if filename
-// has more than 8 characters.
+  // String required in the .rc file.
+  // This will be the name displayed in the Screen Saver config window.
+  // This doesn't seem to work under some versions of Windows if filename
+  // has more than 8 characters.
 #define IDS_DESCRIPTION 1
 // Screensaver's "settings" dialog box
 #define DLG_SCRNSAVECONFIGURE 7001
 // icon resource id
 #define ID_APP 7002
-
 
 // The following globals are defined in rsWin32Saver.cpp
 extern HINSTANCE mainInstance;
@@ -84,45 +77,31 @@ extern unsigned int dFrameRateLimit;
 // Application must implement the displaying of statistics if kStatistics is true.
 extern int kStatistics;
 
-
 //----------------------------------------------------------------------------
-
-
 // The following functions must be defined by the saver that uses this library.
 
 // This should handle all messages to the saver
-LRESULT screenSaverProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-// All idle processing is done here.  Typically, you would just draw 
+LRESULT screenSaverProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+// All idle processing is done here.  Typically, you would just draw
 // frames during this routine.
 void idleProc();
 // Use this function to set up the "settings" dialog box.
-BOOL screenSaverConfigureDialog (HWND dlg, UINT msg, WPARAM wParam, LPARAM lParam);
-
+BOOL screenSaverConfigureDialog(HWND dlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //----------------------------------------------------------------------------
-
-
 // The ScreenSaverProc function should call this function with any unhandled messages
-LRESULT defScreenSaverProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
+LRESULT defScreenSaverProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //----------------------------------------------------------------------------
-
-
 // Chooses the best pixel format available in the current graphics mode.
 // It gives preference to modes that use OpenGL harware acceleration.
 void setBestPixelFormat(HDC hdc);
 
-
 //----------------------------------------------------------------------------
-
 // Functions for using frame rate limiter
 
 void initFrameRateLimitSlider(HWND hdlg, int sliderID, int textID);
 void updateFrameRateLimitSlider(HWND hdlg, int sliderID, int textID);
 void readFrameRateLimitFromRegistry();
-
-
-
 
 #endif

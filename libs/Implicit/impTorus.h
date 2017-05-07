@@ -18,34 +18,28 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPTORUS_H
 #define IMPTORUS_H
 
-
-
 #include "impShape.h"
 
-
-
-class  impTorus : public impShape{
+class  impTorus : public impShape
+{
 private:
 	float radius;
 
 public:
-	impTorus(){
-		radius = 1.0f;
-	}
-	~impTorus(){};
-	void setRadius(float r){radius = r;}
-	float getRadius(){return radius;}
+	impTorus() { radius = 1.0f; }
+	~impTorus() {};
+
+	void setRadius(float r) { radius = r; }
+	float getRadius() { return radius; }
+
 	// position is an array of 3 floats
 	// returns the field strenth of this sphere at a given position
 	virtual float value(float* position);
 	virtual void center(float* position);
-	virtual void addCrawlPoint(impCrawlPointVector &cpv);
+	virtual void addCrawlPoint(impCrawlPointVector& cpv);
 };
-
-
 
 #endif

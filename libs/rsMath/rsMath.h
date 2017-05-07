@@ -18,22 +18,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef RSMATH_H
 #define RSMATH_H
 
-
-#include <stdlib.h>
 #include <math.h>
-#include "rsVec.h"
-#include "rsVec4.h"
-#include "rsMatrix.h"
-#include "rsQuat.h"
-#include "rsTrigonometry.h"
+#include <stdlib.h>
+
 #ifdef __SSE__
 #include <xmmintrin.h>
 #endif
 
+#include "rsMatrix.h"
+#include "rsQuat.h"
+#include "rsTrigonometry.h"
+#include "rsVec.h"
+#include "rsVec4.h"
 
 #define RS_EPSILON 0.000001f
 #define RS_PIo2 1.57079632679f
@@ -42,21 +41,23 @@
 #define RS_DEG2RAD 0.0174532925f
 #define RS_RAD2DEG 57.2957795131f
 
-
-
-// Useful random number functions
-// Don't forget to initialize with srand()
-inline int rsRandi(int x){
+ // Useful random number functions
+ // Don't forget to initialize with srand()
+inline int
+rsRandi(int x)
+{
 	return rand() % x;
 }
 
-
-inline float rsRandf(float x){
+inline float
+rsRandf(float x)
+{
 	return x * (float(rand()) / float(RAND_MAX));
 }
 
-
-inline float rsSqrtf(const float& x){
+inline float
+rsSqrtf(const float& x)
+{
 #ifdef __SSE__
 	return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
 #else
@@ -65,8 +66,9 @@ inline float rsSqrtf(const float& x){
 #endif
 }
 
-
-inline float rsInvSqrtf(const float& x){
+inline float
+rsInvSqrtf(const float& x)
+{
 #ifdef __SSE__
 	return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x)));
 #else
@@ -74,6 +76,7 @@ inline float rsInvSqrtf(const float& x){
 	return 1.0f / sqrtf(x);
 #endif
 }
+
 /*typedef union {
 	float f;
 	int i;
@@ -85,6 +88,5 @@ inline float rsInvSqrtf(const float& x){
 	tmp.i = 0x5f3759df - (tmp.i >> 1);
 	return tmp.f * (1.5f - 0.5f * x * tmp.f * tmp.f);
 }*/
-
 
 #endif

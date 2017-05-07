@@ -18,21 +18,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include "rsMath.h"
+
 #include <math.h>
 
-
-
-rsMatrix::rsMatrix(){
+rsMatrix::rsMatrix()
+{
 }
 
-
-rsMatrix::~rsMatrix(){
+rsMatrix::~rsMatrix()
+{
 }
 
-
-void rsMatrix::identity(){
+void
+rsMatrix::identity()
+{
 	m[0] = 1.0f;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -51,34 +51,39 @@ void rsMatrix::identity(){
 	m[15] = 1.0f;
 }
 
-
-void rsMatrix::set(float* mat){
+void
+rsMatrix::set(float* mat)
+{
 	int i;
-	for(i=0; i<16; i++)
+	for (i = 0; i < 16; i++)
 		m[i] = mat[i];
 }
 
-
-void rsMatrix::get(float* mat){
+void
+rsMatrix::get(float* mat)
+{
 	int i;
-	for(i=0; i<16; i++)
+	for (i = 0; i < 16; i++)
 		mat[i] = m[i];
 }
 
-
-float* rsMatrix::get(){
+float*
+rsMatrix::get()
+{
 	return m;
 }
 
-
-void rsMatrix::copy(const rsMatrix &mat){
+void
+rsMatrix::copy(const rsMatrix &mat)
+{
 	int i;
-	for(i=0; i<16; i++)
+	for (i = 0; i < 16; i++)
 		m[i] = mat[i];
 }
 
-
-void rsMatrix::preMult(const rsMatrix &postMat){
+void
+rsMatrix::preMult(const rsMatrix &postMat)
+{
 	const float preMat0(m[0]);
 	const float preMat1(m[1]);
 	const float preMat2(m[2]);
@@ -96,26 +101,27 @@ void rsMatrix::preMult(const rsMatrix &postMat){
 	const float preMat14(m[14]);
 	const float preMat15(m[15]);
 
-	m[0]  = preMat0 * postMat[0]  + preMat4 * postMat[1]  + preMat8  * postMat[2]  + preMat12 * postMat[3];
-	m[1]  = preMat1 * postMat[0]  + preMat5 * postMat[1]  + preMat9  * postMat[2]  + preMat13 * postMat[3];
-	m[2]  = preMat2 * postMat[0]  + preMat6 * postMat[1]  + preMat10 * postMat[2]  + preMat14 * postMat[3];
-	m[3]  = preMat3 * postMat[0]  + preMat7 * postMat[1]  + preMat11 * postMat[2]  + preMat15 * postMat[3];
-	m[4]  = preMat0 * postMat[4]  + preMat4 * postMat[5]  + preMat8  * postMat[6]  + preMat12 * postMat[7];
-	m[5]  = preMat1 * postMat[4]  + preMat5 * postMat[5]  + preMat9  * postMat[6]  + preMat13 * postMat[7];
-	m[6]  = preMat2 * postMat[4]  + preMat6 * postMat[5]  + preMat10 * postMat[6]  + preMat14 * postMat[7];
-	m[7]  = preMat3 * postMat[4]  + preMat7 * postMat[5]  + preMat11 * postMat[6]  + preMat15 * postMat[7];
-	m[8]  = preMat0 * postMat[8]  + preMat4 * postMat[9]  + preMat8  * postMat[10] + preMat12 * postMat[11];
-	m[9]  = preMat1 * postMat[8]  + preMat5 * postMat[9]  + preMat9  * postMat[10] + preMat13 * postMat[11];
-	m[10] = preMat2 * postMat[8]  + preMat6 * postMat[9]  + preMat10 * postMat[10] + preMat14 * postMat[11];
-	m[11] = preMat3 * postMat[8]  + preMat7 * postMat[9]  + preMat11 * postMat[10] + preMat15 * postMat[11];
+	m[0] = preMat0 * postMat[0] + preMat4 * postMat[1] + preMat8  * postMat[2] + preMat12 * postMat[3];
+	m[1] = preMat1 * postMat[0] + preMat5 * postMat[1] + preMat9  * postMat[2] + preMat13 * postMat[3];
+	m[2] = preMat2 * postMat[0] + preMat6 * postMat[1] + preMat10 * postMat[2] + preMat14 * postMat[3];
+	m[3] = preMat3 * postMat[0] + preMat7 * postMat[1] + preMat11 * postMat[2] + preMat15 * postMat[3];
+	m[4] = preMat0 * postMat[4] + preMat4 * postMat[5] + preMat8  * postMat[6] + preMat12 * postMat[7];
+	m[5] = preMat1 * postMat[4] + preMat5 * postMat[5] + preMat9  * postMat[6] + preMat13 * postMat[7];
+	m[6] = preMat2 * postMat[4] + preMat6 * postMat[5] + preMat10 * postMat[6] + preMat14 * postMat[7];
+	m[7] = preMat3 * postMat[4] + preMat7 * postMat[5] + preMat11 * postMat[6] + preMat15 * postMat[7];
+	m[8] = preMat0 * postMat[8] + preMat4 * postMat[9] + preMat8  * postMat[10] + preMat12 * postMat[11];
+	m[9] = preMat1 * postMat[8] + preMat5 * postMat[9] + preMat9  * postMat[10] + preMat13 * postMat[11];
+	m[10] = preMat2 * postMat[8] + preMat6 * postMat[9] + preMat10 * postMat[10] + preMat14 * postMat[11];
+	m[11] = preMat3 * postMat[8] + preMat7 * postMat[9] + preMat11 * postMat[10] + preMat15 * postMat[11];
 	m[12] = preMat0 * postMat[12] + preMat4 * postMat[13] + preMat8  * postMat[14] + preMat12 * postMat[15];
 	m[13] = preMat1 * postMat[12] + preMat5 * postMat[13] + preMat9  * postMat[14] + preMat13 * postMat[15];
 	m[14] = preMat2 * postMat[12] + preMat6 * postMat[13] + preMat10 * postMat[14] + preMat14 * postMat[15];
 	m[15] = preMat3 * postMat[12] + preMat7 * postMat[13] + preMat11 * postMat[14] + preMat15 * postMat[15];
 }
 
-
-void rsMatrix::postMult(const rsMatrix &preMat){
+void
+rsMatrix::postMult(const rsMatrix &preMat)
+{
 	const float postMat0(m[0]);
 	const float postMat1(m[1]);
 	const float postMat2(m[2]);
@@ -133,26 +139,27 @@ void rsMatrix::postMult(const rsMatrix &preMat){
 	const float postMat14(m[14]);
 	const float postMat15(m[15]);
 
-	m[0]  = preMat[0] * postMat0  + preMat[4] * postMat1  + preMat[8]  * postMat2  + preMat[12] * postMat3;
-	m[1]  = preMat[1] * postMat0  + preMat[5] * postMat1  + preMat[9]  * postMat2  + preMat[13] * postMat3;
-	m[2]  = preMat[2] * postMat0  + preMat[6] * postMat1  + preMat[10] * postMat2  + preMat[14] * postMat3;
-	m[3]  = preMat[3] * postMat0  + preMat[7] * postMat1  + preMat[11] * postMat2  + preMat[15] * postMat3;
-	m[4]  = preMat[0] * postMat4  + preMat[4] * postMat5  + preMat[8]  * postMat6  + preMat[12] * postMat7;
-	m[5]  = preMat[1] * postMat4  + preMat[5] * postMat5  + preMat[9]  * postMat6  + preMat[13] * postMat7;
-	m[6]  = preMat[2] * postMat4  + preMat[6] * postMat5  + preMat[10] * postMat6  + preMat[14] * postMat7;
-	m[7]  = preMat[3] * postMat4  + preMat[7] * postMat5  + preMat[11] * postMat6  + preMat[15] * postMat7;
-	m[8]  = preMat[0] * postMat8  + preMat[4] * postMat9  + preMat[8]  * postMat10 + preMat[12] * postMat11;
-	m[9]  = preMat[1] * postMat8  + preMat[5] * postMat9  + preMat[9]  * postMat10 + preMat[13] * postMat11;
-	m[10] = preMat[2] * postMat8  + preMat[6] * postMat9  + preMat[10] * postMat10 + preMat[14] * postMat11;
-	m[11] = preMat[3] * postMat8  + preMat[7] * postMat9  + preMat[11] * postMat10 + preMat[15] * postMat11;
-	m[12] = preMat[0] * postMat12 + preMat[4] * postMat13 + preMat[8]  * postMat14 + preMat[12] * postMat15;
-	m[13] = preMat[1] * postMat12 + preMat[5] * postMat13 + preMat[9]  * postMat14 + preMat[13] * postMat15;
+	m[0] = preMat[0] * postMat0 + preMat[4] * postMat1 + preMat[8] * postMat2 + preMat[12] * postMat3;
+	m[1] = preMat[1] * postMat0 + preMat[5] * postMat1 + preMat[9] * postMat2 + preMat[13] * postMat3;
+	m[2] = preMat[2] * postMat0 + preMat[6] * postMat1 + preMat[10] * postMat2 + preMat[14] * postMat3;
+	m[3] = preMat[3] * postMat0 + preMat[7] * postMat1 + preMat[11] * postMat2 + preMat[15] * postMat3;
+	m[4] = preMat[0] * postMat4 + preMat[4] * postMat5 + preMat[8] * postMat6 + preMat[12] * postMat7;
+	m[5] = preMat[1] * postMat4 + preMat[5] * postMat5 + preMat[9] * postMat6 + preMat[13] * postMat7;
+	m[6] = preMat[2] * postMat4 + preMat[6] * postMat5 + preMat[10] * postMat6 + preMat[14] * postMat7;
+	m[7] = preMat[3] * postMat4 + preMat[7] * postMat5 + preMat[11] * postMat6 + preMat[15] * postMat7;
+	m[8] = preMat[0] * postMat8 + preMat[4] * postMat9 + preMat[8] * postMat10 + preMat[12] * postMat11;
+	m[9] = preMat[1] * postMat8 + preMat[5] * postMat9 + preMat[9] * postMat10 + preMat[13] * postMat11;
+	m[10] = preMat[2] * postMat8 + preMat[6] * postMat9 + preMat[10] * postMat10 + preMat[14] * postMat11;
+	m[11] = preMat[3] * postMat8 + preMat[7] * postMat9 + preMat[11] * postMat10 + preMat[15] * postMat11;
+	m[12] = preMat[0] * postMat12 + preMat[4] * postMat13 + preMat[8] * postMat14 + preMat[12] * postMat15;
+	m[13] = preMat[1] * postMat12 + preMat[5] * postMat13 + preMat[9] * postMat14 + preMat[13] * postMat15;
 	m[14] = preMat[2] * postMat12 + preMat[6] * postMat13 + preMat[10] * postMat14 + preMat[14] * postMat15;
 	m[15] = preMat[3] * postMat12 + preMat[7] * postMat13 + preMat[11] * postMat14 + preMat[15] * postMat15;
 }
 
-
-void rsMatrix::makeTranslate(float x, float y, float z){
+void
+rsMatrix::makeTranslate(float x, float y, float z)
+{
 	m[0] = 1.0f;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -171,7 +178,9 @@ void rsMatrix::makeTranslate(float x, float y, float z){
 	m[15] = 1.0f;
 }
 
-void rsMatrix::makeTranslate(float *p){
+void
+rsMatrix::makeTranslate(float *p)
+{
 	m[0] = 1.0f;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -190,7 +199,9 @@ void rsMatrix::makeTranslate(float *p){
 	m[15] = 1.0f;
 }
 
-void rsMatrix::makeTranslate(const rsVec &vec){
+void
+rsMatrix::makeTranslate(const rsVec &vec)
+{
 	m[0] = 1.0f;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -209,8 +220,9 @@ void rsMatrix::makeTranslate(const rsVec &vec){
 	m[15] = 1.0f;
 }
 
-
-void rsMatrix::makeScale(float s){
+void
+rsMatrix::makeScale(float s)
+{
 	m[0] = s;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -229,7 +241,9 @@ void rsMatrix::makeScale(float s){
 	m[15] = 1.0f;
 }
 
-void rsMatrix::makeScale(float x, float y, float z){
+void
+rsMatrix::makeScale(float x, float y, float z)
+{
 	m[0] = x;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -248,7 +262,9 @@ void rsMatrix::makeScale(float x, float y, float z){
 	m[15] = 1.0f;
 }
 
-void rsMatrix::makeScale(float* s){
+void
+rsMatrix::makeScale(float* s)
+{
 	m[0] = s[0];
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -267,7 +283,9 @@ void rsMatrix::makeScale(float* s){
 	m[15] = 1.0f;
 }
 
-void rsMatrix::makeScale(const rsVec &vec){
+void
+rsMatrix::makeScale(const rsVec &vec)
+{
 	m[0] = vec[0];
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -286,98 +304,120 @@ void rsMatrix::makeScale(const rsVec &vec){
 	m[15] = 1.0f;
 }
 
-
-void rsMatrix::makeRotate(float a, float x, float y, float z){
+void
+rsMatrix::makeRotate(float a, float x, float y, float z)
+{
 	rsQuat q;
 	q.make(a, x, y, z);
 	q.toMat(m);
 }
 
-void rsMatrix::makeRotate(float a, const rsVec &v){
+void
+rsMatrix::makeRotate(float a, const rsVec &v)
+{
 	rsQuat q;
 	q.make(a, v);
 	q.toMat(m);
 }
 
-void rsMatrix::makeRotate(rsQuat &q){
+void
+rsMatrix::makeRotate(rsQuat &q)
+{
 	q.toMat(m);
 }
 
-
-void rsMatrix::translate(float x, float y, float z){
+void
+rsMatrix::translate(float x, float y, float z)
+{
 	rsMatrix mat;
 	mat.makeTranslate(x, y, z);
 	this->postMult(mat);
 }
 
-void rsMatrix::translate(float *p){
+void
+rsMatrix::translate(float *p)
+{
 	rsMatrix mat;
 	mat.makeTranslate(p);
 	this->postMult(mat);
 }
 
-void rsMatrix::translate(const rsVec &vec){
+void
+rsMatrix::translate(const rsVec &vec)
+{
 	rsMatrix mat;
 	mat.makeTranslate(vec);
 	this->postMult(mat);
 }
 
-
-void rsMatrix::scale(float s){
+void
+rsMatrix::scale(float s)
+{
 	rsMatrix mat;
 	mat.makeScale(s);
 	this->postMult(mat);
 }
 
-void rsMatrix::scale(float x, float y, float z){
+void
+rsMatrix::scale(float x, float y, float z)
+{
 	rsMatrix mat;
 	mat.makeScale(x, y, z);
 	this->postMult(mat);
 }
 
-void rsMatrix::scale(float* s){
+void
+rsMatrix::scale(float* s)
+{
 	rsMatrix mat;
 	mat.makeScale(s);
 	this->postMult(mat);
 }
 
-void rsMatrix::scale(const rsVec &vec){
+void
+rsMatrix::scale(const rsVec &vec)
+{
 	rsMatrix mat;
 	mat.makeScale(vec);
 	this->postMult(mat);
 }
 
-
-void rsMatrix::rotate(float a, float x, float y, float z){
+void
+rsMatrix::rotate(float a, float x, float y, float z)
+{
 	rsMatrix mat;
 	mat.makeRotate(a, x, y, z);
 	this->postMult(mat);
 }
 
-
-void rsMatrix::rotate(float a, const rsVec &v){
+void
+rsMatrix::rotate(float a, const rsVec &v)
+{
 	rsMatrix mat;
 	mat.makeRotate(a, v);
 	this->postMult(mat);
 }
 
-
-void rsMatrix::rotate(rsQuat &q){
+void
+rsMatrix::rotate(rsQuat &q)
+{
 	rsMatrix mat;
 	mat.makeRotate(q);
 	this->postMult(mat);
 }
 
-
-float rsMatrix::determinant3(const float aa, const float ab, const float ac,
+float
+rsMatrix::determinant3(const float aa, const float ab, const float ac,
 	const float ba, const float bb, const float bc,
-	const float ca, const float cb, const float cc){
+	const float ca, const float cb, const float cc)
+{
 	return (aa * bb * cc) + (ab * bc * ca) + (ac * ba * cb)
-		- (aa * bc * cb) - (ab * ba * cc) - (ac * bb * ca); 
+		- (aa * bc * cb) - (ab * ba * cc) - (ac * bb * ca);
 }
 
-
-bool rsMatrix::invert(){
+bool
+rsMatrix::invert()
+{
 	const float aa(m[0]);
 	const float ba(m[1]);
 	const float ca(m[2]);
@@ -402,35 +442,36 @@ bool rsMatrix::invert(){
 	const float det3_4(-determinant3(ab, ac, ad, bb, bc, bd, cb, cc, cd));
 	const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
 
-	if(fabs(det) < RS_EPSILON)
+	if (fabs(det) < RS_EPSILON)
 		return false;  // matrix is singular, cannot be inverted
 
 	// reciprocal of determinant
 	const float rec_det(1.0f / det);
 
 	// calculate inverted matrix
-	m[0]  =   det3_1 * rec_det;
-	m[4]  =   det3_2 * rec_det;
-	m[8]  =   det3_3 * rec_det;
-	m[12] =   det3_4 * rec_det;
-	m[1]  = - determinant3(ba, bc, bd, ca, cc, cd, da, dc, dd) * rec_det;
-	m[5]  =   determinant3(aa, ac, ad, ca, cc, cd, da, dc, dd) * rec_det;
-	m[9]  = - determinant3(aa, ac, ad, ba, bc, bd, da, dc, dd) * rec_det;
-	m[13] =   determinant3(aa, ac, ad, ba, bc, bd, ca, cc, cd) * rec_det;
-	m[2]  =   determinant3(ba, bb, bd, ca, cb, cd, da, db, dd) * rec_det;
-	m[6]  = - determinant3(aa, ab, ad, ca, cb, cd, da, db, dd) * rec_det;
-	m[10] =   determinant3(aa, ab, ad, ba, bb, bd, da, db, dd) * rec_det;
-	m[14] = - determinant3(aa, ab, ad, ba, bb, bd, ca, cb, cd) * rec_det;
-	m[3]  = - determinant3(ba, bb, bc, ca, cb, cc, da, db, dc) * rec_det;
-	m[7]  =   determinant3(aa, ab, ac, ca, cb, cc, da, db, dc) * rec_det;
-	m[11] = - determinant3(aa, ab, ac, ba, bb, bc, da, db, dc) * rec_det;
-	m[15] =   determinant3(aa, ab, ac, ba, bb, bc, ca, cb, cc) * rec_det;
+	m[0] = det3_1 * rec_det;
+	m[4] = det3_2 * rec_det;
+	m[8] = det3_3 * rec_det;
+	m[12] = det3_4 * rec_det;
+	m[1] = -determinant3(ba, bc, bd, ca, cc, cd, da, dc, dd) * rec_det;
+	m[5] = determinant3(aa, ac, ad, ca, cc, cd, da, dc, dd) * rec_det;
+	m[9] = -determinant3(aa, ac, ad, ba, bc, bd, da, dc, dd) * rec_det;
+	m[13] = determinant3(aa, ac, ad, ba, bc, bd, ca, cc, cd) * rec_det;
+	m[2] = determinant3(ba, bb, bd, ca, cb, cd, da, db, dd) * rec_det;
+	m[6] = -determinant3(aa, ab, ad, ca, cb, cd, da, db, dd) * rec_det;
+	m[10] = determinant3(aa, ab, ad, ba, bb, bd, da, db, dd) * rec_det;
+	m[14] = -determinant3(aa, ab, ad, ba, bb, bd, ca, cb, cd) * rec_det;
+	m[3] = -determinant3(ba, bb, bc, ca, cb, cc, da, db, dc) * rec_det;
+	m[7] = determinant3(aa, ab, ac, ca, cb, cc, da, db, dc) * rec_det;
+	m[11] = -determinant3(aa, ab, ac, ba, bb, bc, da, db, dc) * rec_det;
+	m[15] = determinant3(aa, ab, ac, ba, bb, bc, ca, cb, cc) * rec_det;
 
-	return true; 
+	return true;
 }
 
-
-bool rsMatrix::invert(const rsMatrix &mat){
+bool
+rsMatrix::invert(const rsMatrix &mat)
+{
 	const float aa(mat[0]);
 	const float ba(mat[1]);
 	const float ca(mat[2]);
@@ -455,35 +496,36 @@ bool rsMatrix::invert(const rsMatrix &mat){
 	const float det3_4(-determinant3(ab, ac, ad, bb, bc, bd, cb, cc, cd));
 	const float det(aa * det3_1 + ba * det3_2 + ca * det3_3 + da * det3_4);
 
-	if(fabs(det) < RS_EPSILON)
+	if (fabs(det) < RS_EPSILON)
 		return false;  // matrix is singular, cannot be inverted
 
 	// reciprocal of determinant
 	const float rec_det(1.0f / det);
 
 	// calculate inverted matrix
-	m[0]  =   det3_1 * rec_det;
-	m[4]  =   det3_2 * rec_det;
-	m[8]  =   det3_3 * rec_det;
-	m[12] =   det3_4 * rec_det;
-	m[1]  = - determinant3(ba, bc, bd, ca, cc, cd, da, dc, dd) * rec_det;
-	m[5]  =   determinant3(aa, ac, ad, ca, cc, cd, da, dc, dd) * rec_det;
-	m[9]  = - determinant3(aa, ac, ad, ba, bc, bd, da, dc, dd) * rec_det;
-	m[13] =   determinant3(aa, ac, ad, ba, bc, bd, ca, cc, cd) * rec_det;
-	m[2]  =   determinant3(ba, bb, bd, ca, cb, cd, da, db, dd) * rec_det;
-	m[6]  = - determinant3(aa, ab, ad, ca, cb, cd, da, db, dd) * rec_det;
-	m[10] =   determinant3(aa, ab, ad, ba, bb, bd, da, db, dd) * rec_det;
-	m[14] = - determinant3(aa, ab, ad, ba, bb, bd, ca, cb, cd) * rec_det;
-	m[3]  = - determinant3(ba, bb, bc, ca, cb, cc, da, db, dc) * rec_det;
-	m[7]  =   determinant3(aa, ab, ac, ca, cb, cc, da, db, dc) * rec_det;
-	m[11] = - determinant3(aa, ab, ac, ba, bb, bc, da, db, dc) * rec_det;
-	m[15] =   determinant3(aa, ab, ac, ba, bb, bc, ca, cb, cc) * rec_det;
+	m[0] = det3_1 * rec_det;
+	m[4] = det3_2 * rec_det;
+	m[8] = det3_3 * rec_det;
+	m[12] = det3_4 * rec_det;
+	m[1] = -determinant3(ba, bc, bd, ca, cc, cd, da, dc, dd) * rec_det;
+	m[5] = determinant3(aa, ac, ad, ca, cc, cd, da, dc, dd) * rec_det;
+	m[9] = -determinant3(aa, ac, ad, ba, bc, bd, da, dc, dd) * rec_det;
+	m[13] = determinant3(aa, ac, ad, ba, bc, bd, ca, cc, cd) * rec_det;
+	m[2] = determinant3(ba, bb, bd, ca, cb, cd, da, db, dd) * rec_det;
+	m[6] = -determinant3(aa, ab, ad, ca, cb, cd, da, db, dd) * rec_det;
+	m[10] = determinant3(aa, ab, ad, ba, bb, bd, da, db, dd) * rec_det;
+	m[14] = -determinant3(aa, ab, ad, ba, bb, bd, ca, cb, cd) * rec_det;
+	m[3] = -determinant3(ba, bb, bc, ca, cb, cc, da, db, dc) * rec_det;
+	m[7] = determinant3(aa, ab, ac, ca, cb, cc, da, db, dc) * rec_det;
+	m[11] = -determinant3(aa, ab, ac, ba, bb, bc, da, db, dc) * rec_det;
+	m[15] = determinant3(aa, ab, ac, ba, bb, bc, ca, cb, cc) * rec_det;
 
-	return true; 
+	return true;
 }
 
-
-void rsMatrix::rotationInvert(const rsMatrix &mat){
+void
+rsMatrix::rotationInvert(const rsMatrix &mat)
+{
 	float det = mat[0] * mat[5] * mat[10]
 		+ mat[4] * mat[9] * mat[2]
 		+ mat[8] * mat[1] * mat[6]
@@ -504,12 +546,14 @@ void rsMatrix::rotationInvert(const rsMatrix &mat){
 	m[15] = 1.0f;
 }
 
-
-void rsMatrix::fromQuat(const rsQuat &q){
+void
+rsMatrix::fromQuat(const rsQuat &q)
+{
 	float s, xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
 
 	// must have an axis
-	if(q[0] == 0.0f && q[1] == 0.0f && q[2] == 0.0f){
+	if (q[0] == 0.0f && q[1] == 0.0f && q[2] == 0.0f)
+	{
 		identity();
 		return;
 	}
@@ -546,25 +590,28 @@ void rsMatrix::fromQuat(const rsQuat &q){
 	m[15] = 1.0f;
 }
 
-
-rsMatrix & rsMatrix::operator = (const rsMatrix &mat){
-	m[0]=mat[0]; m[1]=mat[1]; m[2]=mat[2]; m[3]=mat[3];
-	m[4]=mat[4]; m[5]=mat[5]; m[6]=mat[6]; m[7]=mat[7];
-	m[8]=mat[8]; m[9]=mat[9]; m[10]=mat[10]; m[11]=mat[11];
-	m[12]=mat[12]; m[13]=mat[13]; m[14]=mat[14]; m[15]=mat[15];
+rsMatrix&
+rsMatrix::operator = (const rsMatrix &mat)
+{
+	m[0] = mat[0]; m[1] = mat[1]; m[2] = mat[2]; m[3] = mat[3];
+	m[4] = mat[4]; m[5] = mat[5]; m[6] = mat[6]; m[7] = mat[7];
+	m[8] = mat[8]; m[9] = mat[9]; m[10] = mat[10]; m[11] = mat[11];
+	m[12] = mat[12]; m[13] = mat[13]; m[14] = mat[14]; m[15] = mat[15];
 	return *this;
 }
 
-
-std::ostream & rsMatrix::operator << (std::ostream &os){
-	return os 
+std::ostream&
+rsMatrix::operator << (std::ostream &os)
+{
+	return os
 		<< "| " << m[0] << " " << m[4] << " " << m[8] << " " << m[12] << " |" << std::endl
 		<< "| " << m[1] << " " << m[5] << " " << m[9] << " " << m[13] << " |" << std::endl
 		<< "| " << m[2] << " " << m[6] << " " << m[10] << " " << m[14] << " |" << std::endl
 		<< "| " << m[3] << " " << m[7] << " " << m[11] << " " << m[15] << " |" << std::endl;
 }
+
 /*std::ostream & operator << (std::ostream& os, const rsMatrix& mat){
-	return os 
+	return os
 		<< "| " << mat[0] << " " << mat[4] << " " << mat[8] << " " << mat[12] << " |" << std::endl
 		<< "| " << mat[1] << " " << mat[5] << " " << mat[9] << " " << mat[13] << " |" << std::endl
 		<< "| " << mat[2] << " " << mat[6] << " " << mat[10] << " " << mat[14] << " |" << std::endl

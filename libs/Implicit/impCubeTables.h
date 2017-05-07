@@ -18,45 +18,39 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPCUBETABLE_H
 #define IMPCUBETABLE_H
-
 
 /****************************************
 
 OpenGL coordinate system
 
-         Y
-         |
-         |
-         |
-         |
-         |
-         /--------X
-        /
-       /
-	  Z
-
+	  Y
+	  |
+	  |
+	  |
+	  |
+	  |
+	  /--------X
+	 /
+	/
+   Z
 
 Indices for vertices and edge on cube
 
-
-          2-----6-----6
-         /|          /|
-        3 |        11 |
-       /  1        /  9
-      3-----7-----7   |
-      |   |       |   |
-      |   0-----4-|---4
-      2  /       10  /
-      | 0         | 8
-      |/          |/
-      1-----5-----5
-
+	   2-----6-----6
+	  /|          /|
+	 3 |        11 |
+	/  1        /  9
+   3-----7-----7   |
+   |   |       |   |
+   |   0-----4-|---4
+   2  /       10  /
+   | 0         | 8
+   |/          |/
+   1-----5-----5
 
 *****************************************/
-
 
 // corners
 // left-right-bottom-top-far-near notation
@@ -69,9 +63,8 @@ Indices for vertices and edge on cube
 #define RTF 0x40
 #define RTN 0x80
 
-
-
-class impCubeTables{
+class impCubeTables
+{
 public:
 	// This table describes the sequence of edges to visit
 	// in order to build triangle strips in a cube  There are
@@ -81,6 +74,7 @@ public:
 	// of the data in each row.
 	//int** cubetable;
 	int triStripPatterns[256][17];
+
 	// 256 x 6 array of true/false values.  For each of the 256
 	// entries in the cubetable, this table indicates which
 	// neighboring cubes will also contain parts of the surface.
@@ -88,7 +82,7 @@ public:
 	bool crawlDirections[256][6];
 
 	impCubeTables();
-	~impCubeTables(){};
+	~impCubeTables() {};
 
 private:
 	// edge connectivity
@@ -100,10 +94,9 @@ private:
 	int vc[8][3];
 
 	int nextedge(int vertex, int edge);
-	void addtotable(int row, int edgecount, int *edgelist);
+	void addtotable(int row, int edgecount, int* edgelist);
 	void makeTriStripPatterns();
 	void makeCrawlDirections();
 };
-
 
 #endif

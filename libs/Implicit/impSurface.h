@@ -18,24 +18,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPSURFACE_H
 #define IMPSURFACE_H
 
-
 #ifdef WIN32
-	#include <windows.h>
+#include <windows.h>
 #endif
 #include <vector>
+
 #include <GL/gl.h>
 #include <GL/glext.h>
-
 
 #define USE_UNSIGNED_SHORT 0  // use short instead of int when passing indices to draw calls
 #define USE_TRIANGLE_STRIPS 0  // use triangle strips instead of triangles
 
-
-class impSurface{
+class impSurface
+{
 private:
 	unsigned int index_offset;
 	unsigned int vertex_offset;
@@ -89,7 +87,5 @@ public:
 	void draw();
 	//void draw_wireframe();
 };
-
-
 
 #endif

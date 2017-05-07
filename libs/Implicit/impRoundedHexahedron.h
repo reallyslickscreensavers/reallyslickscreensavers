@@ -18,30 +18,29 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPROUNDEDHEXAHEDRON_H
 #define IMPROUNDEDHEXAHEDRON_H
 
-
-
 #include "impShape.h"
-
-
 
 // An impRoundedHexahedron is a rectangular solid with rounded corners.
 // It is defined as the inverse square falloff from a rectangular solid.
-class impRoundedHexahedron : public impShape{
+class impRoundedHexahedron : public impShape
+{
 	float width, height, length;  // dimension on x-, y-, and z-axes
 
 public:
-	impRoundedHexahedron(){
-		width = height = length = 1.0f;
-	};
-	~impRoundedHexahedron(){};
-	void setSize(float w, float h, float l){ width = w; height = h; length = l; }
+	impRoundedHexahedron() { width = height = length = 1.0f; };
+	~impRoundedHexahedron() {};
+
+	void setSize(float w, float h, float l)
+	{
+		width = w;
+		height = h;
+		length = l;
+	}
+
 	virtual float value(float* position);
 };
-
-
 
 #endif
