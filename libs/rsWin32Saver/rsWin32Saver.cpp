@@ -18,9 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <windows.h>
-#include <stdio.h>
 #include <commctrl.h>
+#include <stdio.h>
+#include <windows.h>
 
 #include "rsWin32Saver.h"
 
@@ -647,7 +647,9 @@ readFrameRateLimitFromRegistry()
 	result = RegOpenKeyEx(HKEY_CURRENT_USER, registryPath, 0, KEY_READ, &skey);
 	if (result != ERROR_SUCCESS)
 		return;
+
 	valsize = sizeof(val);
+
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if (result == ERROR_SUCCESS)
 		dFrameRateLimit = val;

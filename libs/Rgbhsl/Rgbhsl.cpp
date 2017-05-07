@@ -129,7 +129,8 @@ rgb2hsl(float r, float g, float b, float &h, float &s, float &l)
 	}
 }
 
-void hsl2rgb(float h, float s, float l, float &r, float &g, float &b)
+void
+hsl2rgb(float h, float s, float l, float &r, float &g, float &b)
 {
 	// hue influence
 	h = fmodf(h, 1.0f);
@@ -191,7 +192,8 @@ void hsl2rgb(float h, float s, float l, float &r, float &g, float &b)
 	b *= l;
 }
 
-void hslTween(float h1, float s1, float l1,
+void
+hslTween(float h1, float s1, float l1,
 	float h2, float s2, float l2, float tween, int direction,
 	float &outh, float &outs, float &outl)
 {
@@ -226,7 +228,8 @@ void hslTween(float h1, float s1, float l1,
 	outl = l1 + (tween * (l2 - l1));
 }
 
-void rgbTween(float r1, float g1, float b1,
+void
+rgbTween(float r1, float g1, float b1,
 	float r2, float g2, float b2, float tween, int direction,
 	float &outr, float &outg, float &outb)
 {
