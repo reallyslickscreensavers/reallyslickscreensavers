@@ -18,25 +18,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 // Euphoria screensaver
-
 
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
 
-#include <gl/gl.h>
-#include <gl/glu.h>
-
 #include <regstr.h>
 #include <commctrl.h>
 
-#include <rsMath/rsMath.h>
+#include <gl/gl.h>
+#include <gl/glu.h>
+
 #include <Rgbhsl/Rgbhsl.h>
-#include <rsWin32Saver/rsWin32Saver.h>
+#include <rsMath/rsMath.h>
 #include <rsText/rsText.h>
+#include <rsWin32Saver/rsWin32Saver.h>
 
 #include <resource.h>
 
@@ -45,17 +43,15 @@
 #define NUMCONSTS 9
 #define PIx2 6.28318530718f
 
-
 class wisp;
-
 
 // Global variables
 LPCTSTR registryPath = ("Software\\Really Slick\\Euphoria");
 HGLRC hglrc;
 HDC hdc;
 int readyToDraw = 0;
-wisp *backwisps;
-wisp *wisps;
+wisp* backwisps;
+wisp* wisps;
 unsigned int tex;
 float aspectRatio;
 int viewport[4];
@@ -74,24 +70,22 @@ int dFeedbacksize;
 int dWireframe;
 int dTexture;
 
-
 // feedback texture object
 unsigned int feedbacktex;
 int feedbacktexsize;
 // feedback variables
-static float fr[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+static float fr[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 static float fv[4];
 static float f[4];
 // feedback limiters
-static float lr[3] = {0.0f, 0.0f, 0.0f};
+static float lr[3] = { 0.0f, 0.0f, 0.0f };
 static float lv[3];
 static float l[3];
 
-
-
-class wisp{
+class wisp
+{
 public:
-	float ***vertices;
+	float*** vertices;
 	float c[NUMCONSTS];     // constants
 	float cr[NUMCONSTS];    // constants' radial position
 	float cv[NUMCONSTS];    // constants' change velocities
@@ -107,26 +101,30 @@ public:
 	void drawAsBackground();
 };
 
-wisp::wisp(){
+wisp::wisp()
+{
 	int i, j;
 	float recHalfDens = 1.0f / (float(dDensity) * 0.5f);
 
-	vertices = new float**[dDensity+1];
-	for(i=0; i<=dDensity; i++){
-		vertices[i] = new float*[dDensity+1];
-		for(j=0; j<=dDensity; j++){
+	vertices = new float** [dDensity + 1];
+	for (i = 0; i <= dDensity; i++)
+	{
+		vertices[i] = new float*[dDensity + 1];
+		for (j = 0; j <= dDensity; j++)
+		{
 			vertices[i][j] = new float[7];
 			vertices[i][j][3] = float(i) * recHalfDens - 1.0f;  // x position on grid
 			vertices[i][j][4] = float(j) * recHalfDens - 1.0f;  // y position on grid
 			// distance squared from the center
 			vertices[i][j][5] = vertices[i][j][3] * vertices[i][j][3]
-				+ vertices[i][j][4] * vertices[i][j][4];
+			    + vertices[i][j][4] * vertices[i][j][4];
 			vertices[i][j][6] = 0.0f;  // intensity
 		}
 	}
 
 	// initialize constants
-	for(i=0; i<NUMCONSTS; i++){
+	for (i = 0; i < NUMCONSTS; i++)
+	{
 		c[i] = rsRandf(2.0f) - 1.0f;
 		cr[i] = rsRandf(PIx2);
 		cv[i] = rsRandf(float(dSpeed) * 0.03f) + (float(dSpeed) * 0.001f);
@@ -140,20 +138,24 @@ wisp::wisp(){
 	saturationSpeed = rsRandf(0.04f) + 0.001f;
 }
 
-wisp::~wisp(){
+wisp::~wisp()
+{
 	int i, j;
 
-	for(i=0; i<=dDensity; i++){
-		for(j=0; j<=dDensity; j++){
+	for (i = 0; i <= dDensity; i++)
+	{
+		for (j = 0; j <= dDensity; j++)
 			delete[] vertices[i][j];
-		}
+
 		delete[] vertices[i];
 	}
+
 	delete[] vertices;
 }
 
-
-void wisp::update(){
+void
+wisp::update()
+{
 	int i, j;
 	rsVec up, right, crossvec;
 	// visibility constants
@@ -161,85 +163,103 @@ void wisp::update(){
 	static float viscon2 = 1.0f / viscon1;
 
 	// update constants
-	for(i=0; i<NUMCONSTS; i++){
+	for (i = 0; i < NUMCONSTS; i++)
+	{
 		cr[i] += cv[i] * frameTime;
-		if(cr[i] > PIx2)
+		if (cr[i] > PIx2)
 			cr[i] -= PIx2;
 		c[i] = cosf(cr[i]);
 	}
 
 	// update vertex positions
-	for(i=0; i<=dDensity; i++){
-		for(j=0; j<=dDensity; j++){
+	for (i = 0; i <= dDensity; i++)
+	{
+		for (j = 0; j <= dDensity; j++)
+		{
 			vertices[i][j][0] = vertices[i][j][3] * vertices[i][j][3] * vertices[i][j][4] * c[0]
-				+ vertices[i][j][5] * c[1] + 0.5f * c[2];
+			    + vertices[i][j][5] * c[1] + 0.5f * c[2];
 			vertices[i][j][1] = vertices[i][j][4] * vertices[i][j][4] * vertices[i][j][5] * c[3]
-				+ vertices[i][j][3] * c[4] + 0.5f * c[5];
+			    + vertices[i][j][3] * c[4] + 0.5f * c[5];
 			vertices[i][j][2] = vertices[i][j][5] * vertices[i][j][5] * vertices[i][j][3] * c[6]
-				+ vertices[i][j][4] * c[7] + c[8];
+			    + vertices[i][j][4] * c[7] + c[8];
 		}
 	}
 
 	// update vertex normals for most of mesh
-	for(i=1; i<dDensity; i++){
-		for(j=1; j<dDensity; j++){
-			up.set(vertices[i][j+1][0] - vertices[i][j-1][0],
-				vertices[i][j+1][1] - vertices[i][j-1][1],
-				vertices[i][j+1][2] - vertices[i][j-1][2]);
-			right.set(vertices[i+1][j][0] - vertices[i-1][j][0],
-				vertices[i+1][j][1] - vertices[i-1][j][1],
-				vertices[i+1][j][2] - vertices[i-1][j][2]);
+	for (i = 1; i < dDensity; i++)
+	{
+		for (j = 1; j < dDensity; j++)
+		{
+			up.set(vertices[i][j + 1][0] - vertices[i][j - 1][0],
+			    vertices[i][j + 1][1] - vertices[i][j - 1][1],
+			    vertices[i][j + 1][2] - vertices[i][j - 1][2]);
+			right.set(vertices[i + 1][j][0] - vertices[i - 1][j][0],
+			    vertices[i + 1][j][1] - vertices[i - 1][j][1],
+			    vertices[i + 1][j][2] - vertices[i - 1][j][2]);
 			up.normalize();
 			right.normalize();
 			crossvec.cross(right, up);
 			// Use depth component of normal to compute intensity
 			// This way only edges of wisp are bright
-			if(crossvec[2] < 0.0f)
+			if (crossvec[2] < 0.0f)
 				crossvec[2] *= -1.0f;
 			vertices[i][j][6] = viscon2 * (viscon1 - crossvec[2]);
-			if(vertices[i][j][6] > 1.0f)
+			if (vertices[i][j][6] > 1.0f)
 				vertices[i][j][6] = 1.0f;
-			if(vertices[i][j][6] < 0.0f)
+			if (vertices[i][j][6] < 0.0f)
 				vertices[i][j][6] = 0.0f;
 		}
 	}
 
 	// update color
 	hsl[0] += hueSpeed * frameTime;
-	if(hsl[0] < 0.0f)
+	if (hsl[0] < 0.0f)
 		hsl[0] += 1.0f;
-	if(hsl[0] > 1.0f)
+	if (hsl[0] > 1.0f)
 		hsl[0] -= 1.0f;
+
 	hsl[1] += saturationSpeed * frameTime;
-	if(hsl[1] <= 0.1f){
+
+	if (hsl[1] <= 0.1f)
+	{
 		hsl[1] = 0.1f;
 		saturationSpeed = -saturationSpeed;
 	}
-	if(hsl[1] >= 1.0f){
+
+	if (hsl[1] >= 1.0f)
+	{
 		hsl[1] = 1.0f;
 		saturationSpeed = -saturationSpeed;
 	}
+
 	hsl2rgb(hsl[0], hsl[1], hsl[2], rgb[0], rgb[1], rgb[2]);
 }
 
-void wisp::draw(){
+void
+wisp::draw()
+{
 	int i, j;
 
 	glPushMatrix();
 
-	if(dWireframe){
-		for(i=1; i<dDensity; i++){
+	if (dWireframe)
+	{
+		for (i = 1; i < dDensity; i++)
+		{
 			glBegin(GL_LINE_STRIP);
-			for(j=0; j<=dDensity; j++){
+			for (j = 0; j <= dDensity; j++)
+			{
 				glColor3f(rgb[0] + vertices[i][j][6] - 1.0f, rgb[1] + vertices[i][j][6] - 1.0f, rgb[2] + vertices[i][j][6] - 1.0f);
 				glTexCoord2d(vertices[i][j][3] - vertices[i][j][0], vertices[i][j][4] - vertices[i][j][1]);
 				glVertex3fv(vertices[i][j]);
 			}
 			glEnd();
 		}
-		for(j=1; j<dDensity; j++){
+		for (j = 1; j < dDensity; j++)
+		{
 			glBegin(GL_LINE_STRIP);
-			for(i=0; i<=dDensity; i++){
+			for (i = 0; i <= dDensity; i++)
+			{
 				glColor3f(rgb[0] + vertices[i][j][6] - 1.0f, rgb[1] + vertices[i][j][6] - 1.0f, rgb[2] + vertices[i][j][6] - 1.0f);
 				glTexCoord2d(vertices[i][j][3] - vertices[i][j][0], vertices[i][j][4] - vertices[i][j][1]);
 				glVertex3fv(vertices[i][j]);
@@ -247,17 +267,20 @@ void wisp::draw(){
 			glEnd();
 		}
 	}
-	else{
-		for(i=0; i<dDensity; i++){
+	else
+	{
+		for (i = 0; i < dDensity; i++)
+		{
 			glBegin(GL_TRIANGLE_STRIP);
-				for(j=0; j<=dDensity; j++){
-					glColor3f(rgb[0] + vertices[i+1][j][6] - 1.0f, rgb[1] + vertices[i+1][j][6] - 1.0f, rgb[2] + vertices[i+1][j][6] - 1.0f);
-					glTexCoord2d(vertices[i+1][j][3] - vertices[i+1][j][0], vertices[i+1][j][4] - vertices[i+1][j][1]);
-					glVertex3fv(vertices[i+1][j]);
-					glColor3f(rgb[0] + vertices[i][j][6] - 1.0f, rgb[1] + vertices[i][j][6] - 1.0f, rgb[2] + vertices[i][j][6] - 1.0f);
-					glTexCoord2d(vertices[i][j][3] - vertices[i][j][0], vertices[i][j][4] - vertices[i][j][1]);
-					glVertex3fv(vertices[i][j]);
-				}
+			for (j = 0; j <= dDensity; j++)
+			{
+				glColor3f(rgb[0] + vertices[i + 1][j][6] - 1.0f, rgb[1] + vertices[i + 1][j][6] - 1.0f, rgb[2] + vertices[i + 1][j][6] - 1.0f);
+				glTexCoord2d(vertices[i + 1][j][3] - vertices[i + 1][j][0], vertices[i + 1][j][4] - vertices[i + 1][j][1]);
+				glVertex3fv(vertices[i + 1][j]);
+				glColor3f(rgb[0] + vertices[i][j][6] - 1.0f, rgb[1] + vertices[i][j][6] - 1.0f, rgb[2] + vertices[i][j][6] - 1.0f);
+				glTexCoord2d(vertices[i][j][3] - vertices[i][j][0], vertices[i][j][4] - vertices[i][j][1]);
+				glVertex3fv(vertices[i][j]);
+			}
 			glEnd();
 		}
 	}
@@ -265,26 +288,32 @@ void wisp::draw(){
 	glPopMatrix();
 }
 
-
-void wisp::drawAsBackground(){
+void
+wisp::drawAsBackground()
+{
 	int i, j;
-	
+
 	glPushMatrix();
 	glTranslatef(c[0] * 0.2f, c[1] * 0.2f, 1.6f);
 
-	if(dWireframe){
-		for(i=1; i<dDensity; i++){
+	if (dWireframe)
+	{
+		for (i = 1; i < dDensity; i++)
+		{
 			glBegin(GL_LINE_STRIP);
-			for(j=0; j<=dDensity; j++){
+			for (j = 0; j <= dDensity; j++)
+			{
 				glColor3f(rgb[0] + vertices[i][j][6] - 1.0f, rgb[1] + vertices[i][j][6] - 1.0f, rgb[2] + vertices[i][j][6] - 1.0f);
 				glTexCoord2d(vertices[i][j][3] - vertices[i][j][0], vertices[i][j][4] - vertices[i][j][1]);
 				glVertex3f(vertices[i][j][3], vertices[i][j][4], vertices[i][j][6]);
 			}
 			glEnd();
 		}
-		for(j=1; j<dDensity; j++){
+		for (j = 1; j < dDensity; j++)
+		{
 			glBegin(GL_LINE_STRIP);
-			for(i=0; i<=dDensity; i++){
+			for (i = 0; i <= dDensity; i++)
+			{
 				glColor3f(rgb[0] + vertices[i][j][6] - 1.0f, rgb[1] + vertices[i][j][6] - 1.0f, rgb[2] + vertices[i][j][6] - 1.0f);
 				glTexCoord2d(vertices[i][j][3] - vertices[i][j][0], vertices[i][j][4] - vertices[i][j][1]);
 				glVertex3f(vertices[i][j][3], vertices[i][j][4], vertices[i][j][6]);
@@ -292,17 +321,20 @@ void wisp::drawAsBackground(){
 			glEnd();
 		}
 	}
-	else{
-		for(i=0; i<dDensity; i++){
+	else
+	{
+		for (i = 0; i < dDensity; i++)
+		{
 			glBegin(GL_TRIANGLE_STRIP);
-				for(j=0; j<=dDensity; j++){
-					glColor3f(rgb[0] + vertices[i+1][j][6] - 1.0f, rgb[1] + vertices[i+1][j][6] - 1.0f, rgb[2] + vertices[i+1][j][6] - 1.0f);
-					glTexCoord2d(vertices[i+1][j][3] - vertices[i+1][j][0], vertices[i+1][j][4] - vertices[i+1][j][1]);
-					glVertex3f(vertices[i+1][j][3], vertices[i+1][j][4], vertices[i+1][j][6]);
-					glColor3f(rgb[0] + vertices[i][j][6] - 1.0f, rgb[1] + vertices[i][j][6] - 1.0f, rgb[2] + vertices[i][j][6] - 1.0f);
-					glTexCoord2d(vertices[i][j][3] - vertices[i][j][0], vertices[i][j][4] - vertices[i][j][1]);
-					glVertex3f(vertices[i][j][3], vertices[i][j][4], vertices[i][j][6]);
-				}
+			for (j = 0; j <= dDensity; j++)
+			{
+				glColor3f(rgb[0] + vertices[i + 1][j][6] - 1.0f, rgb[1] + vertices[i + 1][j][6] - 1.0f, rgb[2] + vertices[i + 1][j][6] - 1.0f);
+				glTexCoord2d(vertices[i + 1][j][3] - vertices[i + 1][j][0], vertices[i + 1][j][4] - vertices[i + 1][j][1]);
+				glVertex3f(vertices[i + 1][j][3], vertices[i + 1][j][4], vertices[i + 1][j][6]);
+				glColor3f(rgb[0] + vertices[i][j][6] - 1.0f, rgb[1] + vertices[i][j][6] - 1.0f, rgb[2] + vertices[i][j][6] - 1.0f);
+				glTexCoord2d(vertices[i][j][3] - vertices[i][j][0], vertices[i][j][4] - vertices[i][j][1]);
+				glVertex3f(vertices[i][j][3], vertices[i][j][4], vertices[i][j][6]);
+			}
 			glEnd();
 		}
 	}
@@ -310,34 +342,43 @@ void wisp::drawAsBackground(){
 	glPopMatrix();
 }
 
-
-void draw(){
+void
+draw()
+{
 	int i;
 
 	// Update wisps
-	for(i=0; i<dWisps; i++)
+	for (i = 0; i < dWisps; i++)
 		wisps[i].update();
-	for(i=0; i<dBackground; i++)
+	for (i = 0; i < dBackground; i++)
 		backwisps[i].update();
 
 	// Render feedback and copy to texture if necessary
-	if(dFeedback){
+	if (dFeedback)
+	{
 		static float feedbackIntensity = float(dFeedback) / 101.0f;
 
 		// update feedback variables
-		for(i=0; i<4; i++){
+		for (i = 0; i < 4; i++)
+		{
 			fr[i] += frameTime * fv[i];
-			if(fr[i] > PIx2)
+
+			if (fr[i] > PIx2)
 				fr[i] -= PIx2;
 		}
+
 		f[0] = 30.0f * cosf(fr[0]);
 		f[1] = 0.2f * cosf(fr[1]);
 		f[2] = 0.2f * cosf(fr[2]);
 		f[3] = 0.8f * cosf(fr[3]);
-		for(i=0; i<3; i++){
+
+		for (i = 0; i < 3; i++)
+		{
 			lr[i] += frameTime * lv[i];
-			if(lr[i] > PIx2)
+
+			if (lr[i] > PIx2)
 				lr[i] -= PIx2;
+
 			l[i] = cosf(lr[i]);
 			l[i] = l[i] * l[i];
 		}
@@ -357,23 +398,25 @@ void draw(){
 		glTranslatef(f[1] * l[1], f[2] * l[1], f[3] * l[2]);
 		glRotatef(f[0] * l[0], 0, 0, 1);
 		glBegin(GL_TRIANGLE_STRIP);
-			glTexCoord2f(-0.5f, -0.5f);
-			glVertex3f(-aspectRatio*2.0f, -2.0f, 1.25f);
-			glTexCoord2f(1.5f, -0.5f);
-			glVertex3f(aspectRatio*2.0f, -2.0f, 1.25f);
-			glTexCoord2f(-0.5f, 1.5f);
-			glVertex3f(-aspectRatio*2.0f, 2.0f, 1.25f);
-			glTexCoord2f(1.5f, 1.5f);
-			glVertex3f(aspectRatio*2.0f, 2.0f, 1.25f);
+		glTexCoord2f(-0.5f, -0.5f);
+		glVertex3f(-aspectRatio * 2.0f, -2.0f, 1.25f);
+		glTexCoord2f(1.5f, -0.5f);
+		glVertex3f(aspectRatio * 2.0f, -2.0f, 1.25f);
+		glTexCoord2f(-0.5f, 1.5f);
+		glVertex3f(-aspectRatio * 2.0f, 2.0f, 1.25f);
+		glTexCoord2f(1.5f, 1.5f);
+		glVertex3f(aspectRatio * 2.0f, 2.0f, 1.25f);
 		glEnd();
 		glPopMatrix();
 		glBindTexture(GL_TEXTURE_2D, tex);
-		for(i=0; i<dBackground; i++)
+
+		for (i = 0; i < dBackground; i++)
 			backwisps[i].drawAsBackground();
-		for(i=0; i<dWisps; i++)
+
+		for (i = 0; i < dWisps; i++)
 			wisps[i].draw();
 
-		// readback feedback texture
+		// read back feedback texture
 		glReadBuffer(GL_BACK);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, feedbacktexsize);
 		glBindTexture(GL_TEXTURE_2D, feedbacktex);
@@ -393,26 +436,27 @@ void draw(){
 		glTranslatef(f[1] * l[1], f[2] * l[1], f[3] * l[2]);
 		glRotatef(f[0] * l[0], 0, 0, 1);
 		glBegin(GL_TRIANGLE_STRIP);
-			glTexCoord2f(-0.5f, -0.5f);
-			glVertex3f(-aspectRatio*2.0f, -2.0f, 1.25f);
-			glTexCoord2f(1.5f, -0.5f);
-			glVertex3f(aspectRatio*2.0f, -2.0f, 1.25f);
-			glTexCoord2f(-0.5f, 1.5f);
-			glVertex3f(-aspectRatio*2.0f, 2.0f, 1.25f);
-			glTexCoord2f(1.5f, 1.5f);
-			glVertex3f(aspectRatio*2.0f, 2.0f, 1.25f);
+		glTexCoord2f(-0.5f, -0.5f);
+		glVertex3f(-aspectRatio * 2.0f, -2.0f, 1.25f);
+		glTexCoord2f(1.5f, -0.5f);
+		glVertex3f(aspectRatio * 2.0f, -2.0f, 1.25f);
+		glTexCoord2f(-0.5f, 1.5f);
+		glVertex3f(-aspectRatio * 2.0f, 2.0f, 1.25f);
+		glTexCoord2f(1.5f, 1.5f);
+		glVertex3f(aspectRatio * 2.0f, 2.0f, 1.25f);
 		glEnd();
 		glPopMatrix();
 	}
-	// Just clear the screen if feedback is not in use
-	else
+	else // Just clear the screen if feedback is not in use
 		glClear(GL_COLOR_BUFFER_BIT);
 
 	// draw regular top layer
 	glBindTexture(GL_TEXTURE_2D, tex);
-	for(i=0; i<dBackground; i++)
+
+	for (i = 0; i < dBackground; i++)
 		backwisps[i].drawAsBackground();
-	for(i=0; i<dWisps; i++)
+
+	for (i = 0; i < dWisps; i++)
 		wisps[i].draw();
 
 	// print text
@@ -421,12 +465,15 @@ void draw(){
 	static std::string str;
 	static int frames = 0;
 	++frames;
-	if(frames == 20){
+	if (frames == 20)
+	{
 		str = "FPS = " + to_string(20.0f / totalTime);
 		totalTime = 0.0f;
 		frames = 0;
 	}
-	if(kStatistics){
+
+	if (kStatistics)
+	{
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
@@ -448,18 +495,20 @@ void draw(){
 	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
 }
 
-
-void idleProc(){
+void
+idleProc()
+{
 	// update time
 	static rsTimer timer;
 	frameTime = float(timer.tick());
 
-	if(readyToDraw && !isSuspended && !checkingPassword)
+	if (readyToDraw && !isSuspended && !checkingPassword)
 		draw();
 }
 
-
-void initSaver(HWND hwnd){
+void
+initSaver(HWND hwnd)
+{
 	RECT rect;
 
 	srand((unsigned)time(NULL));
@@ -490,17 +539,21 @@ void initSaver(HWND hwnd){
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glLineWidth(2.0f);
+
 	// Commented out because smooth lines and textures don't mix on my TNT.
 	// It's like it rendering in software mode
 	//glEnable(GL_LINE_SMOOTH);
 	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
-	if(dTexture){
+	if (dTexture)
+	{
 		int whichtex = dTexture;
-		if(whichtex == 4)  // random texture
+		if (whichtex == 4)  // random texture
 			whichtex = rsRandi(3) + 1;
+
 		glEnable(GL_TEXTURE_2D);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
 		// Initialize texture
 		glGenTextures(1, &tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
@@ -508,23 +561,28 @@ void initSaver(HWND hwnd){
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		switch(whichtex){
-		case 1:
-			gluBuild2DMipmaps(GL_TEXTURE_2D, 1, TEXSIZE, TEXSIZE, GL_LUMINANCE, GL_UNSIGNED_BYTE, plasmamap);
-			break;
-		case 2:
-			gluBuild2DMipmaps(GL_TEXTURE_2D, 1, TEXSIZE, TEXSIZE, GL_LUMINANCE, GL_UNSIGNED_BYTE, stringymap);
-			break;
-		case 3:
-			gluBuild2DMipmaps(GL_TEXTURE_2D, 1, TEXSIZE, TEXSIZE, GL_LUMINANCE, GL_UNSIGNED_BYTE, linesmap);
+
+		switch (whichtex)
+		{
+			case 1:
+				gluBuild2DMipmaps(GL_TEXTURE_2D, 1, TEXSIZE, TEXSIZE, GL_LUMINANCE, GL_UNSIGNED_BYTE, plasmamap);
+				break;
+			case 2:
+				gluBuild2DMipmaps(GL_TEXTURE_2D, 1, TEXSIZE, TEXSIZE, GL_LUMINANCE, GL_UNSIGNED_BYTE, stringymap);
+				break;
+			case 3:
+				gluBuild2DMipmaps(GL_TEXTURE_2D, 1, TEXSIZE, TEXSIZE, GL_LUMINANCE, GL_UNSIGNED_BYTE, linesmap);
 		}
 	}
 
-	if(dFeedback){
+	if (dFeedback)
+	{
 		feedbacktexsize = int(powf(2, dFeedbacksize));
+
 		// Feedback texture can't be bigger than the window using glCopyTexSubImage2D.
 		// (This wouldn't be a limitation if we used FBOs.)
-		while(feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]){
+		while (feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3])
+		{
 			dFeedbacksize -= 1;
 			feedbacktexsize = int(powf(2, dFeedbacksize));
 		}
@@ -557,7 +615,9 @@ void initSaver(HWND hwnd){
 	textwriter = new rsText;
 }
 
-void cleanUp(HWND hwnd){
+void
+cleanUp(HWND hwnd)
+{
 	// Free memory
 	delete[] wisps;
 
@@ -567,123 +627,126 @@ void cleanUp(HWND hwnd){
 	wglDeleteContext(hglrc);
 }
 
-
-void setDefaults(int which){
-	switch(which){
-	case DEFAULTS1:  // Regular
-		dWisps = 5;
-		dBackground = 0;
-		dDensity = 35;
-		dVisibility = 35;
-		dSpeed = 15;
-		dFeedback = 0;
-		dFeedbackspeed = 1;
-		dFeedbacksize = 10;
-		dWireframe = 0;
-		dTexture = 4;
-		break;
-	case DEFAULTS2:  // Grid
-		dWisps = 4;
-		dBackground = 1;
-		dDensity = 30;
-		dVisibility = 70;
-		dSpeed = 15;
-		dFeedback = 0;
-		dFeedbackspeed = 1;
-		dFeedbacksize = 10;
-		dWireframe = 1;
-		dTexture = 0;
-		break;
-	case DEFAULTS3:  // Cubism
-		dWisps = 15;
-		dBackground = 0;
-		dDensity = 4;
-		dVisibility = 15;
-		dSpeed = 10;
-		dFeedback = 0;
-		dFeedbackspeed = 1;
-		dFeedbacksize = 10;
-		dWireframe = 0;
-		dTexture = 0;
-		break;
-	case DEFAULTS4:  // Bad math
-		dWisps = 2;
-		dBackground = 2;
-		dDensity = 20;
-		dVisibility = 40;
-		dSpeed = 30;
-		dFeedback = 40;
-		dFeedbackspeed = 5;
-		dFeedbacksize = 10;
-		dWireframe = 1;
-		dTexture = 2;
-		break;
-	case DEFAULTS5:  // Jack
-		dWisps = 0;
-		dBackground = 2;
-		dDensity = 25;
-		dVisibility = 10;
-		dSpeed = 20;
-		dFeedback = 90;
-		dFeedbackspeed = 3;
-		dFeedbacksize = 10;
-		dWireframe = 0;
-		dTexture = 0;
-		break;
-	case DEFAULTS6:  // Overdose
-		dWisps = 2;
-		dBackground = 2;
-		dDensity = 100;
-		dVisibility = 40;
-		dSpeed = 40;
-		dFeedback = 80;
-		dFeedbackspeed = 10;
-		dFeedbacksize = 10;
-		dWireframe = 0;
-		dTexture = 4;
-		break;
-	case DEFAULTS7:  // Nowhere
-		dWisps = 0;
-		dBackground = 3;
-		dDensity = 30;
-		dVisibility = 40;
-		dSpeed = 20;
-		dFeedback = 80;
-		dFeedbackspeed = 10;
-		dFeedbacksize = 10;
-		dWireframe = 1;
-		dTexture = 3;
-		break;
-	case DEFAULTS8:  // Echo
-		dWisps = 3;
-		dBackground = 0;
-		dDensity = 35;
-		dVisibility = 30;
-		dSpeed = 20;
-		dFeedback = 85;
-		dFeedbackspeed = 15;
-		dFeedbacksize = 10;
-		dWireframe = 0;
-		dTexture = 1;
-		break;
-	case DEFAULTS9:  // Kaleidoscope
-		dWisps = 3;
-		dBackground = 0;
-		dDensity = 35;
-		dVisibility = 40;
-		dSpeed = 15;
-		dFeedback = 90;
-		dFeedbackspeed = 3;
-		dFeedbacksize = 10;
-		dWireframe = 0;
-		dTexture = 0;
-		break;
+void
+setDefaults(int which)
+{
+	switch (which)
+	{
+		case DEFAULTS1:  // Regular
+			dWisps = 5;
+			dBackground = 0;
+			dDensity = 35;
+			dVisibility = 35;
+			dSpeed = 15;
+			dFeedback = 0;
+			dFeedbackspeed = 1;
+			dFeedbacksize = 10;
+			dWireframe = 0;
+			dTexture = 4;
+			break;
+		case DEFAULTS2:  // Grid
+			dWisps = 4;
+			dBackground = 1;
+			dDensity = 30;
+			dVisibility = 70;
+			dSpeed = 15;
+			dFeedback = 0;
+			dFeedbackspeed = 1;
+			dFeedbacksize = 10;
+			dWireframe = 1;
+			dTexture = 0;
+			break;
+		case DEFAULTS3:  // Cubism
+			dWisps = 15;
+			dBackground = 0;
+			dDensity = 4;
+			dVisibility = 15;
+			dSpeed = 10;
+			dFeedback = 0;
+			dFeedbackspeed = 1;
+			dFeedbacksize = 10;
+			dWireframe = 0;
+			dTexture = 0;
+			break;
+		case DEFAULTS4:  // Bad math
+			dWisps = 2;
+			dBackground = 2;
+			dDensity = 20;
+			dVisibility = 40;
+			dSpeed = 30;
+			dFeedback = 40;
+			dFeedbackspeed = 5;
+			dFeedbacksize = 10;
+			dWireframe = 1;
+			dTexture = 2;
+			break;
+		case DEFAULTS5:  // Jack
+			dWisps = 0;
+			dBackground = 2;
+			dDensity = 25;
+			dVisibility = 10;
+			dSpeed = 20;
+			dFeedback = 90;
+			dFeedbackspeed = 3;
+			dFeedbacksize = 10;
+			dWireframe = 0;
+			dTexture = 0;
+			break;
+		case DEFAULTS6:  // Overdose
+			dWisps = 2;
+			dBackground = 2;
+			dDensity = 100;
+			dVisibility = 40;
+			dSpeed = 40;
+			dFeedback = 80;
+			dFeedbackspeed = 10;
+			dFeedbacksize = 10;
+			dWireframe = 0;
+			dTexture = 4;
+			break;
+		case DEFAULTS7:  // Nowhere
+			dWisps = 0;
+			dBackground = 3;
+			dDensity = 30;
+			dVisibility = 40;
+			dSpeed = 20;
+			dFeedback = 80;
+			dFeedbackspeed = 10;
+			dFeedbacksize = 10;
+			dWireframe = 1;
+			dTexture = 3;
+			break;
+		case DEFAULTS8:  // Echo
+			dWisps = 3;
+			dBackground = 0;
+			dDensity = 35;
+			dVisibility = 30;
+			dSpeed = 20;
+			dFeedback = 85;
+			dFeedbackspeed = 15;
+			dFeedbacksize = 10;
+			dWireframe = 0;
+			dTexture = 1;
+			break;
+		case DEFAULTS9:  // Kaleidoscope
+			dWisps = 3;
+			dBackground = 0;
+			dDensity = 35;
+			dVisibility = 40;
+			dSpeed = 15;
+			dFeedback = 90;
+			dFeedbackspeed = 3;
+			dFeedbacksize = 10;
+			dWireframe = 0;
+			dTexture = 0;
+			break;
 	}
 }
 
-
 // Initialize all user-defined stuff
-void readRegistry(){
+void
+readRegistry()
+{
 	LONG result;
 	HKEY skey;
 	DWORD valtype, valsize, val;
@@ -691,57 +754,58 @@ void readRegistry(){
 	setDefaults(DEFAULTS1);
 
 	result = RegOpenKeyEx(HKEY_CURRENT_USER, registryPath, 0, KEY_READ, &skey);
-	if(result != ERROR_SUCCESS)
+	if (result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
+	valsize = sizeof(val);
 
 	result = RegQueryValueEx(skey, "Wisps", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dWisps = val;
 	result = RegQueryValueEx(skey, "Background", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dBackground = val;
 	result = RegQueryValueEx(skey, "Density", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dDensity = val;
 	result = RegQueryValueEx(skey, "Visibility", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dVisibility = val;
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dSpeed = val;
 	result = RegQueryValueEx(skey, "Feedback", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dFeedback = val;
 	result = RegQueryValueEx(skey, "Feedbackspeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dFeedbackspeed = val;
 	result = RegQueryValueEx(skey, "Feedbacksize", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dFeedbacksize = val;
 	result = RegQueryValueEx(skey, "Texture", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dTexture = val;
 	result = RegQueryValueEx(skey, "Wireframe", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dWireframe = val;
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if (result == ERROR_SUCCESS)
 		dFrameRateLimit = val;
 
 	RegCloseKey(skey);
 }
 
-
 // Save all user-defined stuff
-void writeRegistry(){
-    LONG result;
+void
+writeRegistry()
+{
+	LONG result;
 	HKEY skey;
 	DWORD val, disp;
 
 	result = RegCreateKeyEx(HKEY_CURRENT_USER, registryPath, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &skey, &disp);
-	if(result != ERROR_SUCCESS)
+	if (result != ERROR_SUCCESS)
 		return;
 
 	val = dWisps;
@@ -770,31 +834,37 @@ void writeRegistry(){
 	RegCloseKey(skey);
 }
 
-
-BOOL CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
-	switch(msg){
-	case WM_CTLCOLORSTATIC:
-		if(HWND(lpm) == GetDlgItem(hdlg, WEBPAGE)){
-			SetTextColor(HDC(wpm), RGB(0,0,255));
-			SetBkColor(HDC(wpm), COLORREF(GetSysColor(COLOR_3DFACE)));
-			return int(GetSysColorBrush(COLOR_3DFACE));
-		}
-		break;
-    case WM_COMMAND:
-		switch(LOWORD(wpm)){
-		case IDOK:
-		case IDCANCEL:
-			EndDialog(hdlg, LOWORD(wpm));
+BOOL CALLBACK
+aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm)
+{
+	switch (msg)
+	{
+		case WM_CTLCOLORSTATIC:
+			if (HWND(lpm) == GetDlgItem(hdlg, WEBPAGE))
+			{
+				SetTextColor(HDC(wpm), RGB(0, 0, 255));
+				SetBkColor(HDC(wpm), COLORREF(GetSysColor(COLOR_3DFACE)));
+				return int(GetSysColorBrush(COLOR_3DFACE));
+			}
 			break;
-		case WEBPAGE:
-			ShellExecute(NULL, "open", "http://www.reallyslick.com", NULL, NULL, SW_SHOWNORMAL);
-		}
+		case WM_COMMAND:
+			switch (LOWORD(wpm))
+			{
+				case IDOK:
+				case IDCANCEL:
+					EndDialog(hdlg, LOWORD(wpm));
+					break;
+				case WEBPAGE:
+					ShellExecute(NULL, "open", "http://www.reallyslick.com", NULL, NULL, SW_SHOWNORMAL);
+			}
 	}
+
 	return FALSE;
 }
 
-
-void initControls(HWND hdlg){
+void
+initControls(HWND hdlg)
+{
 	char cval[16];
 
 	SendDlgItemMessage(hdlg, WISPS, UDM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(100), DWORD(0))));
@@ -862,112 +932,126 @@ void initControls(HWND hdlg){
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
 }
 
-
-BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
+BOOL
+screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm)
+{
 	int ival;
 	char cval[16];
 
-    switch(msg){
-    case WM_INITDIALOG:
-        InitCommonControls();
-        readRegistry();
-        initControls(hdlg);
-        return TRUE;
-    case WM_COMMAND:
-        switch(LOWORD(wpm)){
-        case IDOK:
-			dWisps = SendDlgItemMessage(hdlg, WISPS, UDM_GETPOS, 0, 0);
-			if(dWisps < 0)
-				dWisps = 0;
-			if(dWisps > 100)
-				dWisps = 100;
-			dBackground = SendDlgItemMessage(hdlg, BACKGROUND, UDM_GETPOS, 0, 0);
-			if(dBackground < 0)
-				dBackground = 0;
-			if(dBackground > 100)
-				dBackground = 100;
-            dDensity = SendDlgItemMessage(hdlg, DENSITY, TBM_GETPOS, 0, 0);
-			dVisibility = SendDlgItemMessage(hdlg, VISIBILITY, TBM_GETPOS, 0, 0);
-			dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			dFeedback = SendDlgItemMessage(hdlg, FEEDBACK, TBM_GETPOS, 0, 0);
-			dFeedbackspeed = SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_GETPOS, 0, 0);
-			dFeedbacksize = SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_GETPOS, 0, 0);
-			dTexture = SendDlgItemMessage(hdlg, TEXTURE, CB_GETCURSEL, 0, 0);
-			dWireframe = (IsDlgButtonChecked(hdlg, WIREFRAME) == BST_CHECKED);
-			dFrameRateLimit = SendDlgItemMessage(hdlg, FRAMERATELIMIT, TBM_GETPOS, 0, 0);
-			writeRegistry();
-            // Fall through
-        case IDCANCEL:
-            EndDialog(hdlg, LOWORD(wpm));
-            break;
-		case DEFAULTS1:
-		case DEFAULTS2:
-		case DEFAULTS3:
-		case DEFAULTS4:
-		case DEFAULTS5:
-		case DEFAULTS6:
-		case DEFAULTS7:
-		case DEFAULTS8:
-		case DEFAULTS9:
-			setDefaults(wpm);
+	switch (msg)
+	{
+		case WM_INITDIALOG:
+			InitCommonControls();
+			readRegistry();
 			initControls(hdlg);
-			break;
-		case ABOUT:
-			DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, DLGPROC(aboutProc));
-		}
-        return TRUE;
-	case WM_HSCROLL:
-		if(HWND(lpm) == GetDlgItem(hdlg, DENSITY)){
-			ival = SendDlgItemMessage(hdlg, DENSITY, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", ival);
-			SendDlgItemMessage(hdlg, DENSITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
-		}
-		if(HWND(lpm) == GetDlgItem(hdlg, VISIBILITY)){
-			ival = SendDlgItemMessage(hdlg, VISIBILITY, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", ival);
-			SendDlgItemMessage(hdlg, VISIBILITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
-		}
-		if(HWND(lpm) == GetDlgItem(hdlg, SPEED)){
-			ival = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", ival);
-			SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
-		}
-		if(HWND(lpm) == GetDlgItem(hdlg, FEEDBACK)){
-			ival = SendDlgItemMessage(hdlg, FEEDBACK, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", ival);
-			SendDlgItemMessage(hdlg, FEEDBACKTEXT, WM_SETTEXT, 0, LPARAM(cval));
-		}
-		if(HWND(lpm) == GetDlgItem(hdlg, FEEDBACKSPEED)){
-			ival = SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", ival);
-			SendDlgItemMessage(hdlg, FEEDBACKSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
-		}
-		if(HWND(lpm) == GetDlgItem(hdlg, FEEDBACKSIZE)){
-			ival = SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", int(powf(2, ival)));
-			SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
-		}
-		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))
-			updateFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
-		return TRUE;
-    }
-    return FALSE;
+			return TRUE;
+		case WM_COMMAND:
+			switch (LOWORD(wpm))
+			{
+				case IDOK:
+					dWisps = SendDlgItemMessage(hdlg, WISPS, UDM_GETPOS, 0, 0);
+					if (dWisps < 0)
+						dWisps = 0;
+					if (dWisps > 100)
+						dWisps = 100;
+					dBackground = SendDlgItemMessage(hdlg, BACKGROUND, UDM_GETPOS, 0, 0);
+					if (dBackground < 0)
+						dBackground = 0;
+					if (dBackground > 100)
+						dBackground = 100;
+					dDensity = SendDlgItemMessage(hdlg, DENSITY, TBM_GETPOS, 0, 0);
+					dVisibility = SendDlgItemMessage(hdlg, VISIBILITY, TBM_GETPOS, 0, 0);
+					dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
+					dFeedback = SendDlgItemMessage(hdlg, FEEDBACK, TBM_GETPOS, 0, 0);
+					dFeedbackspeed = SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_GETPOS, 0, 0);
+					dFeedbacksize = SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_GETPOS, 0, 0);
+					dTexture = SendDlgItemMessage(hdlg, TEXTURE, CB_GETCURSEL, 0, 0);
+					dWireframe = (IsDlgButtonChecked(hdlg, WIREFRAME) == BST_CHECKED);
+					dFrameRateLimit = SendDlgItemMessage(hdlg, FRAMERATELIMIT, TBM_GETPOS, 0, 0);
+					writeRegistry();
+				// Fall through
+				case IDCANCEL:
+					EndDialog(hdlg, LOWORD(wpm));
+					break;
+				case DEFAULTS1:
+				case DEFAULTS2:
+				case DEFAULTS3:
+				case DEFAULTS4:
+				case DEFAULTS5:
+				case DEFAULTS6:
+				case DEFAULTS7:
+				case DEFAULTS8:
+				case DEFAULTS9:
+					setDefaults(wpm);
+					initControls(hdlg);
+					break;
+				case ABOUT:
+					DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, DLGPROC(aboutProc));
+			}
+			return TRUE;
+		case WM_HSCROLL:
+			if (HWND(lpm) == GetDlgItem(hdlg, DENSITY))
+			{
+				ival = SendDlgItemMessage(hdlg, DENSITY, TBM_GETPOS, 0, 0);
+				sprintf_s(cval, "%d", ival);
+				SendDlgItemMessage(hdlg, DENSITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
+			}
+			if (HWND(lpm) == GetDlgItem(hdlg, VISIBILITY))
+			{
+				ival = SendDlgItemMessage(hdlg, VISIBILITY, TBM_GETPOS, 0, 0);
+				sprintf_s(cval, "%d", ival);
+				SendDlgItemMessage(hdlg, VISIBILITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
+			}
+			if (HWND(lpm) == GetDlgItem(hdlg, SPEED))
+			{
+				ival = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
+				sprintf_s(cval, "%d", ival);
+				SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
+			}
+			if (HWND(lpm) == GetDlgItem(hdlg, FEEDBACK))
+			{
+				ival = SendDlgItemMessage(hdlg, FEEDBACK, TBM_GETPOS, 0, 0);
+				sprintf_s(cval, "%d", ival);
+				SendDlgItemMessage(hdlg, FEEDBACKTEXT, WM_SETTEXT, 0, LPARAM(cval));
+			}
+			if (HWND(lpm) == GetDlgItem(hdlg, FEEDBACKSPEED))
+			{
+				ival = SendDlgItemMessage(hdlg, FEEDBACKSPEED, TBM_GETPOS, 0, 0);
+				sprintf_s(cval, "%d", ival);
+				SendDlgItemMessage(hdlg, FEEDBACKSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
+			}
+			if (HWND(lpm) == GetDlgItem(hdlg, FEEDBACKSIZE))
+			{
+				ival = SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_GETPOS, 0, 0);
+				sprintf_s(cval, "%d", int(powf(2, ival)));
+				SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
+			}
+			if (HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))
+				updateFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
+
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
-
-LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
+LONG
+screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm)
+{
 	static unsigned long threadID;
 
-	switch(msg){
-	case WM_CREATE:
-		readRegistry();
-		initSaver(hwnd);
-		readyToDraw = 1;
-		break;
-	case WM_DESTROY:
-		readyToDraw = 0;
-		cleanUp(hwnd);
-		break;
+	switch (msg)
+	{
+		case WM_CREATE:
+			readRegistry();
+			initSaver(hwnd);
+			readyToDraw = 1;
+			break;
+		case WM_DESTROY:
+			readyToDraw = 0;
+			cleanUp(hwnd);
+			break;
 	}
+
 	return defScreenSaverProc(hwnd, msg, wpm, lpm);
 }
