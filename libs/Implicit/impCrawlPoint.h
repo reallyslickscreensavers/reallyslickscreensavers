@@ -18,32 +18,49 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPCRAWLPOINT_H
 #define IMPCRAWLPOINT_H
 
-
-
 #include <vector>
 
-
-
 // For making a list of starting points for surface crawling.
-class impCrawlPoint{
+class impCrawlPoint
+{
 public:
-    float position[3];
-    
-    impCrawlPoint(){};
-    impCrawlPoint(float x, float y, float z){position[0] = x; position[1] = y; position[2] = z;};
-    impCrawlPoint(float* p){position[0] = p[0]; position[1] = p[1]; position[2] = p[2];};
-	~impCrawlPoint(){};
-	void set(float x, float y, float z){position[0] = x; position[1] = y; position[2] = z;};
-    void set(float* p){position[0] = p[0]; position[1] = p[1]; position[2] = p[2];};
+	float position[3];
+
+	impCrawlPoint() {};
+	~impCrawlPoint() {};
+
+	impCrawlPoint(float x, float y, float z)
+	{
+		position[0] = x;
+		position[1] = y;
+		position[2] = z;
+	};
+
+	impCrawlPoint(float* p)
+	{
+		position[0] = p[0];
+		position[1] = p[1];
+		position[2] = p[2];
+	};
+
+	void set(float x, float y, float z)
+	{
+		position[0] = x;
+		position[1] = y;
+		position[2] = z;
+	};
+
+	void set(float* p)
+	{
+		position[0] = p[0];
+		position[1] = p[1];
+		position[2] = p[2];
+	};
 };
 
-
 typedef std::vector<impCrawlPoint> impCrawlPointVector;
-
-
 
 #endif

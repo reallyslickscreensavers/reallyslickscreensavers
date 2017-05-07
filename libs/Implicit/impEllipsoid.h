@@ -18,24 +18,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPELLIPSOID_H
 #define IMPELLIPSOID_H
 
-
-
 #include "impShape.h"
 
-
-
-class impEllipsoid : public impShape{
+class impEllipsoid : public impShape
+{
 public:
-    impEllipsoid(){};
-    ~impEllipsoid(){};
-    
-    virtual float value(float* position);
+	impEllipsoid() {};
+	~impEllipsoid() {};
+
+	virtual float value(float* position);
 };
-
-
 
 #endif

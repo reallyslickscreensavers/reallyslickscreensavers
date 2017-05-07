@@ -18,26 +18,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPCAPSULE_H
 #define IMPCAPSULE_H
 
-
 #include "impShape.h"
 
-
 // An impCapsule is defined as the inverse square falloff from a segment.
-class impCapsule : public impShape{
+class impCapsule : public impShape
+{
 	float length;  // dimension on z-axis
 
 public:
-	impCapsule(){
-		length = 1.0f;
-	};
-	~impCapsule(){};
-	void setLength(float l){ length = l; }
+	impCapsule() { length = 1.0f; };
+	~impCapsule() {};
+
+	void setLength(float l) { length = l; }
 	virtual float value(float* position);
 };
-
 
 #endif

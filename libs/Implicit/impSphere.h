@@ -18,23 +18,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef IMPSPHERE_H
 #define IMPSPHERE_H
 
-
-
 #include "impShape.h"
 
-
-
-class impSphere : public impShape{
+class impSphere : public impShape
+{
 public:
-	impSphere(){};
-    ~impSphere(){};
-    virtual float value(float* position);
+	impSphere() {};
+	~impSphere() {};
+
+	virtual float value(float* position);
 };
-
-
 
 #endif

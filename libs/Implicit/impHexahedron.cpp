@@ -18,12 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include "impHexahedron.h"
 
-
-
-float impHexahedron::value(float* position){
+float
+impHexahedron::value(float* position)
+{
 	const float& x(position[0]);
 	const float& y(position[1]);
 	const float& z(position[2]);
@@ -35,7 +34,8 @@ float impHexahedron::value(float* position){
 	const float xx(1.0f / (tx * tx + IMP_MIN_DIVISOR));
 	const float yy(1.0f / (ty * ty + IMP_MIN_DIVISOR));
 	const float zz(1.0f / (tz * tz + IMP_MIN_DIVISOR));
-	if(xx < yy)
+
+	if (xx < yy)
 		return (xx < zz) ? xx : zz;
 	else
 		return (yy < zz) ? yy : zz;

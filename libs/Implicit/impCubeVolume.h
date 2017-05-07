@@ -22,19 +22,18 @@
 #ifndef IMPCUBEVOLUME_H
 #define IMPCUBEVOLUME_H
 
+#include <math.h>
 
+#include <list>
+#include <vector>
 
 #include "impSurface.h"
 #include "impCubeTables.h"
 #include "impCrawlPoint.h"
-#include <vector>
-#include <list>
-
-#include <math.h>
 
 
-
-struct cubedata{
+struct cubedata
+{
 	// corner mask which describes how cube is polygonized
 	unsigned int mask;
 	// position left-lower-far corner (-x, -y, -z)
@@ -62,25 +61,43 @@ struct cubedata{
 // For making a list of cubes to be polygonized.
 // The list can be sorted by depth before polygonization in
 // the case of transparent surfaces.
-class sortableCube{
+class sortableCube
+{
 public:
 	unsigned int index;  // index of cube in volume
 	float depth;  // distance squared from eyepoint
-    
-	sortableCube(){}
-	sortableCube(unsigned int ind){index = ind;}
-	~sortableCube(){}
-    
-	friend bool operator < (const sortableCube& a, const sortableCube& b){return((a.depth)<(b.depth));}
-	friend bool operator > (const sortableCube& a, const sortableCube& b){return((a.depth)>(b.depth));}
-	friend bool operator == (const sortableCube& a, const sortableCube& b){return((a.depth)==(b.depth));}
-	friend bool operator != (const sortableCube& a, const sortableCube& b){return((a.depth)!=(b.depth));}
+
+	sortableCube() {}
+	sortableCube(unsigned int ind) { index = ind; }
+	~sortableCube() {}
+
+	friend bool operator < (const sortableCube& a, const sortableCube& b)
+	{
+		return((a.depth) < (b.depth));
+	}
+
+	friend bool operator > (const sortableCube& a, const sortableCube& b)
+	{
+		return((a.depth) > (b.depth));
+	}
+
+	friend bool operator == (const sortableCube& a, const sortableCube& b)
+	{
+		return((a.depth) == (b.depth));
+	}
+
+	friend bool operator != (const sortableCube& a, const sortableCube& b)
+	{
+		return((a.depth) != (b.depth));
+	}
 };
 
 
-class impCubeVolume{
+class impCubeVolume
+{
 public:
 	float (*function)(float* position);
+
 private:
 	float lbf[3];  // left-bottom-far corner of volume
 	float cubewidth;
@@ -103,26 +120,28 @@ private:
 public:
 	impCubeVolume();
 	~impCubeVolume();
+
 	// pass dimensions of volume in cubes plus "cubewidth"
 	void init(unsigned int width, unsigned int height, unsigned int length, float cw);
-	void useFastNormals(bool val){fastnormals = val;}
-	void setCrawlFromSides(bool val){crawlfromsides = val;}
-	void setSurfaceValue(float sv){surfacevalue = sv;}
-	float getSurfaceValue(){return surfacevalue;}
-	void setSurface(impSurface* s){surface = s;}
-	impSurface* getSurface(){return surface;}
+	void useFastNormals(bool val) { fastnormals = val; }
+	void setCrawlFromSides(bool val) { crawlfromsides = val; }
+	void setSurfaceValue(float sv) { surfacevalue = sv; }
+	float getSurfaceValue() { return surfacevalue; }
+	void setSurface(impSurface* s) { surface = s; }
+	impSurface* getSurface() { return surface; }
+
 	// These routines compute geometry and store it in "surface"
 	// Providing an eyepoint indicates that you want to sort the surface
 	// so that transparent surfaces will be drawn back-to-front.
-	// Providing a list of crawlpoints indicates that you want to use a 
+	// Providing a list of crawlpoints indicates that you want to use a
 	// surface crawling algorithm.
 	// If no crawlpoint list is provided, then every cube is checked, which
 	// is slow but thorough (there's no chance of missing a piece of the
 	// surface).
 	void makeSurface();
 	void makeSurface(float eyex, float eyey, float eyez);
-	void makeSurface(impCrawlPointVector &cpv);
-	void makeSurface(float eyex, float eyey, float eyez, impCrawlPointVector &cpv);
+	void makeSurface(impCrawlPointVector& cpv);
+	void makeSurface(float eyex, float eyey, float eyez, impCrawlPointVector& cpv);
 
 private:
 	// x, y, and z define position of cube in this volume
@@ -147,9 +166,9 @@ private:
 
 	// utility function for converting 3D cube coordinates to a cube index
 	inline const unsigned int cubeindex(const unsigned int& i, const unsigned int& j, const unsigned int& k)
-		{ return (((k * h_1) + j) * w_1) + i; }
+	{
+		return (((k * h_1) + j) * w_1) + i;
+	}
 };
-
-
 
 #endif
