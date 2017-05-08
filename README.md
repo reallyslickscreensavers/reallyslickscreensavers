@@ -9,7 +9,7 @@ Contact information is available on the website.
 
 # Dependencies:
 
-* [OpenAL](www.openal.org) — required for **Skyrocket**.
+* [OpenAL](http://www.openal.org) — required for **Skyrocket**.
 * [FreeGLUT](http://freeglut.sourceforge.net) — required for **ImplicitDemo**
 * [Inno Setup](http://www.jrsoftware.org/isinfo.php) — required to build installer executable.
 
@@ -24,12 +24,12 @@ In order to build installer your dev-environment must have Inno Setup installed 
 * **v 0.2.x**
 Latest available sources were imported from [original svn repository](https://sourceforge.net/projects/rssavers/). Project files and folders structure were re-arranged a little. Projects and solution files were converted to `Visual Studio 2015` format. Additional dependencies were added as submodules with redistributable packages.
 
-*TODO: Update those parts of code and makefiles?*
+*TODO: Update those parts of code and makefiles?*  
 There are bits of X Windowing System (X11) code among the rssavers source code. However, the code in this project has never been fully converted to work as *nix screensavers. Hyperspace and Microcosm were actually written in Linux originally and then ported to Windows. This is because gdb and ddd tend to work much better than the Visual Studio debuggers and because Microcosm required much performance profiling with gprof, which cannot be done with the Express Edition of Visual Studio.  Perhaps the paid versions of VS have decent profilers.
 
 # Distribution notes:
 
-*TODO: possible obsolete note, check this later:*
+*TODO: possible obsolete note, check this later:*  
 `bin/GPL.txt` and `bin/README.txt` do not appear to maintain their DOS-style
 carriage returns when stored in svn.  They must be repaired with unix2dos
 before being distributed.
