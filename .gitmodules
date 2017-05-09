@@ -1,0 +1,6 @@
+[submodule "3rdparty/freeglut"]
+	path = 3rdparty/freeglut
+	url = https://gitlab.com/dbelyaev/freeglut-redist.git
+[submodule "3rdparty/openal"]
+	path = 3rdparty/openal
+	url = https://gitlab.com/dbelyaev/openal-redist.git
