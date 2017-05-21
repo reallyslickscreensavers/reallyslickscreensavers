@@ -67,7 +67,7 @@
     <Link>
       <AdditionalDependencies>comctl32.lib;winmm.lib;Opengl32.lib;glu32.lib;rsWin32Saverd.lib;Rgbhsld.lib;rsTextd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)Cyclone.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -98,7 +98,7 @@
     <Link>
       <AdditionalDependencies>comctl32.lib;winmm.lib;Opengl32.lib;glu32.lib;rsWin32Saver.lib;Rgbhsl.lib;rsText.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>

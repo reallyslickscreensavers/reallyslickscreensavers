@@ -68,7 +68,7 @@
     <Link>
       <AdditionalDependencies>comctl32.lib;winmm.lib;Opengl32.lib;glu32.lib;OpenAL32.lib;rsWin32Saverd.lib;rsMathd.lib;rsTextd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>../../lib;../../3rdparty/openal/libs/win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);../../3rdparty/openal/libs/win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)Skyrocket.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -102,7 +102,7 @@
     <Link>
       <AdditionalDependencies>comctl32.lib;winmm.lib;Opengl32.lib;glu32.lib;OpenAL32.lib;rsWin32Saver.lib;rsMath.lib;rsText.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>../../lib;../../3rdparty/openal/libs/win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);../../3rdparty/openal/libs/win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <HeapReserveSize>0</HeapReserveSize>

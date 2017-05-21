@@ -67,7 +67,7 @@
     <Link>
       <AdditionalDependencies>Opengl32.lib;glu32.lib;freeglut_staticd.lib;Implicitd.lib;rsMathd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>../../lib;../../3rdparty/freeglut/libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);../../3rdparty/freeglut/libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)ImplicitDemo.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
@@ -93,7 +93,7 @@
     <Link>
       <AdditionalDependencies>Opengl32.lib;glu32.lib;freeglut_static.lib;Implicit.lib;rsMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>../../lib;../../3rdparty/freeglut/libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);../../3rdparty/freeglut/libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
