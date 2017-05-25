@@ -8,3 +8,6 @@ url=https://gitlab.com/redist/openal-redist.git
 	path = libs
 	url = https://github.com/reallyslickscreensavers/rslibs.git
 	branch = master
+[submodule "3rdparty/GL"]
+	path = 3rdparty/GL
+	url = https://github.com/reallyslickscreensavers/opengl-headers.git
