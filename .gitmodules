@@ -4,3 +4,7 @@
 [submodule "3rdparty/openal"]
 	path = 3rdparty/openal
 url=https://gitlab.com/redist/openal-redist.git
+[submodule "libs"]
+	path = libs
+	url = https://github.com/reallyslickscreensavers/rslibs.git
+	branch = master
