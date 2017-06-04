@@ -1,8 +1,15 @@
-version: 1.0.{build}
 image: Visual Studio 2017
-pull_requests:
-  do_not_increment_build_number: true
 skip_branch_with_pr: true
+init:
+# Set "build version number" to "short-commit-hash" or when tagged to "tag name"
+- ps: >-
+    $githash = $($env:APPVEYOR_REPO_COMMIT.Substring(0, 7))
+
+    if ($env:APPVEYOR_REPO_TAG -eq "true") {
+      Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_TAG_NAME)-$($githash)"
+    } else {
+      Update-AppveyorBuild -Version "build$($env:APPVEYOR_BUILD_NUMBER)-$($githash)"
+    }
 configuration:
 - Debug
 - Release
