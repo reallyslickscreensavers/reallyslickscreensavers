@@ -32,10 +32,11 @@ deploy:
 - provider: GitHub
   release: $(APPVEYOR_REPO_TAG_NAME)
   auth_token:
-    secure: YTcqE4ZD6r3fjgQMNkMIGagSA01Vy0hWhK3zl+629ggI5GJ/l0S6U3ddRDA9+r02Nq71sYw6aB3zW0DVsL2Xd33J0aWQq/friG1CoLyNikI=
+    secure: aMPE/eNgHf7bwL2SEMz9CmiWwZ2gNP5hMatuTIWjF6BVAjo1nYqHiCWmUeMPFgLJ
   artifact: /.*\.exe/
   draft: true
   prerelease: false
   force_update: true
   on:
     APPVEYOR_REPO_TAG: true
+    CONFIGURATION: Installer
