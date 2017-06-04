@@ -2,31 +2,37 @@
 ;
 ; Script for building an installer for Really Slick Screensavers
 ;
-; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
+[ISPP]
+#define AppName "Really Slick Screensavers"
+#define AppShortName "ReallySlickScreensavers"
+#define AppLowerName LowerCase(AppShortName)
+#define AppPublisher "Terence M. Welsh"
+#define AppUrl "http://www.reallyslick.com"
 
-; information defines
-#define ApplicationName "Really Slick Screensavers"
-#define ApplicationShortName "ReallySlickScreensavers"
-#define ApplicationLowerName LowerCase(ApplicationShortName)
-#define ApplicationPublisher "Terence M. Welsh"
-#define ApplicationUrl "http://www.reallyslick.com"
-
-; read product version string from main executable
-#define ApplicationVersion "0.2-beta" ; TODO: Make it dynamically updated with tag and build number
+; obtain version from build server environment variable
+; or revert default string
+#ifndef VERSION
+#define VERSION = GetEnv('APPVEYOR_BUILD_VERSION')
+#if VERSION = "."
+  #define VERSION = "v0.0.0"
+#endif
+#pragma message "Detected Version: " + VERSION
+#endif
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{8CF886E0-9BCA-4D5D-8F9C-6DEA318D0E71}
-AppName={#ApplicationName}
-AppVersion={#ApplicationVersion}
-AppPublisher={#ApplicationPublisher}
-AppPublisherURL={#ApplicationUrl}
-AppSupportURL={#ApplicationUrl}
-AppUpdatesURL={#ApplicationUrl}
+AppId={{699C3D60-79CD-42BE-9B08-95C23AF48DF4}
+AppName={#AppName}
+AppVersion={#VERSION}
+AppPublisher={#AppPublisher}
+AppPublisherURL={#AppUrl}
+AppSupportURL={#AppUrl}
+AppUpdatesURL={#AppUrl}
 DefaultDirName={sys}
-DefaultGroupName={#ApplicationName}
+DefaultGroupName={#AppName}
 Compression=lzma
 SolidCompression=yes
 
@@ -37,10 +43,10 @@ SourceDir=.\..\bin
 OutputDir=.\..\installer\output
 
 ; output installer file name
-OutputBaseFilename={#ApplicationShortName + "_v" + ApplicationVersion}
+OutputBaseFilename={#AppLowerName}_{#VERSION}
 
 UninstallDisplayIcon="installer.ico"
-UninstallDisplayName={#ApplicationName}
+UninstallDisplayName={#AppName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
