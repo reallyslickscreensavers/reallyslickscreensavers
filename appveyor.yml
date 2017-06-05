@@ -4,6 +4,7 @@ branches:
   - master
   - develop
   - refs/pull/*/head
+  - refs/tags/*
 image: Visual Studio 2017
 configuration:
 - Debug
