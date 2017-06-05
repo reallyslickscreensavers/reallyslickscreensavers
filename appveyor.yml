@@ -1,30 +1,45 @@
+version: '{build}'
+branches:
+  only:
+  - master
+  - develop
+  - refs/pull/*/head
 image: Visual Studio 2017
-skip_branch_with_pr: true
-init:
-# Set "build version number" to "short-commit-hash" or when tagged to "tag name"
-- ps: >-
-    $githash = $($env:APPVEYOR_REPO_COMMIT.Substring(0, 7))
-
-    if ($env:APPVEYOR_REPO_TAG -eq "true") {
-      Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_TAG_NAME)-$($githash)"
-    } else {
-      Update-AppveyorBuild -Version "build$($env:APPVEYOR_BUILD_NUMBER)-$($githash)"
-    }
 configuration:
 - Debug
 - Release
 - Installer
 platform: x86
+init:
+# Set "build version number" to "short-commit-hash" or when tagged to "tag name"
+- ps: >-
+    $githash = $($env:APPVEYOR_REPO_COMMIT.Substring(0, 7))
+
+    $buildnumber = $($env:APPVEYOR_BUILD_NUMBER)
+
+    if ($env:APPVEYOR_REPO_TAG -eq "true") {
+
+    Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_TAG_NAME).$($buildnumber)-$($githash)"
+
+    } else {
+
+    Update-AppveyorBuild -Version "build$($buildnumber)-$($githash)"
+
+    }
 environment:
   INNODIR: C:\Program Files (x86)\Inno Setup 5
 install:
 - cmd: >-
+    set
+
     git submodule update --init --recursive
 
     set PATH=%INNODIR%;%PATH%
 build:
   project: src\rssavers.sln
+  parallel: true
   verbosity: minimal
+test: off
 artifacts:
 - path: installer/output/*.exe
   name: installer
@@ -32,10 +47,9 @@ deploy:
 - provider: GitHub
   release: $(APPVEYOR_REPO_TAG_NAME)
   auth_token:
-    secure: aMPE/eNgHf7bwL2SEMz9CmiWwZ2gNP5hMatuTIWjF6BVAjo1nYqHiCWmUeMPFgLJ
+    secure: XLQMxoubqEHl7wgYM1IIYnh4eslkXQOtiU77c8DjHxREq1NEADw3lpxAHQAPAyd6
   artifact: /.*\.exe/
   draft: true
-  prerelease: false
   force_update: true
   on:
     APPVEYOR_REPO_TAG: true
