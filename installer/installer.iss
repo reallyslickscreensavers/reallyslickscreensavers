@@ -50,15 +50,15 @@ UninstallDisplayName={#AppName}
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-;Source: "cyclone.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "euphoria.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "fieldlines.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "flocks.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "flux.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "helios.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "hyperspace.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "lattice.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "microcosm.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "plasma.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "skyrocket.scr"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "solarwinds.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cyclone.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "euphoria.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "fieldlines.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "flocks.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "flux.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "helios.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "hyperspace.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "lattice.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "microcosm.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "plasma.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "skyrocket.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "solarwinds.scr"; DestDir: "{app}"; Flags: ignoreversion
