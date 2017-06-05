@@ -10,11 +10,9 @@
 #define AppPublisher "Terence M. Welsh"
 #define AppUrl "http://www.reallyslick.com"
 
-; obtain version from build server environment variable
-; or revert default string
 #ifndef VERSION
-#define VERSION = GetEnv('APPVEYOR_BUILD_VERSION')
-#if VERSION = "."
+#define VERSION GetEnv('APPVEYOR_BUILD_VERSION')
+#if VERSION == "."
   #define VERSION = "v0.0.0"
 #endif
 #pragma message "Detected Version: " + VERSION
