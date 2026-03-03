@@ -1,9 +1,0 @@
-<Project>
-  <ItemDefinitionGroup>
-    <ResourceCompile>
-      <!-- Ensure rc.exe finds .ico and other resource files next to the .rc file,
-           regardless of the build working directory (fixes CI RC2175 errors). -->
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-  </ItemDefinitionGroup>
-</Project>
