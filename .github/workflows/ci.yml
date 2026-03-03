@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+    branches: ['*']
+
+# Drop all permissions by default — each job grants only what it needs
+permissions: {}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Windows — MSBuild (Debug + Release matrix)
+  # ---------------------------------------------------------------------------
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read          # Required to checkout the repository
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build solution (${{ matrix.configuration }})
+        run: msbuild src\rssavers.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x86
