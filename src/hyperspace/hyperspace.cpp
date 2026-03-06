@@ -428,7 +428,11 @@ void idleProc(){
 	static rsTimer timer;
 	frameTime = float(timer.tick());
 
+#ifdef RS_XSCREENSAVER
 	if(readyToDraw && !isSuspended && !checkingPassword)
+#else
+	if(readyToDraw && !isSuspended)
+#endif
 		draw();
 }
 
