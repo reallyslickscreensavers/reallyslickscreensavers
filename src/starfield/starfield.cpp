@@ -104,11 +104,14 @@ void draw(){
 		// Move star toward viewer
 		starZ[i] -= baseSpeed * starV[i] * frameTime;
 
-		// Respawn if past viewer
-		if(starZ[i] < nearZ){
+		// Respawn if past viewer or outside visible frustum
+		float halfH = fovHalfTan * starZ[i];
+		float halfW = halfH * aspectRatio;
+		if(starZ[i] < nearZ || starX[i] < -halfW || starX[i] > halfW
+			|| starY[i] < -halfH || starY[i] > halfH){
 			starZ[i] = farZ - rsRandf(10.0f);  // respawn near far plane
-			float halfH = fovHalfTan * starZ[i];
-			float halfW = halfH * aspectRatio;
+			halfH = fovHalfTan * starZ[i];
+			halfW = halfH * aspectRatio;
 			starX[i] = rsRandf(halfW * 2.0f) - halfW;
 			starY[i] = rsRandf(halfH * 2.0f) - halfH;
 			starV[i] = rsRandf(1.0f) + 0.5f;
