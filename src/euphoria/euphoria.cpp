@@ -534,7 +534,7 @@ void initSaver(HWND hwnd){
 			dFeedbacksize -= 1;
 			feedbacktexsize = 1 << dFeedbacksize;
 		}
-		// Disable feedback if viewport is too small for even a 1x1 texture
+		// Disable feedback if viewport is too small for even a 2x2 texture
 		if(feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]){
 			dFeedback = 0;
 		}
