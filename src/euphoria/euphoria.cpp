@@ -530,7 +530,7 @@ void initSaver(HWND hwnd){
 		feedbacktexsize = 1 << dFeedbacksize;
 		// Feedback texture can't be bigger than the window using glCopyTexSubImage2D.
 		// (This wouldn't be a limitation if we used FBOs.)
-		while((feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]) && dFeedbacksize > 0){
+		while((feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]) && dFeedbacksize > FEEDBACKSIZE_MIN){
 			dFeedbacksize -= 1;
 			feedbacktexsize = 1 << dFeedbacksize;
 		}
@@ -850,13 +850,13 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, FEEDBACKSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(FEEDBACKSIZE_MIN), DWORD(FEEDBACKSIZE_MAX))));
-	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPOS, 1, LPARAM(dFeedbacksize));
-	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETLINESIZE, 0, LPARAM(1));
-	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPAGESIZE, 0, LPARAM(1));
 	if(dFeedbacksize < FEEDBACKSIZE_MIN)
 		dFeedbacksize = FEEDBACKSIZE_MIN;
 	else if(dFeedbacksize > FEEDBACKSIZE_MAX)
 		dFeedbacksize = FEEDBACKSIZE_MAX;
+	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPOS, 1, LPARAM(dFeedbacksize));
+	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETLINESIZE, 0, LPARAM(1));
+	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPAGESIZE, 0, LPARAM(1));
 	sprintf_s(cval, "%d", 1 << dFeedbacksize);
 	SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
