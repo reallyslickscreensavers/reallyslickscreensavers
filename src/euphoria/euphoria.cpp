@@ -44,6 +44,8 @@
 
 #define NUMCONSTS 9
 #define PIx2 6.28318530718f
+#define FEEDBACKSIZE_MIN 1
+#define FEEDBACKSIZE_MAX 10
 
 
 class wisp;
@@ -521,32 +523,41 @@ void initSaver(HWND hwnd){
 	}
 
 	if(dFeedback){
-		feedbacktexsize = int(powf(2, dFeedbacksize));
+		if(dFeedbacksize < FEEDBACKSIZE_MIN)
+			dFeedbacksize = FEEDBACKSIZE_MIN;
+		else if(dFeedbacksize > FEEDBACKSIZE_MAX)
+			dFeedbacksize = FEEDBACKSIZE_MAX;
+		feedbacktexsize = 1 << dFeedbacksize;
 		// Feedback texture can't be bigger than the window using glCopyTexSubImage2D.
 		// (This wouldn't be a limitation if we used FBOs.)
-		while(feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]){
+		while((feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]) && dFeedbacksize > FEEDBACKSIZE_MIN){
 			dFeedbacksize -= 1;
-			feedbacktexsize = int(powf(2, dFeedbacksize));
+			feedbacktexsize = 1 << dFeedbacksize;
 		}
+		// Disable feedback if viewport is too small for even a 2x2 texture
+		if(feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]){
+			dFeedback = 0;
+		}
+		else{
+			// feedback texture setup
+			glEnable(GL_TEXTURE_2D);
+			glGenTextures(1, &feedbacktex);
+			glBindTexture(GL_TEXTURE_2D, feedbacktex);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+			glTexImage2D(GL_TEXTURE_2D, 0, 3, feedbacktexsize, feedbacktexsize, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
-		// feedback texture setup
-		glEnable(GL_TEXTURE_2D);
-		glGenTextures(1, &feedbacktex);
-		glBindTexture(GL_TEXTURE_2D, feedbacktex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		glTexImage2D(GL_TEXTURE_2D, 0, 3, feedbacktexsize, feedbacktexsize, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-		// feedback velocity variable setup
-		fv[0] = float(dFeedbackspeed) * (rsRandf(0.025f) + 0.025f);
-		fv[1] = float(dFeedbackspeed) * (rsRandf(0.05f) + 0.05f);
-		fv[2] = float(dFeedbackspeed) * (rsRandf(0.05f) + 0.05f);
-		fv[3] = float(dFeedbackspeed) * (rsRandf(0.1f) + 0.1f);
-		lv[0] = float(dFeedbackspeed) * (rsRandf(0.0025f) + 0.0025f);
-		lv[1] = float(dFeedbackspeed) * (rsRandf(0.0025f) + 0.0025f);
-		lv[2] = float(dFeedbackspeed) * (rsRandf(0.0025f) + 0.0025f);
+			// feedback velocity variable setup
+			fv[0] = float(dFeedbackspeed) * (rsRandf(0.025f) + 0.025f);
+			fv[1] = float(dFeedbackspeed) * (rsRandf(0.05f) + 0.05f);
+			fv[2] = float(dFeedbackspeed) * (rsRandf(0.05f) + 0.05f);
+			fv[3] = float(dFeedbackspeed) * (rsRandf(0.1f) + 0.1f);
+			lv[0] = float(dFeedbackspeed) * (rsRandf(0.0025f) + 0.0025f);
+			lv[1] = float(dFeedbackspeed) * (rsRandf(0.0025f) + 0.0025f);
+			lv[2] = float(dFeedbackspeed) * (rsRandf(0.0025f) + 0.0025f);
+		}
 	}
 
 	// Initialize wisps
@@ -838,11 +849,15 @@ void initControls(HWND hdlg){
 	sprintf_s(cval, "%d", dFeedbackspeed);
 	SendDlgItemMessage(hdlg, FEEDBACKSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
-	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(10))));
+	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(FEEDBACKSIZE_MIN), DWORD(FEEDBACKSIZE_MAX))));
+	if(dFeedbacksize < FEEDBACKSIZE_MIN)
+		dFeedbacksize = FEEDBACKSIZE_MIN;
+	else if(dFeedbacksize > FEEDBACKSIZE_MAX)
+		dFeedbacksize = FEEDBACKSIZE_MAX;
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPOS, 1, LPARAM(dFeedbacksize));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPAGESIZE, 0, LPARAM(1));
-	sprintf_s(cval, "%d", int(powf(2, dFeedbacksize)));
+	sprintf_s(cval, "%d", 1 << dFeedbacksize);
 	SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, TEXTURE, CB_DELETESTRING, WPARAM(4), 0);
@@ -944,7 +959,7 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FEEDBACKSIZE)){
 			ival = SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", int(powf(2, ival)));
+			sprintf_s(cval, "%d", 1 << ival);
 			SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))
