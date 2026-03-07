@@ -87,7 +87,7 @@ void initStar(int i){
 	float halfW = halfH * aspectRatio;    // visible half-width at this depth
 	starX[i] = rsRandf(halfW * 2.0f) - halfW;
 	starY[i] = rsRandf(halfH * 2.0f) - halfH;
-	starV[i] = rsRandf(1.0f) + 0.5f;  // velocity multiplier 0.5 to 1.5
+	starV[i] = rsRandf(3.0f) + 0.15f;  // velocity multiplier 0.15 to 3.15
 }
 
 
@@ -114,7 +114,7 @@ void draw(){
 			halfW = halfH * aspectRatio;
 			starX[i] = rsRandf(halfW * 2.0f) - halfW;
 			starY[i] = rsRandf(halfH * 2.0f) - halfH;
-			starV[i] = rsRandf(1.0f) + 0.5f;
+			starV[i] = rsRandf(3.0f) + 0.15f;
 		}
 
 		// Brightness and size based on distance (closer = brighter and bigger)
@@ -185,10 +185,10 @@ void idleProc(){
 
 
 void setDefaults(){
-	dNumStars = 1000;
-	dSpeed = 15;
-	dStarSize = 3;
-	dFrameRateLimit = 30;
+	dNumStars = 2000;
+	dSpeed = 50;
+	dStarSize = 1;
+	dFrameRateLimit = 0;
 }
 
 
