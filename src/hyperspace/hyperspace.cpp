@@ -364,10 +364,10 @@ void draw(){
 
 	// draw sun with lens flare
 	glDisable(GL_FOG);
-	double flarepos[3] = {0.0f, 2.0f, 0.0f};
+	double flarepos[3] = {0.0, 2.0, 0.0};
 	glBindTexture(GL_TEXTURE_2D, flaretex[0]);
 	sunStar->draw(camPos);
-	float diff[3] = {flarepos[0] - camPos[0], flarepos[1] - camPos[1], flarepos[2] - camPos[2]};
+	float diff[3] = {float(flarepos[0] - camPos[0]), float(flarepos[1] - camPos[1]), float(flarepos[2] - camPos[2])};
 	float alpha = 0.5f - 0.005f * sqrtf(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
 	if(alpha > 0.0f)
 		flare(flarepos, 1.0f, 1.0f, 1.0f, alpha);

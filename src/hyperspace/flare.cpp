@@ -189,7 +189,7 @@ void flare(double *pos, float red, float green, float blue, float alpha){
 		&winx, &winy, &winz);
 	x = (float(winx) / float(xsize)) * aspectRatio;
 	y = float(winy) / float(ysize);
-	float diff[3] = {pos[0] - camPos[0], pos[1] - camPos[1], pos[2] - camPos[2]};
+	float diff[3] = {float(pos[0] - camPos[0]), float(pos[1] - camPos[1]), float(pos[2] - camPos[2])};
 	if(diff[0] * billboardMat[8] + diff[1] * billboardMat[9] + diff[2] * billboardMat[10] > 0.0f)
 		return;
 
