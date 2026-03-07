@@ -359,7 +359,7 @@ void* threadFunction1(void* arg){
 
 
 void chooseGizmo(int index = -1){
-	if(index >= 0 && index < gizmos.size())  // choose specific Gizmo
+	if(index >= 0 && static_cast<size_t>(index) < gizmos.size())  // choose specific Gizmo
 		gGizmoIndex = index;
 	else{
 		// choose a new Gizmo at random, making sure to not choose the previous one
@@ -1297,7 +1297,7 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_SETPOS, 1, LPARAM(dBackground));
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf_s(cval, "%d %", dBackground);
+	sprintf_s(cval, "%d %%", dBackground);
 	SendDlgItemMessage(hdlg, SINGLEBACKGROUNDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(20), DWORD(100))));
@@ -1411,7 +1411,7 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, SINGLEBACKGROUND)){
 			ival = SendDlgItemMessage(hdlg, SINGLEBACKGROUND, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d %", ival);
+			sprintf_s(cval, "%d %%", ival);
 			SendDlgItemMessage(hdlg, SINGLEBACKGROUNDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, RESOLUTION)){
@@ -1465,7 +1465,7 @@ void chooseSpecificGizmo(int n){
 	}
 	else{  // 2nd key pressed is 1's place digit
 		spec_gizmo += n;
-		if(spec_gizmo < gizmos.size() - 1)  // select any gizmo except easter egg gizmo
+		if(static_cast<size_t>(spec_gizmo) < gizmos.size() - 1)  // select any gizmo except easter egg gizmo
 			gSpecificGizmo = spec_gizmo;
 		gNumberInputTimer = 0.0f;
 	}
