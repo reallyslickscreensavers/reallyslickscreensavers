@@ -521,12 +521,12 @@ void initSaver(HWND hwnd){
 	}
 
 	if(dFeedback){
-		feedbacktexsize = int(powf(2, dFeedbacksize));
+		feedbacktexsize = int(powf(2.0f, float(dFeedbacksize)));
 		// Feedback texture can't be bigger than the window using glCopyTexSubImage2D.
 		// (This wouldn't be a limitation if we used FBOs.)
 		while(feedbacktexsize > viewport[2] || feedbacktexsize > viewport[3]){
 			dFeedbacksize -= 1;
-			feedbacktexsize = int(powf(2, dFeedbacksize));
+			feedbacktexsize = int(powf(2.0f, float(dFeedbacksize)));
 		}
 
 		// feedback texture setup
@@ -842,7 +842,7 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPOS, 1, LPARAM(dFeedbacksize));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_SETPAGESIZE, 0, LPARAM(1));
-	sprintf_s(cval, "%d", int(powf(2, dFeedbacksize)));
+	sprintf_s(cval, "%d", int(powf(2.0f, float(dFeedbacksize))));
 	SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, TEXTURE, CB_DELETESTRING, WPARAM(4), 0);
@@ -944,7 +944,7 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FEEDBACKSIZE)){
 			ival = SendDlgItemMessage(hdlg, FEEDBACKSIZE, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", int(powf(2, ival)));
+			sprintf_s(cval, "%d", int(powf(2.0f, float(ival))));
 			SendDlgItemMessage(hdlg, FEEDBACKSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
 		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))
