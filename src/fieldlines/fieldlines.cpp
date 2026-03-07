@@ -327,7 +327,7 @@ void idleProc(){
 	static rsTimer timer;
 	frameTime = float(timer.tick());
 
-	if(readyToDraw && !isSuspended && !checkingPassword)
+	if(readyToDraw && !isSuspended)
 		draw();
 }
 
