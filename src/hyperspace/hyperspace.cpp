@@ -428,9 +428,10 @@ void idleProc(){
 	static rsTimer timer;
 	frameTime = float(timer.tick());
 
-	bool shouldDraw = (readyToDraw && !isSuspended);
 #ifdef RS_XSCREENSAVER
-	shouldDraw = (shouldDraw && !checkingPassword);
+	const bool shouldDraw = (readyToDraw && !isSuspended && !checkingPassword);
+#else
+	const bool shouldDraw = (readyToDraw && !isSuspended);
 #endif
 	if(shouldDraw)
 		draw();
