@@ -268,7 +268,11 @@ void initSaver(){
 
 #ifdef RS_XSCREENSAVER
 void cleanUp(){
-	;
+	delete[] starX; starX = NULL;
+	delete[] starY; starY = NULL;
+	delete[] starZ; starZ = NULL;
+	delete[] starV; starV = NULL;
+	delete textwriter;
 }
 #endif
 
