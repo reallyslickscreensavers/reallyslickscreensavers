@@ -187,7 +187,7 @@ void idleProc(){
 void setDefaults(){
 	dNumStars = 2000;
 	dSpeed = 50;
-	dStarSize = 1;
+	dStarSize = 5;
 	dFrameRateLimit = 0;
 }
 
