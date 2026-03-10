@@ -21,7 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="starfield.rc">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
