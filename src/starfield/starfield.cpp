@@ -137,7 +137,7 @@ void draw(){
 	static int frames = 0;
 	++frames;
 	if(frames == 20){
-		str = "FPS = " + to_string(20.0f / totalTime);
+		str = "FPS = " + std::to_string(20.0f / totalTime);
 		totalTime = 0.0f;
 		frames = 0;
 	}
