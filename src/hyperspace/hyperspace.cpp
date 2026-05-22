@@ -499,6 +499,13 @@ void initSaver(HWND hwnd){
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
 
+	// Disable vsync so frame rate is not capped at monitor refresh rate
+	typedef BOOL (APIENTRY *PFNWGLSWAPINTERVALEXTPROC)(int);
+	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT =
+		(PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	if(wglSwapIntervalEXT)
+		wglSwapIntervalEXT(0);
+
 	// setup viewport
 	//viewport[0] = rect.left;
 	//viewport[1] = rect.top;
