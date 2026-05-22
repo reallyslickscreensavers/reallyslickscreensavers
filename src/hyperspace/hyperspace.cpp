@@ -448,6 +448,7 @@ void setDefaults(){
 	dUseTunnels = 1;
 	dUseGoo = 1;
 	dShaders = 1;
+	dFrameRateLimit = 0;
 }
 
 
