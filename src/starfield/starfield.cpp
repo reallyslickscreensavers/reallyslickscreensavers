@@ -25,10 +25,9 @@
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
 #include <process.h>
-#include <time.h>
 #include <regstr.h>
 #include <commctrl.h>
-#include <resource.h>
+#include "resource.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -36,6 +35,9 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <string>
+#include <vector>
+#include <random>
 #include <rsText/rsText.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -43,7 +45,7 @@
 
 // Globals
 #ifdef WIN32
-LPCTSTR registryPath = ("Software\\Really Slick\\Starfield");
+LPCTSTR registryPath = TEXT("Software\\Really Slick\\Starfield");
 HGLRC hglrc;
 HDC hdc;
 #endif
@@ -69,15 +71,15 @@ int dStarSize;
 const float farZ = 200.0f;
 const float nearZ = 0.1f;
 const float fovHalfTan = 0.41421356f;  // tan(22.5 degrees) for 45 degree vertical FOV
+const int maxStarSize = 10;  // matches STARSIZE slider and -starsize CLI range
 
 
-// Useful random number macros
-// Don't forget to initialize with srand()
-inline int rsRandi(int x){
-	return rand() % x;
+inline std::mt19937& rsRandGen(){
+	static std::mt19937 gen(std::random_device{}());
+	return gen;
 }
 inline float rsRandf(float x){
-	return x * (float(rand()) / float(RAND_MAX));
+	return std::uniform_real_distribution<float>(0.0f, x)(rsRandGen());
 }
 
 
@@ -99,7 +101,16 @@ void draw(){
 
 	float baseSpeed = float(dSpeed) * 0.5f;  // scaled speed
 
-	// Update and render stars
+	// Stars are grouped by rounded point size so each size needs only one
+	// glBegin/glEnd pair per frame instead of one per star.
+	static std::vector<int> sizeBuckets[maxStarSize + 1];  // index 0 unused
+	static std::vector<float> starBrightness;
+	if(starBrightness.size() != size_t(dNumStars))
+		starBrightness.resize(dNumStars);
+	for(auto& bucket : sizeBuckets)
+		bucket.clear();
+
+	// Update stars
 	for(int i = 0; i < dNumStars; i++){
 		// Move star toward viewer
 		starZ[i] -= baseSpeed * starV[i] * frameTime;
@@ -121,12 +132,27 @@ void draw(){
 		float brightness = 1.0f - (starZ[i] / farZ);
 		if(brightness < 0.0f) brightness = 0.0f;
 		if(brightness > 1.0f) brightness = 1.0f;
+		starBrightness[i] = brightness;
+
 		float size = float(dStarSize) * brightness;
 		if(size < 1.0f) size = 1.0f;
-		glPointSize(size);
-		glColor3f(brightness, brightness, brightness);
+		int bucket = int(size + 0.5f);
+		// dStarSize comes straight from the registry unclamped, so bound the
+		// index on maxStarSize rather than trusting it
+		if(bucket > maxStarSize) bucket = maxStarSize;
+		sizeBuckets[bucket].push_back(i);
+	}
+
+	// Render stars, one batch per point size
+	for(int s = 1; s <= maxStarSize; s++){
+		if(sizeBuckets[s].empty()) continue;
+		glPointSize(float(s));
 		glBegin(GL_POINTS);
-		glVertex3f(starX[i], starY[i], -starZ[i]);
+		for(int idx : sizeBuckets[s]){
+			float b = starBrightness[idx];
+			glColor3f(b, b, b);
+			glVertex3f(starX[idx], starY[idx], -starZ[idx]);
+		}
 		glEnd();
 	}
 
@@ -236,13 +262,11 @@ void initSaver(HWND hwnd){
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
 	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
-	aspectRatio = float(rect.right) / float(rect.bottom);
+	aspectRatio = float(rect.right - rect.left) / float(rect.bottom - rect.top);
 #endif
 #ifdef RS_XSCREENSAVER
 void initSaver(){
 #endif
-
-	srand((unsigned)time(NULL));
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glDisable(GL_DEPTH_TEST);
@@ -345,13 +369,13 @@ void writeRegistry(){
 }
 
 
-BOOL aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
+INT_PTR CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
 	case WM_CTLCOLORSTATIC:
 		if(HWND(lpm) == GetDlgItem(hdlg, WEBPAGE)){
 			SetTextColor(HDC(wpm), RGB(0,0,255));
 			SetBkColor(HDC(wpm), COLORREF(GetSysColor(COLOR_3DFACE)));
-			return(int(GetSysColorBrush(COLOR_3DFACE)));
+			return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
 		}
 		break;
     case WM_COMMAND:
@@ -424,7 +448,7 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 			initControls(hdlg);
 			break;
 		case ABOUT:
-			DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, DLGPROC(aboutProc));
+			DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, aboutProc);
 		}
         return TRUE;
 	case WM_HSCROLL:

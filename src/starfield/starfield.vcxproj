@@ -18,12 +18,12 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -77,7 +77,7 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>powershell Copy-Item $(OutDir)$(TargetName)$(TargetExt) $(OutDir)$(TargetName).scr -Force</Command>
+      <Command>powershell Copy-Item -LiteralPath '$(OutDir)$(TargetName)$(TargetExt)' -Destination '$(OutDir)$(TargetName).scr' -Force</Command>
       <Message>Output screensaver file from executable...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -107,7 +107,7 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>powershell Copy-Item $(OutDir)$(TargetName)$(TargetExt) $(OutDir)$(TargetName).scr -Force</Command>
+      <Command>powershell Copy-Item -LiteralPath '$(OutDir)$(TargetName)$(TargetExt)' -Destination '$(OutDir)$(TargetName).scr' -Force</Command>
       <Message>Output screensaver file from executable...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
