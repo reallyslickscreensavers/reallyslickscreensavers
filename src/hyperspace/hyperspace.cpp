@@ -448,6 +448,7 @@ void setDefaults(){
 	dUseTunnels = 1;
 	dUseGoo = 1;
 	dShaders = 1;
+	dFrameRateLimit = 0;
 }
 
 
@@ -498,6 +499,13 @@ void initSaver(HWND hwnd){
 	hglrc = wglCreateContext(hdc);
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
+
+	// Disable vsync so frame rate is not capped at monitor refresh rate
+	typedef BOOL (APIENTRY *PFNWGLSWAPINTERVALEXTPROC)(int);
+	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT =
+		(PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	if(wglSwapIntervalEXT)
+		wglSwapIntervalEXT(0);
 
 	// setup viewport
 	//viewport[0] = rect.left;
