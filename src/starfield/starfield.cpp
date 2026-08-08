@@ -37,6 +37,8 @@
 #include <math.h>
 #include <string>
 #include <vector>
+#include <array>
+#include <memory>
 #include <random>
 #include <rsText/rsText.h>
 #include <GL/gl.h>
@@ -53,14 +55,14 @@ int readyToDraw = 0;
 float frameTime = 0.0f;
 float aspectRatio;
 
-// Star data (heap-allocated arrays)
-float* starX = NULL;
-float* starY = NULL;
-float* starZ = NULL;
-float* starV = NULL;  // per-star velocity multiplier
+// Star data
+std::vector<float> starX;
+std::vector<float> starY;
+std::vector<float> starZ;
+std::vector<float> starV;  // per-star velocity multiplier
 
 // text output
-rsText* textwriter;
+std::unique_ptr<rsText> textwriter;
 
 // Parameters edited in the dialog box
 int dNumStars;
@@ -103,7 +105,7 @@ void draw(){
 
 	// Stars are grouped by rounded point size so each size needs only one
 	// glBegin/glEnd pair per frame instead of one per star.
-	static std::vector<int> sizeBuckets[maxStarSize + 1];  // index 0 unused
+	static std::array<std::vector<int>, maxStarSize + 1> sizeBuckets;  // index 0 unused
 	static std::vector<float> starBrightness;
 	if(starBrightness.size() != size_t(dNumStars))
 		starBrightness.resize(dNumStars);
@@ -136,9 +138,9 @@ void draw(){
 
 		float size = float(dStarSize) * brightness;
 		if(size < 1.0f) size = 1.0f;
-		int bucket = int(size + 0.5f);
-		// dStarSize comes straight from the registry unclamped, so bound the
-		// index on maxStarSize rather than trusting it
+		auto bucket = int(size + 0.5f);
+		// readRegistry clamps dStarSize, so this is a backstop on a raw
+		// array index rather than the primary bound
 		if(bucket > maxStarSize) bucket = maxStarSize;
 		sizeBuckets[bucket].push_back(i);
 	}
@@ -219,14 +221,10 @@ void setDefaults(){
 
 
 void allocateStars(){
-	delete[] starX;
-	delete[] starY;
-	delete[] starZ;
-	delete[] starV;
-	starX = new float[dNumStars];
-	starY = new float[dNumStars];
-	starZ = new float[dNumStars];
-	starV = new float[dNumStars];
+	starX.resize(dNumStars);
+	starY.resize(dNumStars);
+	starZ.resize(dNumStars);
+	starV.resize(dNumStars);
 	for(int i = 0; i < dNumStars; i++)
 		initStar(i);
 }
@@ -284,34 +282,46 @@ void initSaver(){
 	allocateStars();
 
 	// Initialize text
-	textwriter = new rsText;
+	textwriter = std::make_unique<rsText>();
 
 	readyToDraw = 1;
 }
 
 
+void freeStars(){
+	starX.clear(); starX.shrink_to_fit();
+	starY.clear(); starY.shrink_to_fit();
+	starZ.clear(); starZ.shrink_to_fit();
+	starV.clear(); starV.shrink_to_fit();
+}
+
+
 #ifdef RS_XSCREENSAVER
 void cleanUp(){
-	delete[] starX; starX = NULL;
-	delete[] starY; starY = NULL;
-	delete[] starZ; starZ = NULL;
-	delete[] starV; starV = NULL;
-	delete textwriter;
+	freeStars();
+	textwriter.reset();
 }
 #endif
 
 
 #ifdef WIN32
 void cleanUp(HWND hwnd){
-	delete[] starX; starX = NULL;
-	delete[] starY; starY = NULL;
-	delete[] starZ; starZ = NULL;
-	delete[] starV; starV = NULL;
-	delete textwriter;
+	freeStars();
+	textwriter.reset();
 	// Kill device context
 	ReleaseDC(hwnd, hdc);
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
+}
+
+
+// Registry values are untrusted; the dialog sliders and the command line both
+// clamp, so apply the same bounds here. Takes the DWORD directly so an
+// oversized value is never converted to int first.
+static int clampRegistryValue(DWORD v, int lo, int hi){
+	if(v > DWORD(hi)) return hi;
+	if(int(v) < lo) return lo;
+	return int(v);
 }
 
 
@@ -331,13 +341,13 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "NumStars", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dNumStars = val;
+		dNumStars = clampRegistryValue(val, 100, 10000);
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = val;
+		dSpeed = clampRegistryValue(val, 1, 100);
 	result = RegQueryValueEx(skey, "StarSize", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dStarSize = val;
+		dStarSize = clampRegistryValue(val, 1, 10);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
 		dFrameRateLimit = val;
