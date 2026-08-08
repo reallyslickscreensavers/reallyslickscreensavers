@@ -32,7 +32,7 @@
 
 #include <regstr.h>
 #include <commctrl.h>
-#include <resource.h>
+#include "resource.h"
 
 #include <rsWin32Saver/rsWin32Saver.h>
 #include <rsText/rsText.h>

@@ -42,7 +42,7 @@
 #include <Implicit/impCrawlPoint.h>
 #include <Implicit/impSphere.h>
 
-#include <resource.h>
+#include "resource.h"
 
 #include "spheremap.h"
 

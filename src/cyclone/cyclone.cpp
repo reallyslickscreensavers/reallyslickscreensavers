@@ -33,7 +33,7 @@
 #include <regstr.h>
 #include <commctrl.h>
 #include <Rgbhsl/Rgbhsl.h>
-#include <resource.h>
+#include "resource.h"
 
 
 class cyclone;
