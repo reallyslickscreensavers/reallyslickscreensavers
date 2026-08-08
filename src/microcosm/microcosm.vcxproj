@@ -74,7 +74,7 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>powershell Copy-Item $(OutDir)$(TargetName)$(TargetExt) $(OutDir)$(TargetName).scr -Force</Command>
+      <Command>copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)$(TargetName).scr"</Command>
       <Message>Output screensaver file from executable...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -104,7 +104,7 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>powershell Copy-Item $(OutDir)$(TargetName)$(TargetExt) $(OutDir)$(TargetName).scr -Force</Command>
+      <Command>copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)$(TargetName).scr"</Command>
       <Message>Output screensaver file from executable...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
