@@ -643,6 +643,8 @@ void readRegistry(){
 	result = RegQueryValueEx(skey, "Complexity", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
 		dComplexity = val;
+	if(dComplexity < 1) dComplexity = 1;
+	if(dComplexity > 10) dComplexity = 10;
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
 		dSpeed = val;
