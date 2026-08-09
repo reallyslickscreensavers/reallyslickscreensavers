@@ -40,7 +40,7 @@ const Range kFrameRate = { 1, 1000 };  // 0 means unlimited, handled separately
 // Values applied by setDefaults() and by the Reset to defaults button
 const int kDefaultNumStars = 5000;
 const int kDefaultSpeed    = 5;
-const int kDefaultStarSize = 1;
+const int kDefaultStarSize = 2;
 
 // Offered in the FPS field when the limit is switched off
 const int kDefaultFrameRate = 60;

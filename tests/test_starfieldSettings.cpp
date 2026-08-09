@@ -30,7 +30,7 @@ TEST(Ranges, MatchDocumentedValues) {
 TEST(Defaults, MatchDocumentedValues) {
     EXPECT_EQ(kDefaultNumStars, 5000);
     EXPECT_EQ(kDefaultSpeed, 5);
-    EXPECT_EQ(kDefaultStarSize, 1);
+    EXPECT_EQ(kDefaultStarSize, 2);
 }
 
 // A default outside its own slider range would be silently clamped the first
