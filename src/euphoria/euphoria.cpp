@@ -38,7 +38,7 @@
 #include <rsWin32Saver/rsWin32Saver.h>
 #include <rsText/rsText.h>
 
-#include <resource.h>
+#include "resource.h"
 
 #include "texture.h"
 

@@ -26,7 +26,7 @@
 #include <regstr.h>
 #include <commctrl.h>
 #include <process.h>
-#include <resource.h>
+#include "resource.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>

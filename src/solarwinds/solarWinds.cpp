@@ -25,7 +25,7 @@
 #include <rsWin32Saver/rsWin32Saver.h>
 #include <regstr.h>
 #include <commctrl.h>
-#include <resource.h>
+#include "resource.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
