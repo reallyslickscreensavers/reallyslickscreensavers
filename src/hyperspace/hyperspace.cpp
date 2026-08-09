@@ -761,13 +761,13 @@ void writeRegistry(){
 }
 
 
-BOOL aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
+INT_PTR CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
 	case WM_CTLCOLORSTATIC:
 		if(HWND(lpm) == GetDlgItem(hdlg, WEBPAGE)){
 			SetTextColor(HDC(wpm), RGB(0,0,255));
 			SetBkColor(HDC(wpm), COLORREF(GetSysColor(COLOR_3DFACE)));
-			return(int(GetSysColorBrush(COLOR_3DFACE)));
+			return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
 		}
 		break;
     case WM_COMMAND:
@@ -841,7 +841,7 @@ void initControls(HWND hdlg){
 }
 
 
-BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
+INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	int ival;
 	char cval[16];
 
@@ -874,7 +874,7 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 			initControls(hdlg);
 			break;
 		case ABOUT:
-			DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, DLGPROC(aboutProc));
+			DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, aboutProc);
 			break;
 		case USEGOO:
 			if(IsDlgButtonChecked(hdlg, USEGOO) == BST_CHECKED)

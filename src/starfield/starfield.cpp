@@ -440,7 +440,7 @@ void initControls(HWND hdlg){
 }
 
 
-BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
+INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 										 WPARAM wpm, LPARAM lpm){
 	int ival;
 	char cval[16];
