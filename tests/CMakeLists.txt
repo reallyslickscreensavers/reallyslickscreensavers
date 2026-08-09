@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(rssavers_tests LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+# GoogleTest requires C++17 (target_compile_features ... PUBLIC cxx_std_17),
+# so declare it here rather than inheriting it transitively from the dependency.
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Fetch Google Test
