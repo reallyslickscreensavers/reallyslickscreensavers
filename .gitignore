@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# CMake test build output (includes the fetched googletest tree)
+tests/build/
+
 # User-specific files
 *.suo
 *.user

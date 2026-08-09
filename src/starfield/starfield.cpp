@@ -43,6 +43,7 @@
 #include <rsText/rsText.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include "starfieldSettings.h"
 
 
 // Globals
@@ -233,9 +234,12 @@ void allocateStars(){
 #ifdef RS_XSCREENSAVER
 void handleCommandLine(int argc, char* argv[]){
 	setDefaults();
-	getArgumentsValue(argc, argv, std::string("-numstars"), dNumStars, 100, 10000);
-	getArgumentsValue(argc, argv, std::string("-speed"), dSpeed, 1, 100);
-	getArgumentsValue(argc, argv, std::string("-starsize"), dStarSize, 1, 10);
+	getArgumentsValue(argc, argv, std::string("-numstars"), dNumStars,
+		starfield::kNumStars.lo, starfield::kNumStars.hi);
+	getArgumentsValue(argc, argv, std::string("-speed"), dSpeed,
+		starfield::kSpeed.lo, starfield::kSpeed.hi);
+	getArgumentsValue(argc, argv, std::string("-starsize"), dStarSize,
+		starfield::kStarSize.lo, starfield::kStarSize.hi);
 }
 
 void reshape(int width, int height){
@@ -315,16 +319,6 @@ void cleanUp(HWND hwnd){
 }
 
 
-// Registry values are untrusted; the dialog sliders and the command line both
-// clamp, so apply the same bounds here. Takes the DWORD directly so an
-// oversized value is never converted to int first.
-static int clampRegistryValue(DWORD v, int lo, int hi){
-	if(v > DWORD(hi)) return hi;
-	if(int(v) < lo) return lo;
-	return int(v);
-}
-
-
 // Initialize all user-defined stuff
 void readRegistry(){
 	LONG result;
@@ -341,13 +335,13 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "NumStars", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dNumStars = clampRegistryValue(val, 100, 10000);
+		dNumStars = starfield::clampToRange(val, starfield::kNumStars);
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = clampRegistryValue(val, 1, 100);
+		dSpeed = starfield::clampToRange(val, starfield::kSpeed);
 	result = RegQueryValueEx(skey, "StarSize", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dStarSize = clampRegistryValue(val, 1, 10);
+		dStarSize = starfield::clampToRange(val, starfield::kStarSize);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
 		dFrameRateLimit = val;
@@ -402,31 +396,47 @@ INT_PTR CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 }
 
 
+// The FPS value is only meaningful while the limit is switched on
+void enableFrameRateControls(HWND hdlg, bool enabled){
+	EnableWindow(GetDlgItem(hdlg, FRAMERATELIMITEDIT), enabled);
+	EnableWindow(GetDlgItem(hdlg, FRAMERATELIMITSPIN), enabled);
+}
+
+
 void initControls(HWND hdlg){
 	char cval[16];
 
-	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(100), DWORD(10000))));
+	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETRANGE, 0,
+		LPARAM(MAKELONG(DWORD(starfield::kNumStars.lo), DWORD(starfield::kNumStars.hi))));
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETPOS, 1, LPARAM(dNumStars));
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETLINESIZE, 0, LPARAM(100));
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETPAGESIZE, 0, LPARAM(500));
 	sprintf_s(cval, "%d", dNumStars);
 	SendDlgItemMessage(hdlg, NUMSTARSTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
-	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
+	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0,
+		LPARAM(MAKELONG(DWORD(starfield::kSpeed.lo), DWORD(starfield::kSpeed.hi))));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
 	sprintf_s(cval, "%d", dSpeed);
 	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
-	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(10))));
+	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETRANGE, 0,
+		LPARAM(MAKELONG(DWORD(starfield::kStarSize.lo), DWORD(starfield::kStarSize.hi))));
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETPOS, 1, LPARAM(dStarSize));
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETPAGESIZE, 0, LPARAM(1));
 	sprintf_s(cval, "%d", dStarSize);
 	SendDlgItemMessage(hdlg, STARSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
-	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
+	// dFrameRateLimit keeps its stored meaning, where 0 is unlimited
+	const starfield::FrameRateUi fr = starfield::frameRateToUi(dFrameRateLimit);
+	CheckDlgButton(hdlg, FRAMERATELIMITCHECK, fr.limited ? BST_CHECKED : BST_UNCHECKED);
+	SendDlgItemMessage(hdlg, FRAMERATELIMITSPIN, UDM_SETRANGE, 0,
+		LPARAM(MAKELONG(DWORD(starfield::kFrameRate.hi), DWORD(starfield::kFrameRate.lo))));
+	SendDlgItemMessage(hdlg, FRAMERATELIMITSPIN, UDM_SETPOS, 0, LPARAM(fr.fps));
+	enableFrameRateControls(hdlg, fr.limited);
 }
 
 
@@ -447,7 +457,9 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 			dNumStars = SendDlgItemMessage(hdlg, NUMSTARS, TBM_GETPOS, 0, 0);
 			dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
 			dStarSize = SendDlgItemMessage(hdlg, STARSIZE, TBM_GETPOS, 0, 0);
-			dFrameRateLimit = SendDlgItemMessage(hdlg, FRAMERATELIMIT, TBM_GETPOS, 0, 0);
+			dFrameRateLimit = starfield::frameRateFromUi(
+				IsDlgButtonChecked(hdlg, FRAMERATELIMITCHECK) == BST_CHECKED,
+				int(SendDlgItemMessage(hdlg, FRAMERATELIMITSPIN, UDM_GETPOS, 0, 0)));
 			writeRegistry();
             // Fall through
         case IDCANCEL:
@@ -456,6 +468,10 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 		case DEFAULTS:
 			setDefaults();
 			initControls(hdlg);
+			break;
+		case FRAMERATELIMITCHECK:
+			enableFrameRateControls(hdlg,
+				IsDlgButtonChecked(hdlg, FRAMERATELIMITCHECK) == BST_CHECKED);
 			break;
 		case ABOUT:
 			DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, aboutProc);
@@ -477,8 +493,6 @@ BOOL screenSaverConfigureDialog(HWND hdlg, UINT msg,
 			sprintf_s(cval, "%d", ival);
 			SendDlgItemMessage(hdlg, STARSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 		}
-		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))
-			updateFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
 		return TRUE;
     }
     return FALSE;

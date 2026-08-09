@@ -26,32 +26,34 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-DLG_SCRNSAVECONFIGURE DIALOGEX 0, 0, 186, 201
+DLG_SCRNSAVECONFIGURE DIALOGEX 0, 0, 270, 140
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Starfield   by Terry Welsh"
-FONT 8, "MS Sans Serif", 0, 0, 0x0
+CAPTION "Starfield Settings"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,7,180,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,68,180,50,14
-    PUSHBUTTON      "About",ABOUT,129,180,50,14
-    LTEXT           "Number of stars",IDC_STATIC,7,22,50,8
-    LTEXT           "Speed",IDC_STATIC,7,52,22,8
-    LTEXT           "Star size",IDC_STATIC,7,82,28,8
-    CONTROL         "Slider1",NUMSTARS,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,7,7,172,15
-    CONTROL         "Slider1",SPEED,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,7,37,172,15
-    CONTROL         "Slider2",STARSIZE,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,7,67,172,15
-    PUSHBUTTON      "Defaults",DEFAULTS,103,158,50,14
-    RTEXT           "#",NUMSTARSTEXT,63,22,20,8
-    RTEXT           "#",SPEEDTEXT,63,52,20,8
-    RTEXT           "#",STARSIZETEXT,63,82,20,8
-    LTEXT           "Frame rate limit",IDC_STATIC,7,112,48,8
-    CONTROL         "",FRAMERATELIMIT,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,7,97,172,15
-    RTEXT           "#",FRAMERATELIMITTEXT,58,112,25,8
-    LTEXT           "0 = no limit",IDC_STATIC,103,112,34,8
+    LTEXT           "Number of stars",IDC_STATIC,7,16,62,8
+    CONTROL         "",NUMSTARS,"msctls_trackbar32",TBS_BOTH |
+                    TBS_NOTICKS | WS_TABSTOP,73,12,150,15
+    RTEXT           "#",NUMSTARSTEXT,227,16,36,8
+    LTEXT           "Speed",IDC_STATIC,7,42,62,8
+    CONTROL         "",SPEED,"msctls_trackbar32",TBS_BOTH |
+                    TBS_NOTICKS | WS_TABSTOP,73,38,150,15
+    RTEXT           "#",SPEEDTEXT,227,42,36,8
+    LTEXT           "Star size",IDC_STATIC,7,68,62,8
+    CONTROL         "",STARSIZE,"msctls_trackbar32",TBS_BOTH |
+                    TBS_NOTICKS | WS_TABSTOP,73,64,150,15
+    RTEXT           "#",STARSIZETEXT,227,68,36,8
+    CONTROL         "Limit frame rate",FRAMERATELIMITCHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,92,70,10
+    EDITTEXT        FRAMERATELIMITEDIT,85,90,32,14,ES_RIGHT | ES_AUTOHSCROLL |
+                    ES_NUMBER
+    CONTROL         "",FRAMERATELIMITSPIN,"msctls_updown32",UDS_SETBUDDYINT |
+                    UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS,117,90,11,14
+    LTEXT           "FPS",IDC_STATIC,133,92,20,8
+    PUSHBUTTON      "About",ABOUT,7,117,52,16
+    PUSHBUTTON      "Reset to defaults",DEFAULTS,75,117,76,16
+    PUSHBUTTON      "Cancel",IDCANCEL,159,117,50,16
+    DEFPUSHBUTTON   "OK",IDOK,213,117,50,16
 END
 
 DLG_ABOUT DIALOGEX 0, 0, 186, 143
@@ -84,15 +86,18 @@ BEGIN
     DLG_SCRNSAVECONFIGURE, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 179
-        VERTGUIDE, 83
-        VERTGUIDE, 103
+        RIGHTMARGIN, 263
+        VERTGUIDE, 69
+        VERTGUIDE, 73
+        VERTGUIDE, 223
+        VERTGUIDE, 227
         TOPMARGIN, 7
-        BOTTOMMARGIN, 194
-        HORZGUIDE, 22
-        HORZGUIDE, 52
-        HORZGUIDE, 82
-        HORZGUIDE, 112
+        BOTTOMMARGIN, 133
+        HORZGUIDE, 12
+        HORZGUIDE, 38
+        HORZGUIDE, 64
+        HORZGUIDE, 90
+        HORZGUIDE, 117
     END
 
     DLG_ABOUT, DIALOG
