@@ -7,19 +7,17 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include <winres.h>
+#include "winres.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -32,23 +30,17 @@ CAPTION "Starfield Settings"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "Number of stars",IDC_STATIC,7,16,62,8
-    CONTROL         "",NUMSTARS,"msctls_trackbar32",TBS_BOTH |
-                    TBS_NOTICKS | WS_TABSTOP,73,12,150,15
+    CONTROL         "",NUMSTARS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,73,12,150,15
     RTEXT           "#",NUMSTARSTEXT,227,16,36,8
     LTEXT           "Speed",IDC_STATIC,7,42,62,8
-    CONTROL         "",SPEED,"msctls_trackbar32",TBS_BOTH |
-                    TBS_NOTICKS | WS_TABSTOP,73,38,150,15
+    CONTROL         "",SPEED,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,73,38,150,15
     RTEXT           "#",SPEEDTEXT,227,42,36,8
     LTEXT           "Star size",IDC_STATIC,7,68,62,8
-    CONTROL         "",STARSIZE,"msctls_trackbar32",TBS_BOTH |
-                    TBS_NOTICKS | WS_TABSTOP,73,64,150,15
+    CONTROL         "",STARSIZE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,73,64,150,15
     RTEXT           "#",STARSIZETEXT,227,68,36,8
-    CONTROL         "Limit frame rate",FRAMERATELIMITCHECK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,92,70,10
-    EDITTEXT        FRAMERATELIMITEDIT,85,90,32,14,ES_RIGHT | ES_AUTOHSCROLL |
-                    ES_NUMBER
-    CONTROL         "",FRAMERATELIMITSPIN,"msctls_updown32",UDS_SETBUDDYINT |
-                    UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS,117,90,11,14
+    CONTROL         "Limit frame rate",FRAMERATELIMITCHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,92,70,10
+    EDITTEXT        FRAMERATELIMITEDIT,85,90,32,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "",FRAMERATELIMITSPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS,117,90,11,14
     LTEXT           "FPS",IDC_STATIC,133,92,20,8
     PUSHBUTTON      "About",ABOUT,7,117,52,16
     PUSHBUTTON      "Reset to defaults",DEFAULTS,75,117,76,16
@@ -64,14 +56,10 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,129,122,50,14,WS_GROUP
     CTEXT           "Starfield",IDC_STATIC,7,6,172,9
     CTEXT           "version 1.0",IDC_STATIC,7,17,172,8
-    CTEXT           "Copyright (C) 1999-2010 Terence M. Welsh",IDC_STATIC,7,
-                    27,172,8
-    CTEXT           "http://www.reallyslick.com",WEBPAGE,7,37,172,8,
-                    SS_NOTIFY | NOT WS_GROUP
-    LTEXT           "\tA classic starfield screensaver.  Stars fly toward the viewer creating a sense of travelling through space.  Enjoy.",
-                    IDC_STATIC,7,55,172,25
-    LTEXT           "   This screensaver is free software licensed under the terms of the Gnu General Public License version 2.  It uses OpenGL for graphics, and it will perform poorly without OpenGL hardware acceleration.",
-                    IDC_STATIC,7,85,172,34
+    CTEXT           "Copyright (C) 2026 Dmitriy Belyaev",IDC_STATIC,7,27,172,8
+    CTEXT           "Based on code by Terence M. Welsh (GNU GPL).",WEBPAGE,7,37,172,8,SS_NOTIFY | NOT WS_GROUP
+    LTEXT           "  The iconic retro starfield screensaver. Bring back the nostalgia of traveling through deep space right from your screen.",IDC_STATIC,7,55,172,25
+    LTEXT           "  This screensaver is free software licensed under the GNU General Public License v2. It utilizes OpenGL for rendering and requires hardware acceleration for optimal performance.",IDC_STATIC,7,85,172,34
 END
 
 
@@ -81,7 +69,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     DLG_SCRNSAVECONFIGURE, DIALOG
     BEGIN
@@ -152,17 +140,29 @@ END
 // remains consistent on all systems.
 ID_APP                  ICON                    "icon1.ico"
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+DLG_ABOUT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_DESCRIPTION         "Starfield"
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -176,3 +176,4 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
+
