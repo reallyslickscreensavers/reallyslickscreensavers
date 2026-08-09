@@ -214,10 +214,10 @@ void idleProc(){
 
 
 void setDefaults(){
-	dNumStars = 2000;
-	dSpeed = 50;
-	dStarSize = 5;
-	dFrameRateLimit = 0;
+	dNumStars = starfield::kDefaultNumStars;
+	dSpeed = starfield::kDefaultSpeed;
+	dStarSize = starfield::kDefaultStarSize;
+	dFrameRateLimit = 0;  // unlimited
 }
 
 

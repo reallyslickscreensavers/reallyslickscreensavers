@@ -27,6 +27,26 @@ TEST(Ranges, MatchDocumentedValues) {
     EXPECT_EQ(kDefaultFrameRate, 60);
 }
 
+TEST(Defaults, MatchDocumentedValues) {
+    EXPECT_EQ(kDefaultNumStars, 5000);
+    EXPECT_EQ(kDefaultSpeed, 5);
+    EXPECT_EQ(kDefaultStarSize, 1);
+}
+
+// A default outside its own slider range would be silently clamped the first
+// time the dialog opened, so the shipped default would not be what the user
+// actually got.
+TEST(Defaults, LieWithinTheirRanges) {
+    EXPECT_GE(kDefaultNumStars, kNumStars.lo);
+    EXPECT_LE(kDefaultNumStars, kNumStars.hi);
+    EXPECT_GE(kDefaultSpeed, kSpeed.lo);
+    EXPECT_LE(kDefaultSpeed, kSpeed.hi);
+    EXPECT_GE(kDefaultStarSize, kStarSize.lo);
+    EXPECT_LE(kDefaultStarSize, kStarSize.hi);
+    EXPECT_GE(kDefaultFrameRate, kFrameRate.lo);
+    EXPECT_LE(kDefaultFrameRate, kFrameRate.hi);
+}
+
 // ---------------------------------------------------------------------------
 // clampToRange
 // ---------------------------------------------------------------------------
