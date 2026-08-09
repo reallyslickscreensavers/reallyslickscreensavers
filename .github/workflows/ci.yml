@@ -30,3 +30,13 @@ jobs:
 
       - name: Build solution (${{ matrix.configuration }})
         run: msbuild src\rssavers.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x86
+
+      - name: Configure tests (CMake)
+        run: cmake -S tests -B tests/build -A Win32
+
+      - name: Build tests
+        run: cmake --build tests/build --config ${{ matrix.configuration }}
+
+      - name: Run tests
+        if: always()
+        run: ctest --test-dir tests/build -C ${{ matrix.configuration }} --output-on-failure
