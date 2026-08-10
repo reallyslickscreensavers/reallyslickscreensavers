@@ -3,7 +3,7 @@
 	url = https://github.com/reallyslickscreensavers/freeglut-redist.git
 [submodule "3rdparty/openal"]
 	path = 3rdparty/openal
-	url=https://gitlab.com/redist/openal-redist.git
+	url = https://github.com/reallyslickscreensavers/openal-redist.git
 [submodule "libs"]
 	path = libs
 	url = https://github.com/reallyslickscreensavers/rslibs.git
