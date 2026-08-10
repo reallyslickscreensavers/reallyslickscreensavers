@@ -18,19 +18,22 @@
 
 // flocks.cpp has no header; the saver's contract is by name.
 //
-// The savers keep their settings in mutable globals (docs/MAINTENANCE.md
-// Task 6). These accessors reach them without this file declaring globals of
-// its own: the extern declarations are block-scope, so they bind to the
-// definitions in flocks.cpp. They must sit at global scope - inside a
-// namespace a block-scope extern would bind to that namespace instead.
-static int& svLeaders()     { extern int dLeaders;     return dLeaders; }
-static int& svFollowers()   { extern int dFollowers;   return dFollowers; }
-static int& svGeometry()    { extern int dGeometry;    return dGeometry; }
-static int& svSize()        { extern int dSize;        return dSize; }
-static int& svSpeed()       { extern int dSpeed;       return dSpeed; }
-static int& svStretch()     { extern int dStretch;     return dStretch; }
-static int& svConnections() { extern int dConnections; return dConnections; }
-static int& svReadyToDraw() { extern int readyToDraw;  return readyToDraw; }
+// SonarCloud cpp:S5421 flags these as mutable globals. They are declarations,
+// not definitions - the variables live in flocks.cpp - but the rule cannot tell
+// the difference, and neither can moving them into block scope inside an
+// accessor, which was tried and changed nothing.
+//
+// The finding is really about the savers exposing their settings as mutable
+// globals at all, which is Task 6 in docs/MAINTENANCE.md. A test cannot reach
+// them any other way until that lands.
+extern int dLeaders;
+extern int dFollowers;
+extern int dGeometry;
+extern int dSize;
+extern int dSpeed;
+extern int dStretch;
+extern int dConnections;
+extern int readyToDraw;
 
 void setDefaults();
 void draw();
@@ -94,10 +97,10 @@ TEST(FlocksHarness, SaverBodyWasActuallyCompiled) {
     // Guards the WIN32-define trap: without it the saver preprocesses away and
     // every other test would pass against an empty translation unit.
     setDefaults();
-    EXPECT_EQ(svLeaders(), 4);
-    EXPECT_EQ(svFollowers(), 1000);
-    EXPECT_EQ(svSize(), 5);
-    EXPECT_EQ(svSpeed(), 15);
+    EXPECT_EQ(dLeaders, 4);
+    EXPECT_EQ(dFollowers, 1000);
+    EXPECT_EQ(dSize, 5);
+    EXPECT_EQ(dSpeed, 15);
 }
 
 // --- startup ---------------------------------------------------------------
@@ -115,7 +118,7 @@ TEST_F(Flocks, InitSaverEnablesDepthTestingAndLighting) {
 }
 
 TEST_F(Flocks, DotsModeSkipsTheLightingSetup) {
-    svGeometry() = 0;
+    dGeometry = 0;
     glstub::reset();
     initSaver(hostWindow());
 
@@ -158,73 +161,73 @@ TEST_F(Flocks, PrimitiveVertexCountsAreLegal) {
 // --- the settings actually change what is drawn ----------------------------
 
 TEST_F(Flocks, GeometryModeIssuesOneDisplayListCallPerBug) {
-    svGeometry() = 1;
-    svLeaders() = 3;
-    svFollowers() = 20;
+    dGeometry = 1;
+    dLeaders = 3;
+    dFollowers = 20;
     start();
     draw();
 
-    EXPECT_EQ(glstub::trace().countCalls("glCallList"), svLeaders() + svFollowers())
+    EXPECT_EQ(glstub::trace().countCalls("glCallList"), dLeaders + dFollowers)
         << "each bug draws itself once from the compiled blob";
 }
 
 TEST_F(Flocks, DotsModeEmitsOnePointPerBug) {
-    svGeometry() = 0;
-    svStretch() = 0;
-    svLeaders() = 2;
-    svFollowers() = 15;
+    dGeometry = 0;
+    dStretch = 0;
+    dLeaders = 2;
+    dFollowers = 15;
     start();
     draw();
 
-    EXPECT_EQ(countPrimitives(GL_POINTS), svLeaders() + svFollowers());
+    EXPECT_EQ(countPrimitives(GL_POINTS), dLeaders + dFollowers);
     EXPECT_EQ(countPrimitives(GL_LINES), 0) << "unstretched dots are points, not lines";
 }
 
 TEST_F(Flocks, StretchTurnsDotsIntoLines) {
-    svGeometry() = 0;
-    svStretch() = 20;
-    svConnections() = 0;
-    svLeaders() = 2;
-    svFollowers() = 15;
+    dGeometry = 0;
+    dStretch = 20;
+    dConnections = 0;
+    dLeaders = 2;
+    dFollowers = 15;
     start();
     draw();
 
-    EXPECT_EQ(countPrimitives(GL_LINES), svLeaders() + svFollowers())
+    EXPECT_EQ(countPrimitives(GL_LINES), dLeaders + dFollowers)
         << "a stretched bug is drawn as a motion-blur line";
     EXPECT_EQ(countPrimitives(GL_POINTS), 0);
 }
 
 TEST_F(Flocks, ConnectionsDrawAnExtraLinePerFollower) {
-    svGeometry() = 0;
-    svStretch() = 0;
-    svLeaders() = 2;
-    svFollowers() = 15;
+    dGeometry = 0;
+    dStretch = 0;
+    dLeaders = 2;
+    dFollowers = 15;
 
-    svConnections() = 0;
+    dConnections = 0;
     start();
     draw();
     const int withoutConnections = countPrimitives(GL_LINES);
 
-    svConnections() = 1;
+    dConnections = 1;
     glstub::reset();
     draw();
     const int withConnections = countPrimitives(GL_LINES);
 
     EXPECT_EQ(withoutConnections, 0);
-    EXPECT_EQ(withConnections, svFollowers())
+    EXPECT_EQ(withConnections, dFollowers)
         << "each follower draws a line back to its leader; leaders have none";
 }
 
 TEST_F(Flocks, MoreBugsMeansMoreDrawing) {
-    svGeometry() = 0;
-    svStretch() = 0;
-    svLeaders() = 2;
-    svFollowers() = 10;
+    dGeometry = 0;
+    dStretch = 0;
+    dLeaders = 2;
+    dFollowers = 10;
     start();
     draw();
     const unsigned long long few = glstub::trace().totalVertices();
 
-    svFollowers() = 100;
+    dFollowers = 100;
     restart();
     draw();
     const unsigned long long many = glstub::trace().totalVertices();
@@ -237,25 +240,25 @@ TEST_F(Flocks, MoreBugsMeansMoreDrawing) {
 
 TEST_F(Flocks, IdleProcSkipsDrawingWhenNotReady) {
     start();
-    svReadyToDraw() = 0;
+    readyToDraw = 0;
     glstub::reset();
 
     idleProc();
 
     EXPECT_EQ(glstub::trace().totalVertices(), 0u);
     EXPECT_EQ(glstub::trace().countCalls("glCallList"), 0);
-    svReadyToDraw() = 1;
+    readyToDraw = 1;
 }
 
 TEST(FlocksFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
     setDefaults();
-    svReadyToDraw() = 0;
+    readyToDraw = 0;
 
     screenSaverProc(hostWindow(), WM_CREATE, 0, 0);
-    EXPECT_EQ(svReadyToDraw(), 1);
+    EXPECT_EQ(readyToDraw, 1);
 
     screenSaverProc(hostWindow(), WM_DESTROY, 0, 0);
-    EXPECT_EQ(svReadyToDraw(), 0);
+    EXPECT_EQ(readyToDraw, 0);
 }
 
 TEST(FlocksFramework, ReadRegistryLeavesEveryValueUsable) {
@@ -267,9 +270,9 @@ TEST(FlocksFramework, ReadRegistryLeavesEveryValueUsable) {
     // note in test_cyclone.cpp.
     readRegistry();
 
-    EXPECT_GT(svLeaders(), 0) << "lBugs is allocated with this count";
-    EXPECT_GT(svFollowers(), 0) << "fBugs is allocated with this count";
-    EXPECT_GT(svSize(), 0);
+    EXPECT_GT(dLeaders, 0) << "lBugs is allocated with this count";
+    EXPECT_GT(dFollowers, 0) << "fBugs is allocated with this count";
+    EXPECT_GT(dSize, 0);
 }
 
 // --- dialog procedures -----------------------------------------------------
@@ -297,12 +300,12 @@ TEST(FlocksDialogs, ConfigureDialogInitialisesAndCancels) {
 
 TEST(FlocksDialogs, ConfigureDialogRestoresDefaults) {
     setDefaults();
-    const int defaultFollowers = svFollowers();
-    svFollowers() = 7;
+    const int defaultFollowers = dFollowers;
+    dFollowers = 7;
 
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
-    EXPECT_EQ(svFollowers(), defaultFollowers);
+    EXPECT_EQ(dFollowers, defaultFollowers);
 }
 
 TEST(FlocksDialogs, ConfigureDialogHandlesSliderMovement) {
