@@ -23,7 +23,7 @@
 // docs/MAINTENANCE.md, "encapsulate mutable module globals" - and not to the
 // test harness, which only supplies what rsWin32Saverd.lib normally would.
 HINSTANCE mainInstance = nullptr;
-HWND mainWindow = 0;
+HWND mainWindow = nullptr;
 int isSuspended = 0;
 int doingPreview = 0;
 int pfd_swap_exchange = 0;

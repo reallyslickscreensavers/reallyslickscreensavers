@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 
 #include <Windows.h>
-#include <GL/gl.h>
+#include <gl/GL.h>
 
 #include "support/gl_stub.h"
 #include "support/test_window.h"
@@ -19,17 +19,23 @@
 // saver has its own resource.h and the target puts src/plasma first.
 #include "resource.h"
 
-// plasma.cpp has no header; the saver's contract with rsWin32Saver is by name.
-extern int dZoom;
-extern int dFocus;
-extern int dSpeed;
-extern int dResolution;
-extern int plasmasize;
-extern int readyToDraw;
-extern int kStatistics;   // owned by the shim, toggled by the 's' key in a real saver
-extern float aspectRatio;
-extern float wide;
-extern float high;
+// plasma.cpp has no header; its contract with the framework is by name.
+//
+// The savers keep their settings in mutable globals (docs/MAINTENANCE.md
+// Task 6). These accessors reach them without this file declaring globals of
+// its own: the extern declarations are block-scope, so they bind to the
+// definitions in plasma.cpp. They must sit at global scope - inside a
+// namespace a block-scope extern would bind to that namespace instead.
+static int&   svZoom()        { extern int dZoom;        return dZoom; }
+static int&   svFocus()       { extern int dFocus;       return dFocus; }
+static int&   svSpeed()       { extern int dSpeed;       return dSpeed; }
+static int&   svResolution()  { extern int dResolution;  return dResolution; }
+static int&   svFieldSize()   { extern int plasmasize;   return plasmasize; }
+static int&   svReadyToDraw() { extern int readyToDraw;  return readyToDraw; }
+static int&   svStatistics()  { extern int kStatistics;  return kStatistics; }
+static float& svAspectRatio() { extern float aspectRatio; return aspectRatio; }
+static float& svWide()        { extern float wide;       return wide; }
+static float& svHigh()        { extern float high;       return high; }
 
 void setDefaults();
 void setPlasmaSize();
@@ -67,27 +73,27 @@ TEST(PlasmaHarness, SaverBodyWasActuallyCompiled) {
     // against an empty translation unit and every other test passes vacuously
     // while coverage reports zero.
     setDefaults();
-    EXPECT_EQ(dZoom, 10);
-    EXPECT_EQ(dFocus, 30);
-    EXPECT_EQ(dSpeed, 20);
-    EXPECT_EQ(dResolution, 25);
+    EXPECT_EQ(svZoom(), 10);
+    EXPECT_EQ(svFocus(), 30);
+    EXPECT_EQ(svSpeed(), 20);
+    EXPECT_EQ(svResolution(), 25);
 }
 
 // --- settings maths --------------------------------------------------------
 
 TEST(PlasmaSettings, PlasmaSizeScalesWithResolution) {
     setDefaults();
-    aspectRatio = 1.0f;
+    svAspectRatio() = 1.0f;
 
-    // Not named `small`/`large`: windows.h drags in rpcndr.h, which does
+    // Not named `small`/`large`: Windows.h drags in rpcndr.h, which does
     // `#define small char`.
-    dResolution = 10;
+    svResolution() = 10;
     setPlasmaSize();
-    const int coarseSize = plasmasize;
+    const int coarseSize = svFieldSize();
 
-    dResolution = 50;
+    svResolution() = 50;
     setPlasmaSize();
-    const int fineSize = plasmasize;
+    const int fineSize = svFieldSize();
 
     EXPECT_GT(coarseSize, 0);
     EXPECT_GT(fineSize, coarseSize) << "a higher resolution setting must mean more samples";
@@ -95,15 +101,15 @@ TEST(PlasmaSettings, PlasmaSizeScalesWithResolution) {
 
 TEST(PlasmaSettings, ZoomDrivesTheVisibleExtent) {
     setDefaults();
-    aspectRatio = 1.0f;
+    svAspectRatio() = 1.0f;
 
-    dZoom = 5;
+    svZoom() = 5;
     setPlasmaSize();
-    const float zoomedOut = wide;
+    const float zoomedOut = svWide();
 
-    dZoom = 50;
+    svZoom() = 50;
     setPlasmaSize();
-    const float zoomedIn = wide;
+    const float zoomedIn = svWide();
 
     EXPECT_GT(zoomedOut, zoomedIn) << "wide is 30/dZoom, so a larger dZoom narrows the view";
     EXPECT_GT(zoomedIn, 0.0f);
@@ -112,13 +118,13 @@ TEST(PlasmaSettings, ZoomDrivesTheVisibleExtent) {
 TEST(PlasmaSettings, WideWidescreenKeepsHeightAndStretchesWidth) {
     setDefaults();
 
-    aspectRatio = 2.0f;   // landscape: height derives from width
+    svAspectRatio() = 2.0f;   // landscape: height derives from width
     setPlasmaSize();
-    EXPECT_GT(wide, high);
+    EXPECT_GT(svWide(), svHigh());
 
-    aspectRatio = 0.5f;   // portrait: the other branch
+    svAspectRatio() = 0.5f;   // portrait: the other branch
     setPlasmaSize();
-    EXPECT_GT(high, wide);
+    EXPECT_GT(svHigh(), svWide());
 }
 
 // --- the real draw path, against the recording stub ------------------------
@@ -129,10 +135,10 @@ TEST(PlasmaDraw, InitSaverPreparesTextureAndMarksReady) {
     initSaver(hostWindow());
 
     const glstub::Trace& t = glstub::trace();
-    EXPECT_EQ(readyToDraw, 1);
+    EXPECT_EQ(svReadyToDraw(), 1);
     EXPECT_GE(t.texturesGenerated, 1) << "plasma uploads one texture at startup";
     EXPECT_GE(t.countCalls("glTexImage2D"), 1);
-    EXPECT_GT(plasmasize, 0) << "aspectRatio came from the host window, so sizing must have run";
+    EXPECT_GT(svFieldSize(), 0) << "aspectRatio came from the host window, so sizing must have run";
 }
 
 TEST(PlasmaDraw, FrameLeavesTheMatrixStackBalanced) {
@@ -177,9 +183,9 @@ TEST(PlasmaDraw, DoesNotLeakEnableState) {
     draw();
 
     // Anything enabled during a frame must be disabled again by the end of it.
-    for (const auto& e : glstub::trace().enables) {
-        EXPECT_EQ(e.second, 0)
-            << "capability " << e.first << " left with net enable " << e.second;
+    for (const auto& [capability, net] : glstub::trace().enables) {
+        EXPECT_EQ(net, 0)
+            << "capability " << capability << " left with net enable " << net;
     }
 }
 
@@ -189,14 +195,14 @@ TEST(PlasmaDraw, EmitsExactlyOneTexturedQuadRegardlessOfResolution) {
     // changes the texture, never the vertex count. Pinned because it is the
     // opposite of what most savers do, and easy to "fix" by mistake.
     setDefaults();
-    dResolution = 10;
+    svResolution() = 10;
     initSaver(hostWindow());
     glstub::reset();
     draw();
     const unsigned long long coarse = glstub::trace().totalVertices();
 
     setDefaults();
-    dResolution = 40;
+    svResolution() = 40;
     initSaver(hostWindow());
     glstub::reset();
     draw();
@@ -222,9 +228,9 @@ TEST(PlasmaDraw, StatisticsOverlayKeepsTheMatrixStackBalanced) {
     // The kStatistics branch pushes on both PROJECTION and MODELVIEW and pops
     // them in the reverse order. It is off by default, so nothing else covers it.
     initialiseSaver();
-    kStatistics = 1;
+    svStatistics() = 1;
     draw();
-    kStatistics = 0;
+    svStatistics() = 0;
 
     const glstub::Trace& t = glstub::trace();
     EXPECT_TRUE(t.matrixBalanced())
@@ -235,15 +241,15 @@ TEST(PlasmaDraw, StatisticsOverlayKeepsTheMatrixStackBalanced) {
 // --- framework entry points ------------------------------------------------
 
 TEST(PlasmaFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
-    readyToDraw = 0;
+    svReadyToDraw() = 0;
     glstub::reset();
 
     screenSaverProc(hostWindow(), WM_CREATE, 0, 0);
-    EXPECT_EQ(readyToDraw, 1);
+    EXPECT_EQ(svReadyToDraw(), 1);
     EXPECT_GE(glstub::trace().texturesGenerated, 1);
 
     screenSaverProc(hostWindow(), WM_DESTROY, 0, 0);
-    EXPECT_EQ(readyToDraw, 0);
+    EXPECT_EQ(svReadyToDraw(), 0);
 }
 
 TEST(PlasmaFramework, ScreenSaverProcPassesUnhandledMessagesThrough) {
@@ -265,9 +271,9 @@ TEST(PlasmaSettings, ReadRegistryLeavesEveryValueUsable) {
     // asserts non-degeneracy, not range.
     readRegistry();
 
-    EXPECT_NE(dZoom, 0) << "dZoom divides into 30.0f in setPlasmaSize";
-    EXPECT_GT(dResolution, 0);
-    EXPECT_GT(dSpeed, 0);
+    EXPECT_NE(svZoom(), 0) << "dZoom divides into 30.0f in setPlasmaSize";
+    EXPECT_GT(svResolution(), 0);
+    EXPECT_GT(svSpeed(), 0);
 }
 
 // --- dialog procedures -----------------------------------------------------
@@ -303,12 +309,12 @@ TEST(PlasmaDialogs, ConfigureDialogInitialisesAndCancels) {
 
 TEST(PlasmaDialogs, ConfigureDialogRestoresDefaults) {
     setDefaults();
-    const int defaultZoom = dZoom;
-    dZoom = 99;
+    const int defaultZoom = svZoom();
+    svZoom() = 99;
 
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
-    EXPECT_EQ(dZoom, defaultZoom) << "the Defaults button must reset the settings";
+    EXPECT_EQ(svZoom(), defaultZoom) << "the Defaults button must reset the settings";
 }
 
 TEST(PlasmaDialogs, ConfigureDialogHandlesSliderMovement) {
@@ -321,12 +327,12 @@ TEST(PlasmaDialogs, ConfigureDialogIgnoresUnknownMessages) {
 
 TEST(PlasmaDraw, IdleProcSkipsDrawingWhenNotReady) {
     initialiseSaver();
-    readyToDraw = 0;
+    svReadyToDraw() = 0;
     glstub::reset();
 
     idleProc();
 
     EXPECT_EQ(glstub::trace().totalVertices(), 0u)
         << "idleProc must not draw before the saver is ready";
-    readyToDraw = 1;
+    svReadyToDraw() = 1;
 }

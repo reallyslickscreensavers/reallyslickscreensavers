@@ -1,7 +1,7 @@
 /*
  * Recording OpenGL stub — implementation.
  *
- * _GDI32_ is defined by the CMake target before windows.h is reached. That is
+ * _GDI32_ is defined by the CMake target before Windows.h is reached. That is
  * the switch wingdi.h itself uses:
  *
  *     #if !defined(_GDI32_)
@@ -19,8 +19,8 @@
  */
 
 #include <Windows.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include <gl/GL.h>
+#include <gl/GLU.h>
 
 #include "gl_stub.h"
 
@@ -40,7 +40,7 @@ void reset() { trace() = Trace(); }
 // entry points below can reach them.
 void record(const char* name)
 {
-	trace().calls.push_back(name);
+	trace().calls.emplace_back(name);
 }
 
 void bumpEnable(unsigned cap, int delta)
@@ -116,7 +116,7 @@ bool primitiveVertexCountsLegal(std::string* why)
 }  // namespace glstub
 
 // ---------------------------------------------------------------------------
-// Stubbed entry points. Signatures must match <GL/gl.h> exactly or the
+// Stubbed entry points. Signatures must match <gl/GL.h> exactly or the
 // __stdcall decoration differs and the link fails — a useful self-check.
 // ---------------------------------------------------------------------------
 

@@ -9,19 +9,25 @@
 #include <gtest/gtest.h>
 
 #include <Windows.h>
-#include <GL/gl.h>
+#include <gl/GL.h>
 
 #include "support/gl_stub.h"
 #include "support/test_window.h"
 #include "resource.h"
 
-// cyclone.cpp has no header; the saver's contract is by name.
-extern int dCyclones;
-extern int dParticles;
-extern int dSize;
-extern int dComplexity;
-extern BOOL dShowCurves;
-extern int readyToDraw;
+// cyclone.cpp has no header; its contract with the framework is by name.
+//
+// The savers keep their settings in mutable globals (docs/MAINTENANCE.md
+// Task 6). These accessors reach them without this file declaring globals of
+// its own: the extern declarations are block-scope, so they bind to the
+// definitions in cyclone.cpp. They must sit at global scope - inside a
+// namespace a block-scope extern would bind to that namespace instead.
+static int&  svCyclones()    { extern int dCyclones;    return dCyclones; }
+static int&  svParticles()   { extern int dParticles;   return dParticles; }
+static int&  svSize()        { extern int dSize;        return dSize; }
+static int&  svComplexity()  { extern int dComplexity;  return dComplexity; }
+static BOOL& svShowCurves()  { extern BOOL dShowCurves; return dShowCurves; }
+static int&  svReadyToDraw() { extern int readyToDraw;  return readyToDraw; }
 
 void setDefaults();
 void draw();
@@ -76,10 +82,10 @@ private:
 
 TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
     setDefaults();
-    EXPECT_EQ(dCyclones, 1);
-    EXPECT_EQ(dParticles, 400);
-    EXPECT_EQ(dComplexity, 3);
-    EXPECT_EQ(dSize, 7);
+    EXPECT_EQ(svCyclones(), 1);
+    EXPECT_EQ(svParticles(), 400);
+    EXPECT_EQ(svComplexity(), 3);
+    EXPECT_EQ(svSize(), 7);
 }
 
 // --- the BLOCKER guard -----------------------------------------------------
@@ -119,19 +125,19 @@ TEST(CycloneBlockerGuard, ReadRegistryAlwaysLeavesComplexityInRange) {
     // Whatever is stored on this machine - or if the key is absent entirely -
     // readRegistry must leave dComplexity within the range initSaver allocates
     // for. Read-only: setDefaults runs first and it returns early on a missing key.
-    dComplexity = -5;
+    svComplexity() = -5;
     readRegistry();
 
-    EXPECT_GE(dComplexity, 1) << "a negative complexity is what makes cyclone.cpp:155 reachable";
-    EXPECT_LE(dComplexity, 10);
+    EXPECT_GE(svComplexity(), 1) << "a negative complexity is what makes cyclone.cpp:155 reachable";
+    EXPECT_LE(svComplexity(), 10);
 }
 
 TEST(CycloneBlockerGuard, ComplexityStaysInRangeAcrossRepeatedReads) {
     for (int i = 0; i < 5; ++i) {
-        dComplexity = (i % 2) ? -100 : 100000;
+        svComplexity() = (i % 2) ? -100 : 100000;
         readRegistry();
-        ASSERT_GE(dComplexity, 1);
-        ASSERT_LE(dComplexity, 10);
+        ASSERT_GE(svComplexity(), 1);
+        ASSERT_LE(svComplexity(), 10);
     }
 }
 
@@ -139,13 +145,13 @@ TEST(CycloneBlockerGuard, CreateClampsBeforeAllocating) {
     // The ordering is the whole guarantee: WM_CREATE must read (and clamp)
     // before it allocates. Corrupt the value first; a correct handler overwrites
     // it via readRegistry before initSaver sizes anything from it.
-    dComplexity = -42;
-    readyToDraw = 0;
+    svComplexity() = -42;
+    svReadyToDraw() = 0;
 
     screenSaverProc(hostWindow(), WM_CREATE, 0, 0);
 
-    EXPECT_GE(dComplexity, 1) << "initSaver sized its arrays from an unclamped value";
-    EXPECT_EQ(readyToDraw, 1);
+    EXPECT_GE(svComplexity(), 1) << "initSaver sized its arrays from an unclamped value";
+    EXPECT_EQ(svReadyToDraw(), 1);
 
     screenSaverProc(hostWindow(), WM_DESTROY, 0, 0);
 }
@@ -184,12 +190,12 @@ TEST_F(Cyclone, FrameDrawsEveryParticleFromTheCompiledBlob) {
     // cyclone's particles are a display list called once per particle, so a
     // frame emits no immediate-mode vertices at all. Counting glCallList is the
     // only way to see the geometry.
-    dCyclones = 2;
-    dParticles = 25;
+    svCyclones() = 2;
+    svParticles() = 25;
     start();
     draw();
 
-    EXPECT_EQ(glstub::trace().countCalls("glCallList"), dCyclones * dParticles);
+    EXPECT_EQ(glstub::trace().countCalls("glCallList"), svCyclones() * svParticles());
     EXPECT_EQ(glstub::trace().totalVertices(), 0u)
         << "particles come from a display list; immediate-mode vertices would be a redesign";
 }
@@ -197,20 +203,20 @@ TEST_F(Cyclone, FrameDrawsEveryParticleFromTheCompiledBlob) {
 TEST_F(Cyclone, DoesNotLeakEnableState) {
     start();
     draw();
-    for (const auto& e : glstub::trace().enables) {
-        EXPECT_EQ(e.second, 0) << "capability " << e.first << " left with net enable " << e.second;
+    for (const auto& [capability, net] : glstub::trace().enables) {
+        EXPECT_EQ(net, 0) << "capability " << capability << " left with net enable " << net;
     }
 }
 
 // --- settings change what is drawn -----------------------------------------
 
 TEST_F(Cyclone, ShowCurvesAddsLineStrips) {
-    dShowCurves = FALSE;
+    svShowCurves() = FALSE;
     start();
     draw();
     const int without = countPrimitives(GL_LINE_STRIP);
 
-    dShowCurves = TRUE;
+    svShowCurves() = TRUE;
     glstub::reset();
     draw();
     const int with = countPrimitives(GL_LINE_STRIP);
@@ -219,13 +225,13 @@ TEST_F(Cyclone, ShowCurvesAddsLineStrips) {
 }
 
 TEST_F(Cyclone, MoreCyclonesMeansMoreDrawing) {
-    dParticles = 20;
-    dCyclones = 1;
+    svParticles() = 20;
+    svCyclones() = 1;
     start();
     draw();
     const int one = glstub::trace().countCalls("glCallList");
 
-    dCyclones = 3;
+    svCyclones() = 3;
     restart();
     draw();
     const int three = glstub::trace().countCalls("glCallList");
@@ -236,13 +242,13 @@ TEST_F(Cyclone, MoreCyclonesMeansMoreDrawing) {
 
 TEST_F(Cyclone, IdleProcSkipsDrawingWhenNotReady) {
     start();
-    readyToDraw = 0;
+    svReadyToDraw() = 0;
     glstub::reset();
 
     idleProc();
 
     EXPECT_EQ(glstub::trace().totalVertices(), 0u);
-    readyToDraw = 1;
+    svReadyToDraw() = 1;
 }
 
 // --- dialog procedures -----------------------------------------------------
@@ -269,12 +275,12 @@ TEST(CycloneDialogs, ConfigureDialogInitialisesAndCancels) {
 
 TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
     setDefaults();
-    const int defaultParticles = dParticles;
-    dParticles = 3;
+    const int defaultParticles = svParticles();
+    svParticles() = 3;
 
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
-    EXPECT_EQ(dParticles, defaultParticles);
+    EXPECT_EQ(svParticles(), defaultParticles);
 }
 
 TEST(CycloneDialogs, ConfigureDialogHandlesSliderMovement) {
