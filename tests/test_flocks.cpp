@@ -259,6 +259,10 @@ TEST(FlocksFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
 TEST(FlocksFramework, ReadRegistryLeavesEveryValueUsable) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine.
+    //
+    // That early return also means this covers little on a machine where the
+    // saver has never stored settings, CI included. See the KNOWN LIMITATION
+    // note in test_cyclone.cpp.
     readRegistry();
 
     EXPECT_GT(dLeaders, 0) << "lBugs is allocated with this count";

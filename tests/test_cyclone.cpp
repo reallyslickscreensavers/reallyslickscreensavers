@@ -98,6 +98,24 @@ TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
 //
 // These tests pin that reasoning. If someone removes the clamp, the findings
 // stop being theoretical and this fails.
+//
+// KNOWN LIMITATION - read this before trusting the guard.
+//
+// readRegistry returns early when HKCU\Software\Really Slick\Cyclone does not
+// exist, which is the case on a fresh CI runner and on any machine where the
+// saver has never stored settings. There the clamp lines never execute and
+// these tests only confirm that setDefaults' value survives. They bite fully
+// only where a key exists.
+//
+// Exercising the populated path means writing to that real key, which would
+// modify the developer's own saver settings, so it is deliberately not done.
+// The way to make this guard unconditional is to give cyclone a settings header
+// with a pure clamp function - the starfieldSettings.h / rsWin32SaverSettings.h
+// pattern - and test that directly. That is Task 11's refactor.
+//
+// The same caveat applies to the ReadRegistry tests in the plasma and flocks
+// suites, and it is why coverage on CI sits about 5 points below a developer
+// machine that has run the savers.
 
 TEST(CycloneBlockerGuard, ReadRegistryAlwaysLeavesComplexityInRange) {
     // Whatever is stored on this machine - or if the key is absent entirely -

@@ -254,7 +254,11 @@ TEST(PlasmaFramework, ScreenSaverProcPassesUnhandledMessagesThrough) {
 
 TEST(PlasmaSettings, ReadRegistryLeavesEveryValueUsable) {
     // readRegistry only reads: it calls setDefaults first and returns early if
-    // the key is absent, so running it cannot disturb the machine. Whatever is
+    // the key is absent, so running it cannot disturb the machine.
+    //
+    // That early return also means this covers little on a machine where the
+    // saver has never stored settings, CI included. See the KNOWN LIMITATION
+    // note in test_cyclone.cpp. Whatever is
     // actually stored under HKCU, the result must be usable.
     //
     // Note this is the unclamped read that Task 11 targets, so today it only
