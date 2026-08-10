@@ -12,6 +12,7 @@
 #include <GL/gl.h>
 
 #include "support/gl_stub.h"
+#include "support/test_window.h"
 #include "resource.h"
 
 // cyclone.cpp has no header; the saver's contract is by name.
@@ -37,7 +38,7 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPA
 
 namespace {
 
-HWND hostWindow() { return GetDesktopWindow(); }
+HWND hostWindow() { return testsupport::hostWindow(); }
 
 int countPrimitives(unsigned mode) {
     int n = 0;

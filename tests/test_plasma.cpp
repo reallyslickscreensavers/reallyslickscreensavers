@@ -13,6 +13,7 @@
 #include <GL/gl.h>
 
 #include "support/gl_stub.h"
+#include "support/test_window.h"
 
 // The module's own control ids (DEFAULTS, ZOOM, ...). Quoted include: every
 // saver has its own resource.h and the target puts src/plasma first.
@@ -43,10 +44,10 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPA
 
 namespace {
 
-// The desktop window is a real HWND that exists without creating one, so
-// initSaver's GetDC/GetClientRect behave. Passing NULL would leave its local
-// RECT uninitialised and aspectRatio would be garbage.
-HWND hostWindow() { return GetDesktopWindow(); }
+// A fixed-size hidden window, not the desktop: initSaver derives aspectRatio
+// from GetClientRect, and plasma sizes its whole field from that. See
+// test_window.h - using the desktop made CI cover five points less than local.
+HWND hostWindow() { return testsupport::hostWindow(); }
 
 // Brings plasma up the way the framework would, then clears the trace so a test
 // sees only what it exercises itself.

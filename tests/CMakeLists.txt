@@ -47,7 +47,7 @@ target_include_directories(gl_stub PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(gl_stub PUBLIC WIN32 _WINDOWS _GDI32_)
 
 # The globals rsWin32Saver would normally own.
-add_library(saver_shim STATIC support/saver_shim.cpp)
+add_library(saver_shim STATIC support/saver_shim.cpp support/test_window.cpp)
 target_include_directories(saver_shim PUBLIC ${REPO_ROOT}/libs)
 target_compile_definitions(saver_shim PUBLIC WIN32 _WINDOWS _GDI32_)
 # winmm for rsTimer's timeGetTime/timeBeginPeriod, comctl32 for InitCommonControls.
