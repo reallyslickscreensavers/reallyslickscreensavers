@@ -7,6 +7,22 @@ on:
 # Drop all permissions by default — each job grants only what it needs
 permissions: {}
 
+# Every configuration is compiled, and every configuration's tests are executed,
+# but each exactly once:
+#
+#   build (Debug)    solution only        - Debug tests are the coverage job's
+#   build (Release)  solution + tests     - the configuration that ships
+#   coverage         tests, instrumented  - Debug, and the only Debug test run
+#
+# Running the suite plain in Debug as well would execute identical code twice,
+# because the coverage job is the same run with instrumentation attached. Both
+# configurations still matter on their own: Release exposes optimiser-dependent
+# behaviour and is what users get, Debug keeps the CRT heap and iterator checks
+# live.
+#
+# Kept to two jobs rather than three because each one re-checks-out with
+# submodules and LFS, which costs more than the run being saved.
+
 jobs:
   # ---------------------------------------------------------------------------
   # Windows — MSBuild (Debug + Release matrix)
@@ -31,18 +47,28 @@ jobs:
       - name: Build solution (${{ matrix.configuration }})
         run: msbuild src\rssavers.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x86
 
+      # Release only: the Debug tests are built and run by the coverage job, and
+      # doing them here as well would be the same execution twice.
       - name: Configure tests (CMake)
+        if: matrix.configuration == 'Release'
         run: cmake -S tests -B tests/build -A Win32
 
       - name: Build tests
-        run: cmake --build tests/build --config ${{ matrix.configuration }}
+        if: matrix.configuration == 'Release'
+        run: cmake --build tests/build --config Release
 
+      # No `if: always()`. A failed build should report one red step, not also
+      # a test failure that is only a consequence of it.
       - name: Run tests
-        if: always()
-        run: ctest --test-dir tests/build -C ${{ matrix.configuration }} --output-on-failure
+        if: matrix.configuration == 'Release'
+        run: ctest --test-dir tests/build -C Release --output-on-failure
 
   # ---------------------------------------------------------------------------
-  # Coverage — OpenCppCoverage over the saver tests, reported on the PR
+  # Coverage — OpenCppCoverage over the saver tests, reported on the PR.
+  #
+  # This is also the Debug test run: the suite is not executed plain in Debug
+  # anywhere else, so a Debug-only failure surfaces here. OpenCppCoverage passes
+  # the child's exit code through, so a failing test still fails the job.
   # ---------------------------------------------------------------------------
   coverage:
     runs-on: windows-latest
