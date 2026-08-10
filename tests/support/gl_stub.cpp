@@ -193,6 +193,8 @@ void APIENTRY glCallList(GLuint)                             { REC(glCallList); 
 void APIENTRY glClear(GLbitfield)                            { REC(glClear); }
 void APIENTRY glClearColor(GLclampf, GLclampf, GLclampf, GLclampf) { REC(glClearColor); }
 void APIENTRY glColor3f(GLfloat, GLfloat, GLfloat)           { REC(glColor3f); }
+void APIENTRY glColor3fv(const GLfloat*)                     { REC(glColor3fv); }
+void APIENTRY glColor4f(GLfloat, GLfloat, GLfloat, GLfloat)  { REC(glColor4f); }
 void APIENTRY glColorMaterial(GLenum, GLenum)                { REC(glColorMaterial); }
 void APIENTRY glEndList(void)                                { REC(glEndList); }
 void APIENTRY glFrontFace(GLenum)                            { REC(glFrontFace); }

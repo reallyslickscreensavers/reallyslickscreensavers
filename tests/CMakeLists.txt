@@ -88,3 +88,20 @@ add_saver_test(cyclone SOURCES
     ${REPO_ROOT}/libs/rsText/rsText.cpp
     ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp
 )
+
+add_saver_test(fieldlines SOURCES
+    ${REPO_ROOT}/src/fieldlines/fieldlines.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+)
+
+# The source file is solarWinds.cpp but the module directory is solarwinds, so
+# the test target name follows the directory.
+add_saver_test(solarwinds SOURCES
+    ${REPO_ROOT}/src/solarwinds/solarWinds.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+)
+
+add_saver_test(starfield SOURCES
+    ${REPO_ROOT}/src/starfield/starfield.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+)
