@@ -1,12 +1,15 @@
 [submodule "3rdparty/freeglut"]
 	path = 3rdparty/freeglut
 	url = https://github.com/reallyslickscreensavers/freeglut-redist.git
+	branch = msvc2015
 [submodule "3rdparty/openal"]
 	path = 3rdparty/openal
 	url = https://github.com/reallyslickscreensavers/openal-redist.git
+	branch = main
 [submodule "libs"]
 	path = libs
 	url = https://github.com/reallyslickscreensavers/rslibs.git
 [submodule "3rdparty/GL"]
 	path = 3rdparty/GL
 	url = https://github.com/reallyslickscreensavers/opengl-headers.git
+	branch = main
