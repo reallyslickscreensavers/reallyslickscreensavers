@@ -11,6 +11,7 @@
 
 #include <Windows.h>
 
+#include <array>
 #include <crtdbg.h>
 #include <stdlib.h>
 
@@ -23,16 +24,18 @@ namespace {
 // stops with the process alive and idle, which reads as "slow" rather than
 // "broken" and burns the whole CI job timeout.
 //
-// This came up for real - a solarWinds test sat at zero CPU for ten minutes
-// before it was recognised as a blocked dialog rather than a slow test.
+// This is precaution, not a fix for anything seen so far: the one hang this
+// harness has produced turned out to be a heap corruption in a test, and it
+// still hung with these reports redirected. Kept because the failure mode is
+// indistinguishable from a slow test and would waste a CI job to diagnose.
 //
-// Routing the reports to stderr makes the same failure show up as output and
-// a non-zero exit, which is what ctest can act on.
+// Routing the reports to stderr makes an assertion show up as output and a
+// non-zero exit, which is what ctest can act on.
 struct SilenceModalFailureDialogs {
 	SilenceModalFailureDialogs()
 	{
 		_set_error_mode(_OUT_TO_STDERR);
-		const int reports[] = {_CRT_WARN, _CRT_ERROR, _CRT_ASSERT};
+		const std::array<int, 3> reports{_CRT_WARN, _CRT_ERROR, _CRT_ASSERT};
 		for (int report : reports) {
 			_CrtSetReportMode(report, _CRTDBG_MODE_FILE);
 			_CrtSetReportFile(report, _CRTDBG_FILE_STDERR);

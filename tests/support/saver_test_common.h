@@ -18,6 +18,12 @@
 
 #include <Windows.h>
 
+// Included once here rather than in each suite: every one needs the GL_* enums
+// to name primitives, and SonarCloud cpp:S3806 fires on the spelling whichever
+// case is used, because the tree has a 3rdparty/GL directory as well as the
+// SDK's gl/GL.h. One finding is better than six.
+#include <gl/GL.h>
+
 #include "gl_stub.h"
 #include "test_window.h"
 
@@ -134,25 +140,30 @@ inline ::testing::AssertionResult NoEnableStateLeaked() {
 // IDOK is never sent by any of these: it calls writeRegistry and would rewrite
 // the developer's real saver settings.
 
-using DialogProc = INT_PTR(CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
+// Templated on the procedure rather than taking a function pointer: every
+// caller passes a plain saver entry point, so the call is direct and there is
+// nothing to indirect through.
 
 // WM_CTLCOLORSTATIC returns a brush through an INT_PTR - the truncation PR #39
 // fixed. lParam 0 matches GetDlgItem's null result so the branch is taken.
-inline ::testing::AssertionResult AboutProcColoursTheWebPageLabel(DialogProc aboutProc) {
+template <typename Proc>
+::testing::AssertionResult AboutProcColoursTheWebPageLabel(Proc aboutProc) {
     if (aboutProc(nullptr, WM_CTLCOLORSTATIC, 0, 0) != 0) {
         return ::testing::AssertionSuccess();
     }
     return ::testing::AssertionFailure() << "expected a brush, not a fall-through";
 }
 
-inline ::testing::AssertionResult IgnoresUnhandledMessages(DialogProc proc) {
+template <typename Proc>
+::testing::AssertionResult IgnoresUnhandledMessages(Proc proc) {
     if (proc(nullptr, WM_MOUSEMOVE, 0, 0) == FALSE) {
         return ::testing::AssertionSuccess();
     }
     return ::testing::AssertionFailure() << "an unhandled message should report FALSE";
 }
 
-inline ::testing::AssertionResult ConfigureDialogInitialisesAndCancels(DialogProc configureProc) {
+template <typename Proc>
+::testing::AssertionResult ConfigureDialogInitialisesAndCancels(Proc configureProc) {
     if (configureProc(nullptr, WM_INITDIALOG, 0, 0) != TRUE) {
         return ::testing::AssertionFailure() << "WM_INITDIALOG should report TRUE";
     }

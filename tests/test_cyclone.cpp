@@ -9,7 +9,6 @@
 
 #include "support/saver_test_common.h"
 
-#include <gl/GL.h>
 
 #include "resource.h"
 

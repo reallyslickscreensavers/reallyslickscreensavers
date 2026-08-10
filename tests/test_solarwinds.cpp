@@ -8,7 +8,6 @@
 #include "support/saver_test_common.h"
 
 #include <array>
-#include <gl/GL.h>
 
 #include "resource.h"
 
