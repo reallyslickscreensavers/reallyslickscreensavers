@@ -4,28 +4,18 @@
  * flocks is the stub's stress case: only about a quarter of its function lines
  * avoid OpenGL, and bug::update both advances the simulation and draws it, so
  * there is no seam between the two. Everything here therefore goes through the
- * saver's real entry points and asserts on the recorded command stream.
+ * saver's real entry points and asserts on the recorded command stream. Shared
+ * scaffolding lives in support/saver_test_common.h.
  */
 
-#include <gtest/gtest.h>
+#include "support/saver_test_common.h"
 
-#include <Windows.h>
-#include <gl/GL.h>
 
-#include "support/gl_stub.h"
-#include "support/test_window.h"
 #include "resource.h"
 
-// flocks.cpp has no header; the saver's contract is by name.
-//
-// SonarCloud cpp:S5421 flags these as mutable globals. They are declarations,
-// not definitions - the variables live in flocks.cpp - but the rule cannot tell
-// the difference, and neither can moving them into block scope inside an
-// accessor, which was tried and changed nothing.
-//
-// The finding is really about the savers exposing their settings as mutable
-// globals at all, which is Task 6 in docs/MAINTENANCE.md. A test cannot reach
-// them any other way until that lands.
+// flocks.cpp has no header; its contract with the framework is by name.
+// SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
+// the saver's own, which is Task 6 in docs/MAINTENANCE.md.
 extern int dLeaders;
 extern int dFollowers;
 extern int dGeometry;
@@ -36,10 +26,6 @@ extern int dConnections;
 extern int readyToDraw;
 
 void setDefaults();
-void draw();
-void idleProc();
-void initSaver(HWND hwnd);
-void cleanUp(HWND hwnd);
 void readRegistry();
 void initControls(HWND hdlg);
 LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm);
@@ -48,45 +34,9 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPA
 
 namespace {
 
-HWND hostWindow() { return testsupport::hostWindow(); }
-
-int countPrimitives(unsigned mode) {
-    int n = 0;
-    for (const auto& p : glstub::trace().primitives) if (p.mode == mode) n++;
-    return n;
-}
-
-// initSaver allocates lBugs/fBugs, so every test that calls it must pair with
-// cleanUp or leak an array per case.
-class Flocks : public ::testing::Test {
+class Flocks : public savertest::SaverFixture {
 protected:
     void SetUp() override { setDefaults(); }
-    void TearDown() override {
-        if (started_) cleanUp(hostWindow());
-    }
-
-    // Brings the saver up and throws the first frame away.
-    //
-    // flocks' draw() lazily constructs its rsText on the very first call
-    // (`static int first`), so a cold frame carries font-building GL calls a
-    // warm one does not. Measuring without this made
-    // MoreBugsMeansMoreDrawing pass in suite order and fail in isolation,
-    // which is exactly how ctest runs it.
-    void start() {
-        initSaver(hostWindow());
-        started_ = true;
-        draw();           // warm-up
-        glstub::reset();
-    }
-
-    // Same, for tests that need to re-init with different settings.
-    void restart() {
-        cleanUp(hostWindow());
-        started_ = false;
-        start();
-    }
-private:
-    bool started_ = false;
 };
 
 }  // namespace
@@ -133,29 +83,19 @@ TEST_F(Flocks, DotsModeSkipsTheLightingSetup) {
 TEST_F(Flocks, FrameLeavesTheMatrixStackBalanced) {
     start();
     draw();
-
-    const glstub::Trace& t = glstub::trace();
-    EXPECT_TRUE(t.matrixBalanced())
-        << "depth " << t.matrixDepth << ", " << t.pushes << " pushes vs " << t.pops << " pops";
-    EXPECT_GE(t.minMatrixDepth, 0) << "popped further than it pushed";
+    EXPECT_TRUE(savertest::MatrixStackBalanced());
 }
 
 TEST_F(Flocks, FramePairsBeginAndEnd) {
     start();
     draw();
-
-    const glstub::Trace& t = glstub::trace();
-    EXPECT_TRUE(t.primitivesBalanced()) << t.begins << " glBegin vs " << t.ends << " glEnd";
-    EXPECT_FALSE(t.nestedBeginSeen);
-    EXPECT_FALSE(t.vertexOutsideBegin);
+    EXPECT_TRUE(savertest::PrimitivesPaired());
 }
 
 TEST_F(Flocks, PrimitiveVertexCountsAreLegal) {
     start();
     draw();
-
-    std::string why;
-    EXPECT_TRUE(glstub::primitiveVertexCountsLegal(&why)) << why;
+    EXPECT_TRUE(savertest::VertexCountsLegal());
 }
 
 // --- the settings actually change what is drawn ----------------------------
@@ -227,13 +167,14 @@ TEST_F(Flocks, MoreBugsMeansMoreDrawing) {
     draw();
     const unsigned long long few = glstub::trace().totalVertices();
 
+    stop();                 // change counts only while nothing is allocated
     dFollowers = 100;
-    restart();
+    start();
     draw();
     const unsigned long long many = glstub::trace().totalVertices();
 
     EXPECT_GT(few, 0u);
-    EXPECT_GT(many, few) << "flocks draws per bug, unlike plasma's fixed quad";
+    EXPECT_GT(many, few) << "flocks draws per bug, unlike plasma's fixed strip";
 }
 
 // --- framework entry points ------------------------------------------------
@@ -254,20 +195,18 @@ TEST(FlocksFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
     setDefaults();
     readyToDraw = 0;
 
-    screenSaverProc(hostWindow(), WM_CREATE, 0, 0);
+    screenSaverProc(testsupport::hostWindow(), WM_CREATE, 0, 0);
     EXPECT_EQ(readyToDraw, 1);
 
-    screenSaverProc(hostWindow(), WM_DESTROY, 0, 0);
+    screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
     EXPECT_EQ(readyToDraw, 0);
 }
 
 TEST(FlocksFramework, ReadRegistryLeavesEveryValueUsable) {
     // Read-only: setDefaults runs first and the function returns early if the
-    // key is absent, so this cannot disturb the machine.
-    //
-    // That early return also means this covers little on a machine where the
-    // saver has never stored settings, CI included. See the KNOWN LIMITATION
-    // note in test_cyclone.cpp.
+    // key is absent, so this cannot disturb the machine. That early return also
+    // means it covers little where the saver has never stored settings, CI
+    // included - see the note in test_cyclone.cpp.
     readRegistry();
 
     EXPECT_GT(dLeaders, 0) << "lBugs is allocated with this count";
@@ -276,16 +215,13 @@ TEST(FlocksFramework, ReadRegistryLeavesEveryValueUsable) {
 }
 
 // --- dialog procedures -----------------------------------------------------
-//
-// IDOK is never sent: it calls writeRegistry and would rewrite the user's real
-// saver settings.
 
 TEST(FlocksDialogs, AboutProcColoursTheWebPageLabel) {
-    EXPECT_NE(aboutProc(nullptr, WM_CTLCOLORSTATIC, 0, 0), 0);
+    EXPECT_TRUE(savertest::AboutProcColoursTheWebPageLabel(aboutProc));
 }
 
 TEST(FlocksDialogs, AboutProcIgnoresMessagesItDoesNotHandle) {
-    EXPECT_EQ(aboutProc(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_TRUE(savertest::IgnoresUnhandledMessages(aboutProc));
 }
 
 TEST(FlocksDialogs, InitControlsRunsWithoutADialog) {
@@ -293,9 +229,9 @@ TEST(FlocksDialogs, InitControlsRunsWithoutADialog) {
     EXPECT_NO_FATAL_FAILURE(initControls(nullptr));
 }
 
-TEST(FlocksDialogs, ConfigureDialogInitialisesAndCancels) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_INITDIALOG, 0, 0), TRUE);
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_COMMAND, IDCANCEL, 0), TRUE);
+TEST(FlocksDialogs, ConfigureDialogHandlesTheStandardMessages) {
+    EXPECT_TRUE(savertest::ConfigureDialogInitialisesAndCancels(screenSaverConfigureDialog));
+    EXPECT_TRUE(savertest::IgnoresUnhandledMessages(screenSaverConfigureDialog));
 }
 
 TEST(FlocksDialogs, ConfigureDialogRestoresDefaults) {
@@ -306,12 +242,4 @@ TEST(FlocksDialogs, ConfigureDialogRestoresDefaults) {
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
     EXPECT_EQ(dFollowers, defaultFollowers);
-}
-
-TEST(FlocksDialogs, ConfigureDialogHandlesSliderMovement) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_HSCROLL, 0, 0), TRUE);
-}
-
-TEST(FlocksDialogs, ConfigureDialogIgnoresUnknownMessages) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
 }

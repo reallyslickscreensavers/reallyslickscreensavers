@@ -11,7 +11,42 @@
 
 #include <Windows.h>
 
+#include <array>
+#include <crtdbg.h>
+#include <stdlib.h>
+
 #include <rsWin32Saver/rsWin32Saver.h>
+
+namespace {
+
+// A Debug CRT assertion, a heap check failure or a crash normally raises a
+// modal dialog. In a test process there is nobody to click it: the run simply
+// stops with the process alive and idle, which reads as "slow" rather than
+// "broken" and burns the whole CI job timeout.
+//
+// This is precaution, not a fix for anything seen so far: the one hang this
+// harness has produced turned out to be a heap corruption in a test, and it
+// still hung with these reports redirected. Kept because the failure mode is
+// indistinguishable from a slow test and would waste a CI job to diagnose.
+//
+// Routing the reports to stderr makes an assertion show up as output and a
+// non-zero exit, which is what ctest can act on.
+struct SilenceModalFailureDialogs {
+	SilenceModalFailureDialogs()
+	{
+		_set_error_mode(_OUT_TO_STDERR);
+		const std::array<int, 3> reports{_CRT_WARN, _CRT_ERROR, _CRT_ASSERT};
+		for (int report : reports) {
+			_CrtSetReportMode(report, _CRTDBG_MODE_FILE);
+			_CrtSetReportFile(report, _CRTDBG_FILE_STDERR);
+		}
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+	}
+};
+
+const SilenceModalFailureDialogs g_silenceDialogs;
+
+}  // namespace
 
 // SonarCloud cpp:S5421 flags every one of these as a mutable global, and it is
 // right that they are. They cannot be anything else: rsWin32Saver.h declares
