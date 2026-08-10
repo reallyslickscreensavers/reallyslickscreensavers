@@ -3,28 +3,19 @@
  *
  * cyclone carries the two BLOCKER findings SonarCloud reports against this
  * repository (cpp:S3519 at cyclone.cpp:155 and :163), so beyond coverage these
- * tests exist to pin the invariant that makes those accesses safe.
+ * tests exist to pin the invariant that makes those accesses safe. Shared
+ * scaffolding lives in support/saver_test_common.h.
  */
 
-#include <gtest/gtest.h>
+#include "support/saver_test_common.h"
 
-#include <Windows.h>
 #include <gl/GL.h>
 
-#include "support/gl_stub.h"
-#include "support/test_window.h"
 #include "resource.h"
 
 // cyclone.cpp has no header; its contract with the framework is by name.
-//
-// SonarCloud cpp:S5421 flags these as mutable globals. They are declarations,
-// not definitions - the variables live in cyclone.cpp - but the rule cannot tell
-// the difference, and neither can moving them into block scope inside an
-// accessor, which was tried and changed nothing.
-//
-// The finding is really about the savers exposing their settings as mutable
-// globals at all, which is Task 6 in docs/MAINTENANCE.md. A test cannot reach
-// them any other way until that lands.
+// SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
+// the saver's own, which is Task 6 in docs/MAINTENANCE.md.
 extern int dCyclones;
 extern int dParticles;
 extern int dSize;
@@ -33,10 +24,6 @@ extern BOOL dShowCurves;
 extern int readyToDraw;
 
 void setDefaults();
-void draw();
-void idleProc();
-void initSaver(HWND hwnd);
-void cleanUp(HWND hwnd);
 void readRegistry();
 void initControls(HWND hdlg);
 LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm);
@@ -45,38 +32,9 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPA
 
 namespace {
 
-HWND hostWindow() { return testsupport::hostWindow(); }
-
-int countPrimitives(unsigned mode) {
-    int n = 0;
-    for (const auto& p : glstub::trace().primitives) if (p.mode == mode) n++;
-    return n;
-}
-
-// initSaver allocates per-cyclone arrays sized from dComplexity, so pair it
-// with cleanUp.
-class Cyclone : public ::testing::Test {
+class Cyclone : public savertest::SaverFixture {
 protected:
     void SetUp() override { setDefaults(); }
-    void TearDown() override { if (started_) cleanUp(hostWindow()); }
-    // Throws the first frame away so every test measures a warm one. ctest runs
-    // each case in its own process, so anything a cold frame does once - lazy
-    // resource construction, first-call statics - would otherwise make a test
-    // pass in suite order and fail in isolation.
-    void start() {
-        initSaver(hostWindow());
-        started_ = true;
-        draw();           // warm-up
-        glstub::reset();
-    }
-
-    void restart() {
-        cleanUp(hostWindow());
-        started_ = false;
-        start();
-    }
-private:
-    bool started_ = false;
 };
 
 }  // namespace
@@ -103,9 +61,6 @@ TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
 // outside the RegQueryValueEx success check, so it applies to the default value
 // too (cyclone.cpp:646, added by PR #35).
 //
-// These tests pin that reasoning. If someone removes the clamp, the findings
-// stop being theoretical and this fails.
-//
 // KNOWN LIMITATION - read this before trusting the guard.
 //
 // readRegistry returns early when HKCU\Software\Really Slick\Cyclone does not
@@ -120,14 +75,11 @@ TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
 // with a pure clamp function - the starfieldSettings.h / rsWin32SaverSettings.h
 // pattern - and test that directly. That is Task 11's refactor.
 //
-// The same caveat applies to the ReadRegistry tests in the plasma and flocks
-// suites, and it is why coverage on CI sits about 5 points below a developer
-// machine that has run the savers.
+// The same caveat applies to the ReadRegistry tests in the other suites, and it
+// is why coverage on CI sits about five points below a developer machine that
+// has run the savers.
 
 TEST(CycloneBlockerGuard, ReadRegistryAlwaysLeavesComplexityInRange) {
-    // Whatever is stored on this machine - or if the key is absent entirely -
-    // readRegistry must leave dComplexity within the range initSaver allocates
-    // for. Read-only: setDefaults runs first and it returns early on a missing key.
     dComplexity = -5;
     readRegistry();
 
@@ -151,12 +103,12 @@ TEST(CycloneBlockerGuard, CreateClampsBeforeAllocating) {
     dComplexity = -42;
     readyToDraw = 0;
 
-    screenSaverProc(hostWindow(), WM_CREATE, 0, 0);
+    screenSaverProc(testsupport::hostWindow(), WM_CREATE, 0, 0);
 
     EXPECT_GE(dComplexity, 1) << "initSaver sized its arrays from an unclamped value";
     EXPECT_EQ(readyToDraw, 1);
 
-    screenSaverProc(hostWindow(), WM_DESTROY, 0, 0);
+    screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -164,29 +116,25 @@ TEST(CycloneBlockerGuard, CreateClampsBeforeAllocating) {
 TEST_F(Cyclone, FrameLeavesTheMatrixStackBalanced) {
     start();
     draw();
-
-    const glstub::Trace& t = glstub::trace();
-    EXPECT_TRUE(t.matrixBalanced())
-        << "depth " << t.matrixDepth << ", " << t.pushes << " pushes vs " << t.pops << " pops";
-    EXPECT_GE(t.minMatrixDepth, 0);
+    EXPECT_TRUE(savertest::MatrixStackBalanced());
 }
 
 TEST_F(Cyclone, FramePairsBeginAndEnd) {
     start();
     draw();
-
-    const glstub::Trace& t = glstub::trace();
-    EXPECT_TRUE(t.primitivesBalanced()) << t.begins << " glBegin vs " << t.ends << " glEnd";
-    EXPECT_FALSE(t.nestedBeginSeen);
-    EXPECT_FALSE(t.vertexOutsideBegin);
+    EXPECT_TRUE(savertest::PrimitivesPaired());
 }
 
 TEST_F(Cyclone, PrimitiveVertexCountsAreLegal) {
     start();
     draw();
+    EXPECT_TRUE(savertest::VertexCountsLegal());
+}
 
-    std::string why;
-    EXPECT_TRUE(glstub::primitiveVertexCountsLegal(&why)) << why;
+TEST_F(Cyclone, DoesNotLeakEnableState) {
+    start();
+    draw();
+    EXPECT_TRUE(savertest::NoEnableStateLeaked());
 }
 
 TEST_F(Cyclone, FrameDrawsEveryParticleFromTheCompiledBlob) {
@@ -201,14 +149,6 @@ TEST_F(Cyclone, FrameDrawsEveryParticleFromTheCompiledBlob) {
     EXPECT_EQ(glstub::trace().countCalls("glCallList"), dCyclones * dParticles);
     EXPECT_EQ(glstub::trace().totalVertices(), 0u)
         << "particles come from a display list; immediate-mode vertices would be a redesign";
-}
-
-TEST_F(Cyclone, DoesNotLeakEnableState) {
-    start();
-    draw();
-    for (const auto& [capability, net] : glstub::trace().enables) {
-        EXPECT_EQ(net, 0) << "capability " << capability << " left with net enable " << net;
-    }
 }
 
 // --- settings change what is drawn -----------------------------------------
@@ -234,8 +174,9 @@ TEST_F(Cyclone, MoreCyclonesMeansMoreDrawing) {
     draw();
     const int one = glstub::trace().countCalls("glCallList");
 
+    stop();                 // change counts only while nothing is allocated
     dCyclones = 3;
-    restart();
+    start();
     draw();
     const int three = glstub::trace().countCalls("glCallList");
 
@@ -255,15 +196,13 @@ TEST_F(Cyclone, IdleProcSkipsDrawingWhenNotReady) {
 }
 
 // --- dialog procedures -----------------------------------------------------
-//
-// IDOK is never sent: it calls writeRegistry and would rewrite real settings.
 
 TEST(CycloneDialogs, AboutProcColoursTheWebPageLabel) {
-    EXPECT_NE(aboutProc(nullptr, WM_CTLCOLORSTATIC, 0, 0), 0);
+    EXPECT_TRUE(savertest::AboutProcColoursTheWebPageLabel(aboutProc));
 }
 
 TEST(CycloneDialogs, AboutProcIgnoresMessagesItDoesNotHandle) {
-    EXPECT_EQ(aboutProc(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_TRUE(savertest::IgnoresUnhandledMessages(aboutProc));
 }
 
 TEST(CycloneDialogs, InitControlsRunsWithoutADialog) {
@@ -271,9 +210,9 @@ TEST(CycloneDialogs, InitControlsRunsWithoutADialog) {
     EXPECT_NO_FATAL_FAILURE(initControls(nullptr));
 }
 
-TEST(CycloneDialogs, ConfigureDialogInitialisesAndCancels) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_INITDIALOG, 0, 0), TRUE);
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_COMMAND, IDCANCEL, 0), TRUE);
+TEST(CycloneDialogs, ConfigureDialogHandlesTheStandardMessages) {
+    EXPECT_TRUE(savertest::ConfigureDialogInitialisesAndCancels(screenSaverConfigureDialog));
+    EXPECT_TRUE(savertest::IgnoresUnhandledMessages(screenSaverConfigureDialog));
 }
 
 TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
@@ -284,12 +223,4 @@ TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
     EXPECT_EQ(dParticles, defaultParticles);
-}
-
-TEST(CycloneDialogs, ConfigureDialogHandlesSliderMovement) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_HSCROLL, 0, 0), TRUE);
-}
-
-TEST(CycloneDialogs, ConfigureDialogIgnoresUnknownMessages) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
 }

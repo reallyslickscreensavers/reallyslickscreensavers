@@ -1,34 +1,21 @@
 /*
  * Tests for the plasma saver.
  *
- * plasma.cpp is compiled directly into this binary against the recording GL
- * stub, so the real draw path runs headless. Nothing here can tell you plasma
- * looks right — only that it issues a coherent sequence of GL commands and that
- * its settings maths behaves.
+ * plasma.cpp is compiled into this binary against the recording GL stub, so the
+ * real draw path runs headless. Nothing here can tell you plasma looks right -
+ * only that it issues a coherent sequence of GL commands and that its settings
+ * maths behaves. Shared scaffolding lives in support/saver_test_common.h.
  */
 
-#include <gtest/gtest.h>
+#include "support/saver_test_common.h"
 
-#include <Windows.h>
 #include <gl/GL.h>
 
-#include "support/gl_stub.h"
-#include "support/test_window.h"
-
-// The module's own control ids (DEFAULTS, ZOOM, ...). Quoted include: every
-// saver has its own resource.h and the target puts src/plasma first.
 #include "resource.h"
 
 // plasma.cpp has no header; its contract with the framework is by name.
-//
-// SonarCloud cpp:S5421 flags these as mutable globals. They are declarations,
-// not definitions - the variables live in plasma.cpp - but the rule cannot tell
-// the difference, and neither can moving them into block scope inside an
-// accessor, which was tried and changed nothing.
-//
-// The finding is really about the savers exposing their settings as mutable
-// globals at all, which is Task 6 in docs/MAINTENANCE.md. A test cannot reach
-// them any other way until that lands.
+// SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
+// the saver's own, which is Task 6 in docs/MAINTENANCE.md.
 extern int dZoom;
 extern int dFocus;
 extern int dSpeed;
@@ -42,9 +29,6 @@ extern float high;
 
 void setDefaults();
 void setPlasmaSize();
-void draw();
-void idleProc();
-void initSaver(HWND hwnd);
 void readRegistry();
 void initControls(HWND hdlg);
 LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm);
@@ -53,18 +37,10 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPA
 
 namespace {
 
-// A fixed-size hidden window, not the desktop: initSaver derives aspectRatio
-// from GetClientRect, and plasma sizes its whole field from that. See
-// test_window.h - using the desktop made CI cover five points less than local.
-HWND hostWindow() { return testsupport::hostWindow(); }
-
-// Brings plasma up the way the framework would, then clears the trace so a test
-// sees only what it exercises itself.
-void initialiseSaver() {
-    setDefaults();
-    initSaver(hostWindow());
-    glstub::reset();
-}
+class Plasma : public savertest::SaverFixture {
+protected:
+    void SetUp() override { setDefaults(); }
+};
 
 }  // namespace
 
@@ -118,7 +94,7 @@ TEST(PlasmaSettings, ZoomDrivesTheVisibleExtent) {
     EXPECT_GT(zoomedIn, 0.0f);
 }
 
-TEST(PlasmaSettings, WideWidescreenKeepsHeightAndStretchesWidth) {
+TEST(PlasmaSettings, WidescreenStretchesWidthAndPortraitStretchesHeight) {
     setDefaults();
 
     aspectRatio = 2.0f;   // landscape: height derives from width
@@ -130,10 +106,9 @@ TEST(PlasmaSettings, WideWidescreenKeepsHeightAndStretchesWidth) {
     EXPECT_GT(high, wide);
 }
 
-// --- the real draw path, against the recording stub ------------------------
+// --- a frame ---------------------------------------------------------------
 
-TEST(PlasmaDraw, InitSaverPreparesTextureAndMarksReady) {
-    setDefaults();
+TEST_F(Plasma, InitSaverPreparesTextureAndMarksReady) {
     glstub::reset();
     initSaver(hostWindow());
 
@@ -142,84 +117,58 @@ TEST(PlasmaDraw, InitSaverPreparesTextureAndMarksReady) {
     EXPECT_GE(t.texturesGenerated, 1) << "plasma uploads one texture at startup";
     EXPECT_GE(t.countCalls("glTexImage2D"), 1);
     EXPECT_GT(plasmasize, 0) << "aspectRatio came from the host window, so sizing must have run";
+
+    cleanUp(hostWindow());
 }
 
-TEST(PlasmaDraw, FrameLeavesTheMatrixStackBalanced) {
-    initialiseSaver();
+TEST_F(Plasma, FrameLeavesTheMatrixStackBalanced) {
+    start();
     draw();
-
-    const glstub::Trace& t = glstub::trace();
-    EXPECT_TRUE(t.matrixBalanced())
-        << "depth " << t.matrixDepth << ", " << t.pushes << " pushes vs " << t.pops << " pops";
-    EXPECT_GE(t.minMatrixDepth, 0) << "popped further than it pushed";
+    EXPECT_TRUE(savertest::MatrixStackBalanced());
 }
 
-TEST(PlasmaDraw, FramePairsBeginAndEnd) {
-    initialiseSaver();
+TEST_F(Plasma, FramePairsBeginAndEnd) {
+    start();
     draw();
-
-    const glstub::Trace& t = glstub::trace();
-    EXPECT_TRUE(t.primitivesBalanced())
-        << t.begins << " glBegin vs " << t.ends << " glEnd";
-    EXPECT_FALSE(t.nestedBeginSeen) << "glBegin inside glBegin is always a bug";
-    EXPECT_FALSE(t.vertexOutsideBegin) << "vertex emitted outside a glBegin block";
+    EXPECT_TRUE(savertest::PrimitivesPaired());
 }
 
-TEST(PlasmaDraw, PrimitiveVertexCountsAreLegal) {
-    initialiseSaver();
+TEST_F(Plasma, PrimitiveVertexCountsAreLegal) {
+    start();
     draw();
-
-    std::string why;
-    EXPECT_TRUE(glstub::primitiveVertexCountsLegal(&why)) << why;
+    EXPECT_TRUE(savertest::VertexCountsLegal());
 }
 
-TEST(PlasmaDraw, FrameEmitsGeometry) {
-    initialiseSaver();
+TEST_F(Plasma, DoesNotLeakEnableState) {
+    start();
     draw();
-
-    EXPECT_GT(glstub::trace().totalVertices(), 0u)
-        << "a frame that draws nothing means the saver is broken, not fast";
+    EXPECT_TRUE(savertest::NoEnableStateLeaked());
 }
 
-TEST(PlasmaDraw, DoesNotLeakEnableState) {
-    initialiseSaver();
-    draw();
-
-    // Anything enabled during a frame must be disabled again by the end of it.
-    for (const auto& [capability, net] : glstub::trace().enables) {
-        EXPECT_EQ(net, 0)
-            << "capability " << capability << " left with net enable " << net;
-    }
-}
-
-TEST(PlasmaDraw, EmitsExactlyOneTexturedQuadRegardlessOfResolution) {
+TEST_F(Plasma, EmitsExactlyOneTexturedStripRegardlessOfResolution) {
     // plasma computes its field on the CPU, uploads it as a texture and blits a
-    // single full-screen quad. Geometry is therefore constant: resolution
+    // single full-screen primitive. Geometry is therefore constant: resolution
     // changes the texture, never the vertex count. Pinned because it is the
     // opposite of what most savers do, and easy to "fix" by mistake.
-    setDefaults();
     dResolution = 10;
-    initSaver(hostWindow());
-    glstub::reset();
+    start();
     draw();
-    const unsigned long long coarse = glstub::trace().totalVertices();
+    EXPECT_EQ(glstub::trace().totalVertices(), 4u);
 
-    setDefaults();
+    stop();
     dResolution = 40;
-    initSaver(hostWindow());
-    glstub::reset();
+    start();
     draw();
-    const glstub::Trace& t = glstub::trace();
 
-    EXPECT_EQ(coarse, 4u);
+    const glstub::Trace& t = glstub::trace();
     EXPECT_EQ(t.totalVertices(), 4u);
     ASSERT_EQ(t.primitives.size(), 1u) << "one screen-filling primitive per frame";
     EXPECT_EQ(t.primitives[0].mode, static_cast<unsigned>(GL_TRIANGLE_STRIP))
         << "plasma.cpp:169 uses a 4-vertex strip, not GL_QUADS";
 }
 
-TEST(PlasmaDraw, UploadsTheFieldAndPresentsOncePerFrame) {
-    initialiseSaver();
+TEST_F(Plasma, UploadsTheFieldAndPresentsOncePerFrame) {
+    start();
     draw();
 
     const glstub::Trace& t = glstub::trace();
@@ -227,51 +176,57 @@ TEST(PlasmaDraw, UploadsTheFieldAndPresentsOncePerFrame) {
     EXPECT_EQ(t.countCalls("wglSwapLayerBuffers"), 1) << "exactly one present per frame";
 }
 
-TEST(PlasmaDraw, StatisticsOverlayKeepsTheMatrixStackBalanced) {
+TEST_F(Plasma, StatisticsOverlayKeepsTheMatrixStackBalanced) {
     // The kStatistics branch pushes on both PROJECTION and MODELVIEW and pops
     // them in the reverse order. It is off by default, so nothing else covers it.
-    initialiseSaver();
+    start();
     kStatistics = 1;
     draw();
     kStatistics = 0;
 
-    const glstub::Trace& t = glstub::trace();
-    EXPECT_TRUE(t.matrixBalanced())
-        << "depth " << t.matrixDepth << ", " << t.pushes << " pushes vs " << t.pops << " pops";
-    EXPECT_GE(t.pushes, 2) << "the overlay should have pushed both matrix modes";
+    EXPECT_TRUE(savertest::MatrixStackBalanced());
+    EXPECT_GE(glstub::trace().pushes, 2) << "the overlay should have pushed both matrix modes";
 }
 
 // --- framework entry points ------------------------------------------------
 
-TEST(PlasmaFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
+TEST_F(Plasma, IdleProcSkipsDrawingWhenNotReady) {
+    start();
     readyToDraw = 0;
     glstub::reset();
 
-    screenSaverProc(hostWindow(), WM_CREATE, 0, 0);
+    idleProc();
+
+    EXPECT_EQ(glstub::trace().totalVertices(), 0u)
+        << "idleProc must not draw before the saver is ready";
+    readyToDraw = 1;
+}
+
+TEST(PlasmaFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
+    setDefaults();
+    readyToDraw = 0;
+    glstub::reset();
+
+    screenSaverProc(testsupport::hostWindow(), WM_CREATE, 0, 0);
     EXPECT_EQ(readyToDraw, 1);
     EXPECT_GE(glstub::trace().texturesGenerated, 1);
 
-    screenSaverProc(hostWindow(), WM_DESTROY, 0, 0);
+    screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
     EXPECT_EQ(readyToDraw, 0);
 }
 
 TEST(PlasmaFramework, ScreenSaverProcPassesUnhandledMessagesThrough) {
-    // Anything it does not handle must reach defScreenSaverProc rather than
-    // being swallowed.
-    EXPECT_NO_FATAL_FAILURE(screenSaverProc(hostWindow(), WM_PAINT, 0, 0));
+    EXPECT_NO_FATAL_FAILURE(screenSaverProc(testsupport::hostWindow(), WM_PAINT, 0, 0));
 }
 
-TEST(PlasmaSettings, ReadRegistryLeavesEveryValueUsable) {
+TEST(PlasmaFramework, ReadRegistryLeavesEveryValueUsable) {
     // readRegistry only reads: it calls setDefaults first and returns early if
-    // the key is absent, so running it cannot disturb the machine.
+    // the key is absent, so running it cannot disturb the machine. That early
+    // return also means it covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
     //
-    // That early return also means this covers little on a machine where the
-    // saver has never stored settings, CI included. See the KNOWN LIMITATION
-    // note in test_cyclone.cpp. Whatever is
-    // actually stored under HKCU, the result must be usable.
-    //
-    // Note this is the unclamped read that Task 11 targets, so today it only
-    // asserts non-degeneracy, not range.
+    // This is the unclamped read Task 11 targets, so it asserts non-degeneracy
+    // rather than range.
     readRegistry();
 
     EXPECT_NE(dZoom, 0) << "dZoom divides into 30.0f in setPlasmaSize";
@@ -280,24 +235,13 @@ TEST(PlasmaSettings, ReadRegistryLeavesEveryValueUsable) {
 }
 
 // --- dialog procedures -----------------------------------------------------
-//
-// A dialog procedure is an ordinary message handler, so it can be driven
-// directly. With a null HWND, GetDlgItem and SendDlgItemMessage return null or
-// fail harmlessly, which is enough to walk the switch arms.
-//
-// IDOK is deliberately never sent: it calls writeRegistry and would rewrite the
-// user's real saver settings.
 
 TEST(PlasmaDialogs, AboutProcColoursTheWebPageLabel) {
-    // WM_CTLCOLORSTATIC returns a brush through an INT_PTR - the truncation
-    // that PR #39 fixed. Passing lParam 0 matches GetDlgItem's null result, so
-    // the branch is taken.
-    const INT_PTR brush = aboutProc(nullptr, WM_CTLCOLORSTATIC, 0, 0);
-    EXPECT_NE(brush, 0) << "the handler must return a brush, not fall through";
+    EXPECT_TRUE(savertest::AboutProcColoursTheWebPageLabel(aboutProc));
 }
 
 TEST(PlasmaDialogs, AboutProcIgnoresMessagesItDoesNotHandle) {
-    EXPECT_EQ(aboutProc(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_TRUE(savertest::IgnoresUnhandledMessages(aboutProc));
 }
 
 TEST(PlasmaDialogs, InitControlsRunsWithoutADialog) {
@@ -305,9 +249,9 @@ TEST(PlasmaDialogs, InitControlsRunsWithoutADialog) {
     EXPECT_NO_FATAL_FAILURE(initControls(nullptr));
 }
 
-TEST(PlasmaDialogs, ConfigureDialogInitialisesAndCancels) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_INITDIALOG, 0, 0), TRUE);
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_COMMAND, IDCANCEL, 0), TRUE);
+TEST(PlasmaDialogs, ConfigureDialogHandlesTheStandardMessages) {
+    EXPECT_TRUE(savertest::ConfigureDialogInitialisesAndCancels(screenSaverConfigureDialog));
+    EXPECT_TRUE(savertest::IgnoresUnhandledMessages(screenSaverConfigureDialog));
 }
 
 TEST(PlasmaDialogs, ConfigureDialogRestoresDefaults) {
@@ -318,24 +262,4 @@ TEST(PlasmaDialogs, ConfigureDialogRestoresDefaults) {
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
     EXPECT_EQ(dZoom, defaultZoom) << "the Defaults button must reset the settings";
-}
-
-TEST(PlasmaDialogs, ConfigureDialogHandlesSliderMovement) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_HSCROLL, 0, 0), TRUE);
-}
-
-TEST(PlasmaDialogs, ConfigureDialogIgnoresUnknownMessages) {
-    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
-}
-
-TEST(PlasmaDraw, IdleProcSkipsDrawingWhenNotReady) {
-    initialiseSaver();
-    readyToDraw = 0;
-    glstub::reset();
-
-    idleProc();
-
-    EXPECT_EQ(glstub::trace().totalVertices(), 0u)
-        << "idleProc must not draw before the saver is ready";
-    readyToDraw = 1;
 }
