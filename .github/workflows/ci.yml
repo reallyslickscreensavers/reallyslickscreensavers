@@ -40,3 +40,62 @@ jobs:
       - name: Run tests
         if: always()
         run: ctest --test-dir tests/build -C ${{ matrix.configuration }} --output-on-failure
+
+  # ---------------------------------------------------------------------------
+  # Coverage — OpenCppCoverage over the saver tests, reported on the PR
+  # ---------------------------------------------------------------------------
+  coverage:
+    runs-on: windows-latest
+    permissions:
+      contents: read          # Required to checkout the repository
+      pull-requests: write    # Required to post the coverage comment
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          lfs: true
+
+      - name: Install OpenCppCoverage
+        run: choco install opencppcoverage --no-progress --yes
+
+      - name: Configure tests (CMake)
+        run: cmake -S tests -B tests/build -A Win32
+
+      # Debug only: Release inlining makes line attribution meaningless, and
+      # OpenCppCoverage needs the PDBs this configuration produces.
+      - name: Build tests (Debug)
+        run: cmake --build tests/build --config Debug
+
+      # --sources must be an absolute path. The MSVC CRT's own sources live
+      # under paths containing \src\ (vctools\crt\vcruntime\src\...), so a bare
+      # "src" filter pulls the entire runtime into the denominator and reports
+      # about 11% instead of 83%.
+      #
+      # --cover_children is required because ctest runs each test as a child
+      # process; without it the report comes back empty.
+      - name: Run tests under coverage
+        shell: pwsh
+        run: |
+          $occ = "$env:ProgramFiles\OpenCppCoverage\OpenCppCoverage.exe"
+          & $occ `
+            --sources "$env:GITHUB_WORKSPACE\src" `
+            --excluded_sources "$env:GITHUB_WORKSPACE\tests" `
+            --cover_children `
+            --export_type "cobertura:$env:GITHUB_WORKSPACE\coverage.xml" `
+            -- ctest --test-dir tests/build -C Debug --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw "tests failed under coverage" }
+
+      - name: Report coverage
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: pwsh tests/tools/coverage-report.ps1 -ReportPath coverage.xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage-cobertura
+          path: coverage.xml
