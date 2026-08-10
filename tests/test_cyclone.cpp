@@ -1,0 +1,269 @@
+/*
+ * Tests for the cyclone saver.
+ *
+ * cyclone carries the two BLOCKER findings SonarCloud reports against this
+ * repository (cpp:S3519 at cyclone.cpp:155 and :163), so beyond coverage these
+ * tests exist to pin the invariant that makes those accesses safe.
+ */
+
+#include <gtest/gtest.h>
+
+#include <windows.h>
+#include <GL/gl.h>
+
+#include "support/gl_stub.h"
+#include "resource.h"
+
+// cyclone.cpp has no header; the saver's contract is by name.
+extern int dCyclones;
+extern int dParticles;
+extern int dSize;
+extern int dComplexity;
+extern int dSpeed;
+extern BOOL dStretch;
+extern BOOL dShowCurves;
+extern int readyToDraw;
+
+void setDefaults();
+void draw();
+void idleProc();
+void initSaver(HWND hwnd);
+void cleanUp(HWND hwnd);
+void readRegistry();
+void initControls(HWND hdlg);
+LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm);
+INT_PTR CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm);
+INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm);
+
+namespace {
+
+HWND hostWindow() { return GetDesktopWindow(); }
+
+int countPrimitives(unsigned mode) {
+    int n = 0;
+    for (const auto& p : glstub::trace().primitives) if (p.mode == mode) n++;
+    return n;
+}
+
+// initSaver allocates per-cyclone arrays sized from dComplexity, so pair it
+// with cleanUp.
+class Cyclone : public ::testing::Test {
+protected:
+    void SetUp() override { setDefaults(); }
+    void TearDown() override { if (started_) cleanUp(hostWindow()); }
+    // Throws the first frame away so every test measures a warm one. ctest runs
+    // each case in its own process, so anything a cold frame does once - lazy
+    // resource construction, first-call statics - would otherwise make a test
+    // pass in suite order and fail in isolation.
+    void start() {
+        initSaver(hostWindow());
+        started_ = true;
+        draw();           // warm-up
+        glstub::reset();
+    }
+
+    void restart() {
+        cleanUp(hostWindow());
+        started_ = false;
+        start();
+    }
+private:
+    bool started_ = false;
+};
+
+}  // namespace
+
+// --- the harness itself ----------------------------------------------------
+
+TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
+    setDefaults();
+    EXPECT_EQ(dCyclones, 1);
+    EXPECT_EQ(dParticles, 400);
+    EXPECT_EQ(dComplexity, 3);
+    EXPECT_EQ(dSize, 7);
+}
+
+// --- the BLOCKER guard -----------------------------------------------------
+//
+// SonarCloud reports cpp:S3519 at cyclone.cpp:155 and :163: a heap access at a
+// negative byte offset, and an index past the end. Both index xyz[], which
+// initSaver allocates as new float*[dComplexity+3] and then walks down from
+// dComplexity+2. Reaching them needs a negative dComplexity.
+//
+// That cannot happen: screenSaverProc calls readRegistry() before initSaver(),
+// and readRegistry clamps dComplexity to 1..10 unconditionally - the clamp sits
+// outside the RegQueryValueEx success check, so it applies to the default value
+// too (cyclone.cpp:646, added by PR #35).
+//
+// These tests pin that reasoning. If someone removes the clamp, the findings
+// stop being theoretical and this fails.
+
+TEST(CycloneBlockerGuard, ReadRegistryAlwaysLeavesComplexityInRange) {
+    // Whatever is stored on this machine - or if the key is absent entirely -
+    // readRegistry must leave dComplexity within the range initSaver allocates
+    // for. Read-only: setDefaults runs first and it returns early on a missing key.
+    dComplexity = -5;
+    readRegistry();
+
+    EXPECT_GE(dComplexity, 1) << "a negative complexity is what makes cyclone.cpp:155 reachable";
+    EXPECT_LE(dComplexity, 10);
+}
+
+TEST(CycloneBlockerGuard, ComplexityStaysInRangeAcrossRepeatedReads) {
+    for (int i = 0; i < 5; ++i) {
+        dComplexity = (i % 2) ? -100 : 100000;
+        readRegistry();
+        ASSERT_GE(dComplexity, 1);
+        ASSERT_LE(dComplexity, 10);
+    }
+}
+
+TEST(CycloneBlockerGuard, CreateClampsBeforeAllocating) {
+    // The ordering is the whole guarantee: WM_CREATE must read (and clamp)
+    // before it allocates. Corrupt the value first; a correct handler overwrites
+    // it via readRegistry before initSaver sizes anything from it.
+    dComplexity = -42;
+    readyToDraw = 0;
+
+    screenSaverProc(hostWindow(), WM_CREATE, 0, 0);
+
+    EXPECT_GE(dComplexity, 1) << "initSaver sized its arrays from an unclamped value";
+    EXPECT_EQ(readyToDraw, 1);
+
+    screenSaverProc(hostWindow(), WM_DESTROY, 0, 0);
+}
+
+// --- a frame ---------------------------------------------------------------
+
+TEST_F(Cyclone, FrameLeavesTheMatrixStackBalanced) {
+    start();
+    draw();
+
+    const glstub::Trace& t = glstub::trace();
+    EXPECT_TRUE(t.matrixBalanced())
+        << "depth " << t.matrixDepth << ", " << t.pushes << " pushes vs " << t.pops << " pops";
+    EXPECT_GE(t.minMatrixDepth, 0);
+}
+
+TEST_F(Cyclone, FramePairsBeginAndEnd) {
+    start();
+    draw();
+
+    const glstub::Trace& t = glstub::trace();
+    EXPECT_TRUE(t.primitivesBalanced()) << t.begins << " glBegin vs " << t.ends << " glEnd";
+    EXPECT_FALSE(t.nestedBeginSeen);
+    EXPECT_FALSE(t.vertexOutsideBegin);
+}
+
+TEST_F(Cyclone, PrimitiveVertexCountsAreLegal) {
+    start();
+    draw();
+
+    std::string why;
+    EXPECT_TRUE(glstub::primitiveVertexCountsLegal(&why)) << why;
+}
+
+TEST_F(Cyclone, FrameDrawsEveryParticleFromTheCompiledBlob) {
+    // cyclone's particles are a display list called once per particle, so a
+    // frame emits no immediate-mode vertices at all. Counting glCallList is the
+    // only way to see the geometry.
+    dCyclones = 2;
+    dParticles = 25;
+    start();
+    draw();
+
+    EXPECT_EQ(glstub::trace().countCalls("glCallList"), dCyclones * dParticles);
+    EXPECT_EQ(glstub::trace().totalVertices(), 0u)
+        << "particles come from a display list; immediate-mode vertices would be a redesign";
+}
+
+TEST_F(Cyclone, DoesNotLeakEnableState) {
+    start();
+    draw();
+    for (const auto& e : glstub::trace().enables) {
+        EXPECT_EQ(e.second, 0) << "capability " << e.first << " left with net enable " << e.second;
+    }
+}
+
+// --- settings change what is drawn -----------------------------------------
+
+TEST_F(Cyclone, ShowCurvesAddsLineStrips) {
+    dShowCurves = FALSE;
+    start();
+    draw();
+    const int without = countPrimitives(GL_LINE_STRIP);
+
+    dShowCurves = TRUE;
+    glstub::reset();
+    draw();
+    const int with = countPrimitives(GL_LINE_STRIP);
+
+    EXPECT_GT(with, without) << "the curve overlay draws the spline as line strips";
+}
+
+TEST_F(Cyclone, MoreCyclonesMeansMoreDrawing) {
+    dParticles = 20;
+    dCyclones = 1;
+    start();
+    draw();
+    const int one = glstub::trace().countCalls("glCallList");
+
+    dCyclones = 3;
+    restart();
+    draw();
+    const int three = glstub::trace().countCalls("glCallList");
+
+    EXPECT_GT(one, 0);
+    EXPECT_GT(three, one) << "each cyclone contributes its own particles";
+}
+
+TEST_F(Cyclone, IdleProcSkipsDrawingWhenNotReady) {
+    start();
+    readyToDraw = 0;
+    glstub::reset();
+
+    idleProc();
+
+    EXPECT_EQ(glstub::trace().totalVertices(), 0u);
+    readyToDraw = 1;
+}
+
+// --- dialog procedures -----------------------------------------------------
+//
+// IDOK is never sent: it calls writeRegistry and would rewrite real settings.
+
+TEST(CycloneDialogs, AboutProcColoursTheWebPageLabel) {
+    EXPECT_NE(aboutProc(NULL, WM_CTLCOLORSTATIC, 0, 0), 0);
+}
+
+TEST(CycloneDialogs, AboutProcIgnoresMessagesItDoesNotHandle) {
+    EXPECT_EQ(aboutProc(NULL, WM_MOUSEMOVE, 0, 0), FALSE);
+}
+
+TEST(CycloneDialogs, InitControlsRunsWithoutADialog) {
+    setDefaults();
+    EXPECT_NO_FATAL_FAILURE(initControls(NULL));
+}
+
+TEST(CycloneDialogs, ConfigureDialogInitialisesAndCancels) {
+    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_INITDIALOG, 0, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_COMMAND, IDCANCEL, 0), TRUE);
+}
+
+TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
+    setDefaults();
+    const int defaultParticles = dParticles;
+    dParticles = 3;
+
+    screenSaverConfigureDialog(NULL, WM_COMMAND, DEFAULTS, 0);
+
+    EXPECT_EQ(dParticles, defaultParticles);
+}
+
+TEST(CycloneDialogs, ConfigureDialogHandlesSliderMovement) {
+    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_HSCROLL, 0, 0), TRUE);
+}
+
+TEST(CycloneDialogs, ConfigureDialogIgnoresUnknownMessages) {
+    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_MOUSEMOVE, 0, 0), FALSE);
+}

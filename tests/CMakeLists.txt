@@ -76,3 +76,15 @@ add_saver_test(plasma SOURCES
     ${REPO_ROOT}/src/plasma/plasma.cpp
     ${REPO_ROOT}/libs/rsText/rsText.cpp
 )
+
+add_saver_test(flocks SOURCES
+    ${REPO_ROOT}/src/flocks/flocks.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp   # bug::update colours bugs through hsl2rgb
+)
+
+add_saver_test(cyclone SOURCES
+    ${REPO_ROOT}/src/cyclone/cyclone.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp
+)
