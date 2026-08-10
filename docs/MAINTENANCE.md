@@ -16,8 +16,8 @@ SonarCloud figures against the analysis of that commit. Re-check them before
 starting; `grep` commands are given with each task.
 
 **Since the last revision, six savers gained tests (Task 17) and that work found
-three real defects — Tasks 14, 15 and 16.** Prefer covering a saver before
-changing it; that is how all three turned up.
+three real defects — Tasks 14, 15 and 16, of which 14 is now fixed.** Prefer
+covering a saver before changing it; that is how all three turned up.
 
 ## Building and verifying
 
@@ -78,7 +78,7 @@ exceed a short per-test limit, and the CI job passes no timeout for that reason.
 | 11 | Registry values used unclamped | open |
 | 12 | Six savers carry private `rand()` copies | open |
 | 13 | Clear-text `http://` URLs | open |
-| **14** | **`solarWinds` sets `readyToDraw = 1` on `WM_DESTROY`** | **new, open** |
+| 14 | `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY` | **done** — PR #44 |
 | **15** | **`fieldlines` nests `glBegin`, silently losing its line widths** | **new, open** |
 | **16** | **Destructors sized from live globals** | **new, open** |
 | **17** | **Test coverage rollout — 6 of 14 savers** | **new, in progress** |
@@ -99,18 +99,15 @@ the guide here — see the note at the end of this section.
 
 ## First — correctness
 
-1. **Task 14.** `solarWinds` sets `readyToDraw = 1` in its `WM_DESTROY`
-   handler and then frees the arrays the draw path reads. A one-character fix
-   with a use-after-free behind it; nothing else on this list is that cheap for
-   that much risk.
-2. **Task 16.** Destructors that size their frees from the current globals
-   rather than from what they allocated. Same class of hazard, slightly more
-   work.
-3. **Task 10, what remains.** The two `cyclone` BLOCKERs are **resolved** — see
+1. **Task 16.** Destructors that size their frees from the current globals
+   rather than from what they allocated. The same class of hazard as Task 14,
+   which is **done**, but slightly more work — and the one that survives in
+   `solarWinds` after that fix.
+2. **Task 10, what remains.** The two `cyclone` BLOCKERs are **resolved** — see
    below — so what is left is `lattice.cpp:703` (uninitialised field) and the
    six `cpp:S836` findings in `skyrocket/particle.cpp`, all "garbage value
    returned to caller".
-4. **Task 15.** `fieldlines` loses its per-segment line widths to nested
+3. **Task 15.** `fieldlines` loses its per-segment line widths to nested
    `glBegin` calls. Visible only as a subtly wrong render, so lower than the
    memory bugs, but it is a genuine rendering defect rather than a lint.
 
@@ -422,13 +419,14 @@ change with the `.cpp` call so they do not disagree.
 
 # P0 (new) — Found by the test harness
 
-Three defects that thirteen years of running these savers never surfaced. Each
-is pinned by a test asserting the **current** behaviour, so fixing it will make
-that test fail — which is the point. The test says so in its own comment.
+Three defects that thirteen years of running these savers never surfaced. Task
+14 is fixed; the two that remain are each pinned by a test asserting the
+**current** behaviour, so fixing one will make its test fail — which is the
+point. The test says so in its own comment.
 
-## Task 14 · `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY`
+## Task 14 · `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY` — DONE (#44)
 
-`solarWinds.cpp:858`:
+`solarWinds.cpp:859` used to read:
 
 ```cpp
 case WM_DESTROY:
@@ -446,8 +444,15 @@ message loop ending and the process exiting, so nothing calls `idleProc` in
 between. That makes it latent, not harmless: the guard does not do what the
 identical line in the other twelve savers does.
 
-Almost certainly a typo. **One character.** Pinned by
-`SolarWindsFramework.DestroyLeavesReadyToDrawSet`.
+Almost certainly a typo. **One character**, now `0`. The pinning test
+`SolarWindsFramework.DestroyLeavesReadyToDrawSet` was folded back into
+`SolarWindsFramework.ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy`,
+matching the other suites. That assertion is the only coverage of the
+`WM_DESTROY` arm: `SaverFixture::stop()` calls `cleanUp` directly, so no `TEST_F`
+case reaches `screenSaverProc`.
+
+Note this does **not** clear Task 16, which lives in the same file:
+`wind::~wind` still sizes its frees from the live globals.
 
 ## Task 15 · `fieldlines` nests `glBegin` and loses its line widths
 

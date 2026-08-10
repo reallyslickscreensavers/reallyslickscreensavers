@@ -856,7 +856,7 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 		readyToDraw = 1;
 		break;
 	case WM_DESTROY:
-		readyToDraw = 1;
+		readyToDraw = 0;
 		cleanUp(hwnd);
 		break;
 	}
