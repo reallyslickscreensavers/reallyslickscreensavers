@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-#include <windows.h>
+#include <Windows.h>
 #include <GL/gl.h>
 
 #include "support/gl_stub.h"
@@ -283,22 +283,22 @@ TEST(PlasmaDialogs, AboutProcColoursTheWebPageLabel) {
     // WM_CTLCOLORSTATIC returns a brush through an INT_PTR - the truncation
     // that PR #39 fixed. Passing lParam 0 matches GetDlgItem's null result, so
     // the branch is taken.
-    const INT_PTR brush = aboutProc(NULL, WM_CTLCOLORSTATIC, 0, 0);
+    const INT_PTR brush = aboutProc(nullptr, WM_CTLCOLORSTATIC, 0, 0);
     EXPECT_NE(brush, 0) << "the handler must return a brush, not fall through";
 }
 
 TEST(PlasmaDialogs, AboutProcIgnoresMessagesItDoesNotHandle) {
-    EXPECT_EQ(aboutProc(NULL, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_EQ(aboutProc(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
 }
 
 TEST(PlasmaDialogs, InitControlsRunsWithoutADialog) {
     setDefaults();
-    EXPECT_NO_FATAL_FAILURE(initControls(NULL));
+    EXPECT_NO_FATAL_FAILURE(initControls(nullptr));
 }
 
 TEST(PlasmaDialogs, ConfigureDialogInitialisesAndCancels) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_INITDIALOG, 0, 0), TRUE);
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_COMMAND, IDCANCEL, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_INITDIALOG, 0, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_COMMAND, IDCANCEL, 0), TRUE);
 }
 
 TEST(PlasmaDialogs, ConfigureDialogRestoresDefaults) {
@@ -306,17 +306,17 @@ TEST(PlasmaDialogs, ConfigureDialogRestoresDefaults) {
     const int defaultZoom = dZoom;
     dZoom = 99;
 
-    screenSaverConfigureDialog(NULL, WM_COMMAND, DEFAULTS, 0);
+    screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
     EXPECT_EQ(dZoom, defaultZoom) << "the Defaults button must reset the settings";
 }
 
 TEST(PlasmaDialogs, ConfigureDialogHandlesSliderMovement) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_HSCROLL, 0, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_HSCROLL, 0, 0), TRUE);
 }
 
 TEST(PlasmaDialogs, ConfigureDialogIgnoresUnknownMessages) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
 }
 
 TEST(PlasmaDraw, IdleProcSkipsDrawingWhenNotReady) {

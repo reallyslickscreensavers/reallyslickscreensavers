@@ -18,7 +18,7 @@
  * opengl32.lib and glu32.lib are deliberately not linked.
  */
 
-#include <windows.h>
+#include <Windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 
@@ -26,34 +26,38 @@
 
 namespace glstub {
 
-Trace g_trace;
+// Function-local rather than a namespace-scope global: one mutable object is
+// unavoidable for a recorder, but it need not be visible to anything else.
+Trace& trace()
+{
+	static Trace instance;
+	return instance;
+}
 
-Trace& trace() { return g_trace; }
-
-void reset() { g_trace = Trace(); }
+void reset() { trace() = Trace(); }
 
 // Helpers live in the namespace proper, not an anonymous one, so the extern "C"
 // entry points below can reach them.
 void record(const char* name)
 {
-	g_trace.calls.push_back(name);
+	trace().calls.push_back(name);
 }
 
 void bumpEnable(unsigned cap, int delta)
 {
-	for (auto& e : g_trace.enables) {
-		if (e.first == cap) { e.second += delta; return; }
+	for (auto& [capability, net] : trace().enables) {
+		if (capability == cap) { net += delta; return; }
 	}
-	g_trace.enables.push_back(std::make_pair(cap, delta));
+	trace().enables.emplace_back(cap, delta);
 }
 
 void countVertex()
 {
-	if (!g_trace.insideBegin || g_trace.primitives.empty()) {
-		g_trace.vertexOutsideBegin = true;
+	if (!trace().insideBegin || trace().primitives.empty()) {
+		trace().vertexOutsideBegin = true;
 		return;
 	}
-	g_trace.primitives.back().vertices++;
+	trace().primitives.back().vertices++;
 }
 
 unsigned long long Trace::totalVertices() const
@@ -65,7 +69,9 @@ unsigned long long Trace::totalVertices() const
 
 int Trace::netEnable(unsigned cap) const
 {
-	for (const auto& e : enables) if (e.first == cap) return e.second;
+	for (const auto& [capability, net] : enables) {
+		if (capability == cap) return net;
+	}
 	return 0;
 }
 
@@ -78,9 +84,10 @@ int Trace::countCalls(const char* name) const
 
 bool primitiveVertexCountsLegal(std::string* why)
 {
-	for (size_t i = 0; i < g_trace.primitives.size(); ++i) {
-		const Primitive& p = g_trace.primitives[i];
-		unsigned need = 0, mult = 1;
+	for (size_t i = 0; i < trace().primitives.size(); ++i) {
+		const Primitive& p = trace().primitives[i];
+		unsigned need = 0;
+		unsigned mult = 1;
 		switch (p.mode) {
 			case GL_POINTS:                               need = 1; mult = 1; break;
 			case GL_LINES:                                need = 2; mult = 2; break;
@@ -218,12 +225,14 @@ void APIENTRY glBitmap(GLsizei, GLsizei, GLfloat, GLfloat, GLfloat, GLfloat, con
 
 // --- GLU: its header declares plain APIENTRY functions, no dllimport --------
 
-static int g_quadricStorage = 0;
-
 GLUquadric* APIENTRY gluNewQuadric(void)
 {
 	REC(gluNewQuadric);
-	return reinterpret_cast<GLUquadric*>(&g_quadricStorage);
+	// GLUquadric is opaque in glu.h, so there is nothing to construct. The
+	// handle is never dereferenced - gluSphere below ignores it - it only has to
+	// be non-null and stable, which a function-local static gives us.
+	static int quadric = 0;
+	return static_cast<GLUquadric*>(static_cast<void*>(&quadric));
 }
 
 void APIENTRY gluDeleteQuadric(GLUquadric*)                          { REC(gluDeleteQuadric); }
@@ -239,14 +248,15 @@ GLint APIENTRY gluBuild2DMipmaps(GLenum, GLint, GLsizei, GLsizei, GLenum, GLenum
 
 // --- WGL -------------------------------------------------------------------
 
-static int g_contextStorage = 0;
-
 extern "C" {
 
 HGLRC WINAPI wglCreateContext(HDC)
 {
 	REC(wglCreateContext);
-	return reinterpret_cast<HGLRC>(&g_contextStorage);
+	// DECLARE_HANDLE makes HGLRC a pointer to a real (if trivial) struct, so a
+	// function-local instance gives a valid non-null handle with no cast at all.
+	static HGLRC__ context = {};
+	return &context;
 }
 
 BOOL WINAPI wglDeleteContext(HGLRC)        { REC(wglDeleteContext);    return TRUE; }
@@ -256,9 +266,9 @@ BOOL WINAPI wglSwapLayerBuffers(HDC, UINT) { REC(wglSwapLayerBuffers); return TR
 PROC WINAPI wglGetProcAddress(LPCSTR)
 {
 	REC(wglGetProcAddress);
-	// NULL means "extension unavailable", which every call site null-checks.
+	// nullptr means "extension unavailable", which every call site null-checks.
 	// That exercises the fallback path rather than crashing.
-	return NULL;
+	return nullptr;
 }
 
 }  // extern "C"

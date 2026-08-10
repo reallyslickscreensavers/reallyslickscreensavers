@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include <windows.h>
+#include <Windows.h>
 #include <GL/gl.h>
 
 #include "support/gl_stub.h"
@@ -20,8 +20,6 @@ extern int dCyclones;
 extern int dParticles;
 extern int dSize;
 extern int dComplexity;
-extern int dSpeed;
-extern BOOL dStretch;
 extern BOOL dShowCurves;
 extern int readyToDraw;
 
@@ -252,21 +250,21 @@ TEST_F(Cyclone, IdleProcSkipsDrawingWhenNotReady) {
 // IDOK is never sent: it calls writeRegistry and would rewrite real settings.
 
 TEST(CycloneDialogs, AboutProcColoursTheWebPageLabel) {
-    EXPECT_NE(aboutProc(NULL, WM_CTLCOLORSTATIC, 0, 0), 0);
+    EXPECT_NE(aboutProc(nullptr, WM_CTLCOLORSTATIC, 0, 0), 0);
 }
 
 TEST(CycloneDialogs, AboutProcIgnoresMessagesItDoesNotHandle) {
-    EXPECT_EQ(aboutProc(NULL, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_EQ(aboutProc(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
 }
 
 TEST(CycloneDialogs, InitControlsRunsWithoutADialog) {
     setDefaults();
-    EXPECT_NO_FATAL_FAILURE(initControls(NULL));
+    EXPECT_NO_FATAL_FAILURE(initControls(nullptr));
 }
 
 TEST(CycloneDialogs, ConfigureDialogInitialisesAndCancels) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_INITDIALOG, 0, 0), TRUE);
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_COMMAND, IDCANCEL, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_INITDIALOG, 0, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_COMMAND, IDCANCEL, 0), TRUE);
 }
 
 TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
@@ -274,15 +272,15 @@ TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
     const int defaultParticles = dParticles;
     dParticles = 3;
 
-    screenSaverConfigureDialog(NULL, WM_COMMAND, DEFAULTS, 0);
+    screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
     EXPECT_EQ(dParticles, defaultParticles);
 }
 
 TEST(CycloneDialogs, ConfigureDialogHandlesSliderMovement) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_HSCROLL, 0, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_HSCROLL, 0, 0), TRUE);
 }
 
 TEST(CycloneDialogs, ConfigureDialogIgnoresUnknownMessages) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
 }

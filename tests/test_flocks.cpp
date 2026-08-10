@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-#include <windows.h>
+#include <Windows.h>
 #include <GL/gl.h>
 
 #include "support/gl_stub.h"
@@ -21,14 +21,10 @@ extern int dLeaders;
 extern int dFollowers;
 extern int dGeometry;
 extern int dSize;
-extern int dComplexity;
 extern int dSpeed;
 extern int dStretch;
-extern int dColorfadespeed;
-extern int dChromatek;
 extern int dConnections;
 extern int readyToDraw;
-extern float aspectRatio;
 
 void setDefaults();
 void draw();
@@ -276,21 +272,21 @@ TEST(FlocksFramework, ReadRegistryLeavesEveryValueUsable) {
 // saver settings.
 
 TEST(FlocksDialogs, AboutProcColoursTheWebPageLabel) {
-    EXPECT_NE(aboutProc(NULL, WM_CTLCOLORSTATIC, 0, 0), 0);
+    EXPECT_NE(aboutProc(nullptr, WM_CTLCOLORSTATIC, 0, 0), 0);
 }
 
 TEST(FlocksDialogs, AboutProcIgnoresMessagesItDoesNotHandle) {
-    EXPECT_EQ(aboutProc(NULL, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_EQ(aboutProc(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
 }
 
 TEST(FlocksDialogs, InitControlsRunsWithoutADialog) {
     setDefaults();
-    EXPECT_NO_FATAL_FAILURE(initControls(NULL));
+    EXPECT_NO_FATAL_FAILURE(initControls(nullptr));
 }
 
 TEST(FlocksDialogs, ConfigureDialogInitialisesAndCancels) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_INITDIALOG, 0, 0), TRUE);
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_COMMAND, IDCANCEL, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_INITDIALOG, 0, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_COMMAND, IDCANCEL, 0), TRUE);
 }
 
 TEST(FlocksDialogs, ConfigureDialogRestoresDefaults) {
@@ -298,15 +294,15 @@ TEST(FlocksDialogs, ConfigureDialogRestoresDefaults) {
     const int defaultFollowers = dFollowers;
     dFollowers = 7;
 
-    screenSaverConfigureDialog(NULL, WM_COMMAND, DEFAULTS, 0);
+    screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
     EXPECT_EQ(dFollowers, defaultFollowers);
 }
 
 TEST(FlocksDialogs, ConfigureDialogHandlesSliderMovement) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_HSCROLL, 0, 0), TRUE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_HSCROLL, 0, 0), TRUE);
 }
 
 TEST(FlocksDialogs, ConfigureDialogIgnoresUnknownMessages) {
-    EXPECT_EQ(screenSaverConfigureDialog(NULL, WM_MOUSEMOVE, 0, 0), FALSE);
+    EXPECT_EQ(screenSaverConfigureDialog(nullptr, WM_MOUSEMOVE, 0, 0), FALSE);
 }

@@ -18,7 +18,7 @@
 #ifndef TEST_WINDOW_H
 #define TEST_WINDOW_H
 
-#include <windows.h>
+#include <Windows.h>
 
 namespace testsupport {
 

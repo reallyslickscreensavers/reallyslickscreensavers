@@ -3,8 +3,6 @@
 namespace testsupport {
 namespace {
 
-HWND g_window = NULL;
-
 LRESULT CALLBACK testWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
 	return DefWindowProc(hwnd, msg, wp, lp);
@@ -17,7 +15,7 @@ HWND create()
 	WNDCLASSA wc;
 	ZeroMemory(&wc, sizeof(wc));
 	wc.lpfnWndProc = testWndProc;
-	wc.hInstance = GetModuleHandle(NULL);
+	wc.hInstance = GetModuleHandle(nullptr);
 	wc.lpszClassName = kClassName;
 	RegisterClassA(&wc);   // harmless if already registered
 
@@ -27,23 +25,24 @@ HWND create()
 	return CreateWindowExA(
 		0, kClassName, "rssavers test host", WS_POPUP,
 		0, 0, kHostWidth, kHostHeight,
-		NULL, NULL, GetModuleHandle(NULL), NULL);
+		nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
 }
 
 }  // namespace
 
 HWND hostWindow()
 {
-	if (!g_window) {
-		g_window = create();
-	}
+	// Function-local so the handle is not a mutable global; created on first
+	// use and reused for the life of the process.
+	static HWND window = create();
+
 	// Falling back to the desktop keeps the suite runnable if a runner ever
 	// denies window creation, at the cost of the determinism above - so it is
 	// worth noticing rather than silently accepting.
-	if (!g_window) {
+	if (!window) {
 		return GetDesktopWindow();
 	}
-	return g_window;
+	return window;
 }
 
 }  // namespace testsupport
