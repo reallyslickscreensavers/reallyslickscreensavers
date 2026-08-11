@@ -80,7 +80,7 @@ exceed a short per-test limit, and the CI job passes no timeout for that reason.
 | 13 | Clear-text `http://` URLs | open |
 | 14 | `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY` | **done** — PR #44 |
 | **15** | **`fieldlines` nests `glBegin`, silently losing its line widths** | **new, open** |
-| **16** | **Destructors sized from live globals** | **new, open** |
+| 16 | Destructors sized from live globals | **done** |
 | **17** | **Test coverage rollout — 6 of 14 savers** | **new, in progress** |
 
 Tasks 10–13 came out of the rslibs work and a re-read of SonarCloud. Tasks
@@ -451,8 +451,9 @@ matching the other suites. That assertion is the only coverage of the
 `WM_DESTROY` arm: `SaverFixture::stop()` calls `cleanUp` directly, so no `TEST_F`
 case reaches `screenSaverProc`.
 
-Note this does **not** clear Task 16, which lives in the same file:
-`wind::~wind` still sizes its frees from the live globals.
+Note this did **not** clear Task 16, which lives in the same file:
+`wind::~wind` sized its frees from the live globals — fixed separately, see
+below.
 
 ## Task 15 · `fieldlines` nests `glBegin` and loses its line widths
 
@@ -472,10 +473,10 @@ The fix is to close each strip before reopening it. Note that doing so changes
 what the saver looks like, so it wants an eye on the result rather than just a
 green build. Pinned by `Fieldlines.DefaultModeLeavesGlBeginBlocksUnclosed`.
 
-## Task 16 · Destructors sized from live globals
+## Task 16 · Destructors sized from live globals — DONE
 
-`wind::~wind` in `solarWinds.cpp` frees `particles[i]` for `i < dParticles` —
-the global, not the count the object was constructed with:
+`wind::~wind` in `solarWinds.cpp` used to free `particles[i]` for
+`i < dParticles` — the global, not the count the object was constructed with:
 
 ```cpp
 wind::~wind(){
@@ -498,6 +499,13 @@ place.
 
 `cyclone` and `flocks` were checked and are **not** affected: they free with
 `delete[]`, which knows its own extent.
+
+**Fixed:** `wind` now captures `numEmitters`, `numParticles` and
+`hasLineList` at construction and the destructor frees by those instead of
+the live globals. Pinned by
+`SolarWinds.DestructorFreesWhatItAllocatedNotCurrentGlobals`, which raises
+`dEmitters`/`dParticles` and flips `dGeometry` between `start()` and `stop()`
+— exactly the mismatch the bug needed — and asserts teardown survives it.
 
 ---
 

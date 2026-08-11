@@ -101,6 +101,9 @@ public:
 	float c[NUMCONSTS];
 	float ct[NUMCONSTS];
 	float cv[NUMCONSTS];
+	int numEmitters;
+	int numParticles;
+	int hasLineList;
 
 	wind();
 	~wind();
@@ -143,21 +146,25 @@ wind::wind(){
 		cv[i] = rsRandf(0.00005f * float(dWindspeed) * float(dWindspeed))
 			+ 0.00001f * float(dWindspeed) * float(dWindspeed);
 	}
+
+	numEmitters = dEmitters;
+	numParticles = dParticles;
+	hasLineList = (dGeometry == 2);
 }
 
 wind::~wind(){
 	int i;
 
-	for(i=0; i<dEmitters; i++)
+	for(i=0; i<numEmitters; i++)
 		delete[] emitters[i];
 	delete[] emitters;
 
-	for(i=0; i<dParticles; i++)
+	for(i=0; i<numParticles; i++)
 		delete[] particles[i];
 	delete[] particles;
 
-	if(dGeometry == 2){
-		for(i=0; i<dParticles; i++)
+	if(hasLineList){
+		for(i=0; i<numParticles; i++)
 			delete[] linelist[i];
 		delete[] linelist;
 		delete[] lastparticle;
