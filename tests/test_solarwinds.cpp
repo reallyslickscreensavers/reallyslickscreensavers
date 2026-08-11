@@ -179,7 +179,13 @@ TEST_F(SolarWinds, IdleProcSkipsDrawingWhenNotReady) {
     readyToDraw = 1;
 }
 
-TEST(SolarWindsFramework, ScreenSaverProcInitialisesOnCreate) {
+TEST(SolarWindsFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
+    // The destroy half is the only coverage of that arm: SaverFixture::stop()
+    // calls cleanUp directly, so no TEST_F case in this file goes through
+    // screenSaverProc. It also guards a fixed defect - solarWinds used to set
+    // readyToDraw = 1 here and then free the particle, emitter and wind arrays,
+    // leaving idleProc, which guards drawing on exactly this flag, free to draw
+    // from freed memory.
     setDefaults(DEFAULTS1);
     readyToDraw = 0;
 
@@ -187,29 +193,7 @@ TEST(SolarWindsFramework, ScreenSaverProcInitialisesOnCreate) {
     EXPECT_EQ(readyToDraw, 1);
 
     screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
-}
-
-TEST(SolarWindsFramework, DestroyLeavesReadyToDrawSet) {
-    // DEFECT, pinned rather than fixed - this test documents current behaviour.
-    //
-    // solarWinds.cpp:858 sets readyToDraw = 1 in the WM_DESTROY handler, then
-    // calls cleanUp, which deletes the particle, emitter and wind arrays. Every
-    // other saver sets it to 0 there, and idleProc guards drawing on exactly
-    // this flag - so a frame arriving after WM_DESTROY would draw from freed
-    // memory.
-    //
-    // It has survived because WM_DESTROY is normally followed straight away by
-    // the message loop ending and the process exiting, so nothing gets a chance
-    // to call idleProc. That makes it latent rather than harmless: the guard
-    // does not do what the identical line in the other twelve savers does.
-    setDefaults(DEFAULTS1);
-    screenSaverProc(testsupport::hostWindow(), WM_CREATE, 0, 0);
-
-    screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
-
-    EXPECT_EQ(readyToDraw, 1)
-        << "if this now fails the defect is fixed - fold it back into the create test";
-    readyToDraw = 0;
+    EXPECT_EQ(readyToDraw, 0);
 }
 
 TEST(SolarWindsFramework, ReadRegistryFallsBackToTheRegularPreset) {
