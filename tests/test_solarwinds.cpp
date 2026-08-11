@@ -148,6 +148,22 @@ TEST_F(SolarWinds, LineGeometryLinksParticlesIntoLines) {
     EXPECT_TRUE(savertest::VertexCountsLegal());
 }
 
+TEST_F(SolarWinds, DestructorFreesWhatItAllocatedNotCurrentGlobals) {
+    // Task 16: the destructor must free by the counts wind was constructed
+    // with, not by whatever the globals say now. Exercise dGeometry == 2 too,
+    // since that branch (linelist/lastparticle) has its own guard.
+    dGeometry = 2;
+    dEmitters = 4;
+    dParticles = 20;
+    start();
+
+    dEmitters = 40;
+    dParticles = 2;
+    dGeometry = 0;
+
+    EXPECT_NO_FATAL_FAILURE(stop());
+}
+
 TEST_F(SolarWinds, MoreParticlesMeansMoreDrawing) {
     dGeometry = 1;          // point mode, so particles become vertices
     dEmitters = 4;
