@@ -104,9 +104,15 @@ stretchedParticle* sunStar;
 starBurst* theStarBurst;
 
 
+// Caustic textures and wavy normal cube maps are built on the first frame
+// rather than in initSaver, because they are rendered and read back from the
+// framebuffer. cleanUp deletes them, so the flag has to be reachable from
+// there: as a static inside draw() it stayed set after teardown and the next
+// frame drew through freed pointers.
+int texturesBuilt = 0;
+
 void draw(){
-	static int first = 1;
-	if(first){
+	if(!texturesBuilt){
 		if(dUseTunnels){  // only tunnels use caustic textures
 			glDisable(GL_FOG);
 			// Caustic textures can only be created after rendering context has been created
@@ -128,7 +134,7 @@ void draw(){
 				theWNCM = new wavyNormalCubeMaps(numAnimTexFrames, 128);
 		}
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-		first = 0;
+		texturesBuilt = 1;
 	}
 
 	// Variables for printing text
@@ -651,9 +657,12 @@ void cleanUp(){
 	if(dUseTunnels){
 		delete theTunnel;
 		delete theCausticTextures;
+		theCausticTextures = NULL;
 	}
 	delete thePath;
 	delete theWNCM;
+	theWNCM = NULL;
+	texturesBuilt = 0;
 }
 #endif
 
@@ -666,9 +675,12 @@ void cleanUp(HWND hwnd){
 	if(dUseTunnels){
 		delete theTunnel;
 		delete theCausticTextures;
+		theCausticTextures = NULL;
 	}
 	delete thePath;
 	delete theWNCM;
+	theWNCM = NULL;
+	texturesBuilt = 0;
 
 	// Kill device context
 	ReleaseDC(hwnd, hdc);
