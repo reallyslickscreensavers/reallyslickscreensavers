@@ -119,6 +119,21 @@ inline ::testing::AssertionResult VertexCountsLegal() {
     return ::testing::AssertionFailure() << why;
 }
 
+// Every readback the stub could not answer. In a real driver each of these is
+// GL_INVALID_ENUM and the caller's buffer is left holding whatever was on the
+// stack, so a hit here means the saver is computing with uninitialised memory.
+inline ::testing::AssertionResult NoInvalidEnums() {
+    const glstub::Trace& t = glstub::trace();
+    if (t.invalidEnums.empty()) {
+        return ::testing::AssertionSuccess();
+    }
+    ::testing::AssertionResult failure = ::testing::AssertionFailure();
+    for (const auto& [function, value] : t.invalidEnums) {
+        failure << function << " was handed enum 0x" << std::hex << value << std::dec << "; ";
+    }
+    return failure;
+}
+
 // Anything enabled during a frame must be disabled again by the end of it.
 // A leak here shows up as some later frame rendering wrong.
 inline ::testing::AssertionResult NoEnableStateLeaked() {
