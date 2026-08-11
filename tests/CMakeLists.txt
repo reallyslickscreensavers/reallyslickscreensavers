@@ -182,6 +182,31 @@ add_saver_test(hyperspace SOURCES
     ${IMPLICIT_SOURCES}                   # the goo is an implicit surface
 )
 
+# skyrocket is the only saver with sound, so it is the only one linking the
+# OpenAL stub. dSound gates whether a SoundEngine is built at all, but
+# soundEngine.cpp has to link either way.
+add_saver_test(skyrocket SOURCES
+    ${REPO_ROOT}/src/skyrocket/skyrocket.cpp
+    ${REPO_ROOT}/src/skyrocket/flare.cpp
+    ${REPO_ROOT}/src/skyrocket/particle.cpp
+    ${REPO_ROOT}/src/skyrocket/shockwave.cpp
+    ${REPO_ROOT}/src/skyrocket/smoke.cpp
+    ${REPO_ROOT}/src/skyrocket/soundEngine.cpp
+    ${REPO_ROOT}/src/skyrocket/world.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/rsMath/rsVec.cpp
+    ${REPO_ROOT}/libs/rsMath/rsMatrix.cpp
+    ${REPO_ROOT}/libs/rsMath/rsQuat.cpp
+    LIBRARIES al_stub
+)
+
+# skyrocket.vcxproj links with <StackReserveSize>10000000</StackReserveSize>,
+# and it needs it: World and the shockwave geometry put large arrays on the
+# stack during setup. Against the linker's 1MB default this overflows the stack
+# inside initSaver and the process dies with 0xC00000FD before gtest can report
+# anything. Matching the shipped setting is the whole fix.
+target_link_options(test_skyrocket PRIVATE /STACK:10000000)
+
 add_saver_test(lattice SOURCES
     ${REPO_ROOT}/src/lattice/lattice.cpp
     ${REPO_ROOT}/src/lattice/camera.cpp
