@@ -70,12 +70,26 @@ unsigned long long Trace::totalVertices() const
 	return n;
 }
 
+unsigned long long Trace::totalArrayVertices() const
+{
+	unsigned long long n = 0;
+	for (const auto& p : arrayPrimitives) n += p.vertices;
+	return n;
+}
+
 int Trace::netEnable(unsigned cap) const
 {
 	for (const auto& [capability, net] : enables) {
 		if (capability == cap) return net;
 	}
 	return 0;
+}
+
+int Trace::countEnables(unsigned cap) const
+{
+	int n = 0;
+	for (unsigned c : enabled) if (c == cap) n++;
+	return n;
 }
 
 int Trace::countCalls(const char* name) const
@@ -348,7 +362,13 @@ void APIENTRY glPopMatrix(void)
 	glstub::popCurrent();
 }
 
-void APIENTRY glEnable(GLenum cap)  { REC(glEnable);  glstub::bumpEnable(cap, +1); }
+void APIENTRY glEnable(GLenum cap)
+{
+	REC(glEnable);
+	glstub::bumpEnable(cap, +1);
+	glstub::trace().enabled.push_back(cap);
+}
+
 void APIENTRY glDisable(GLenum cap) { REC(glDisable); glstub::bumpEnable(cap, -1); }
 
 void APIENTRY glVertex2f(GLfloat, GLfloat)          { REC(glVertex2f);  glstub::countVertex(); }
@@ -427,6 +447,39 @@ void APIENTRY glTexGenfv(GLenum, GLenum, const GLfloat*)     { REC(glTexGenfv); 
 void APIENTRY glTexGeni(GLenum, GLenum, GLint)               { REC(glTexGeni); }
 void APIENTRY glTexImage1D(GLenum, GLint, GLint, GLsizei, GLint, GLenum, GLenum, const void*) { REC(glTexImage1D); }
 void APIENTRY glTexSubImage1D(GLenum, GLint, GLint, GLsizei, GLenum, GLenum, const void*) { REC(glTexSubImage1D); }
+
+// --- vertex arrays ----------------------------------------------------------
+//
+// libs/Implicit draws its marching-cubes mesh with glDrawElements rather than
+// glBegin/glEnd, so helios and microcosm put most of their geometry through
+// here. Recorded into arrayPrimitives so it stays out of the begin/end pairing
+// counts while still being countable.
+
+void APIENTRY glEnableClientState(GLenum)                    { REC(glEnableClientState); }
+void APIENTRY glDisableClientState(GLenum)                   { REC(glDisableClientState); }
+void APIENTRY glVertexPointer(GLint, GLenum, GLsizei, const void*)   { REC(glVertexPointer); }
+void APIENTRY glNormalPointer(GLenum, GLsizei, const void*)          { REC(glNormalPointer); }
+void APIENTRY glTexCoordPointer(GLint, GLenum, GLsizei, const void*) { REC(glTexCoordPointer); }
+void APIENTRY glColorPointer(GLint, GLenum, GLsizei, const void*)    { REC(glColorPointer); }
+void APIENTRY glInterleavedArrays(GLenum, GLsizei, const void*)      { REC(glInterleavedArrays); }
+
+void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum, const void*)
+{
+	REC(glDrawElements);
+	glstub::Primitive p;
+	p.mode = mode;
+	p.vertices = unsigned(count < 0 ? 0 : count);
+	glstub::trace().arrayPrimitives.push_back(p);
+}
+
+void APIENTRY glDrawArrays(GLenum mode, GLint, GLsizei count)
+{
+	REC(glDrawArrays);
+	glstub::Primitive p;
+	p.mode = mode;
+	p.vertices = unsigned(count < 0 ? 0 : count);
+	glstub::trace().arrayPrimitives.push_back(p);
+}
 
 // --- state the stub actually keeps -----------------------------------------
 

@@ -122,3 +122,39 @@ add_saver_test(starfield SOURCES
     ${REPO_ROOT}/src/starfield/starfield.cpp
     ${REPO_ROOT}/libs/rsText/rsText.cpp
 )
+
+add_saver_test(flux SOURCES
+    ${REPO_ROOT}/src/flux/flux.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp   # particle::update colours through hsl2rgb
+)
+
+add_saver_test(euphoria SOURCES
+    ${REPO_ROOT}/src/euphoria/euphoria.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/rsMath/rsVec.cpp    # wisp::update works in rsVec
+    ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp   # and colours through hsl2rgb
+)
+
+# Sources shared by the savers that build implicit surfaces - helios today,
+# microcosm later. Listed here rather than in each add_saver_test call because
+# the set is the whole Implicit library plus the rsMath types it works in.
+set(IMPLICIT_SOURCES
+    ${REPO_ROOT}/libs/Implicit/impCubeTables.cpp
+    ${REPO_ROOT}/libs/Implicit/impCubeVolume.cpp
+    ${REPO_ROOT}/libs/Implicit/impShape.cpp
+    ${REPO_ROOT}/libs/Implicit/impSphere.cpp
+    ${REPO_ROOT}/libs/Implicit/impSurface.cpp
+)
+
+# helios builds a marching-cubes shell around its emitters and steers its
+# camera with quaternions.
+add_saver_test(helios SOURCES
+    ${REPO_ROOT}/src/helios/helios.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/rsMath/rsVec.cpp
+    ${REPO_ROOT}/libs/rsMath/rsMatrix.cpp
+    ${REPO_ROOT}/libs/rsMath/rsQuat.cpp
+    ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp
+    ${IMPLICIT_SOURCES}
+)

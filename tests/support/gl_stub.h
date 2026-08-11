@@ -48,6 +48,17 @@ struct Trace {
 	// the saver leaked GL state, which shows up as another saver rendering wrong.
 	std::vector<std::pair<unsigned, int>> enables;
 
+	// Every capability passed to glEnable, in order. `enables` nets out to zero
+	// for a well-behaved frame, which cannot answer "was this branch taken at
+	// all" - a bracketed glEnable/glDisable pair is invisible there.
+	std::vector<unsigned> enabled;
+
+	// Vertex-array drawing, kept apart from `primitives` because it does not go
+	// through glBegin/glEnd and must not disturb the pairing counts. The
+	// Implicit library draws its marching-cubes mesh this way, so helios and
+	// microcosm put most of their geometry here rather than in `primitives`.
+	std::vector<Primitive> arrayPrimitives;
+
 	// Resources
 	int texturesGenerated = 0;
 	int listsGenerated = 0;
@@ -59,7 +70,9 @@ struct Trace {
 	std::vector<std::pair<std::string, unsigned>> invalidEnums;
 
 	unsigned long long totalVertices() const;
+	unsigned long long totalArrayVertices() const;
 	int netEnable(unsigned cap) const;
+	int countEnables(unsigned cap) const;
 	int countCalls(const char* name) const;
 	bool matrixBalanced() const { return matrixDepth == 0 && pushes == pops; }
 	bool primitivesBalanced() const { return begins == ends && !insideBegin; }
