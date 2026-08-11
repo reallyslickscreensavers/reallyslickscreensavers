@@ -10,6 +10,8 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+
 #include <Windows.h>
 #include <gl/GL.h>
 #include <gl/GLU.h>
@@ -258,14 +260,27 @@ TEST_F(GlStubMatrix, ProjectWritesZerosRatherThanLeakingNaNWhenWIsZero) {
 
 // --- extension probing ------------------------------------------------------
 
-TEST(GlStubExtensions, ReportsNoExtensionsWithoutReturningNull) {
-    // hyperspace and microcosm walk this string with strstr; a null would crash
-    // rather than send them down their no-shader fallback.
+TEST(GlStubExtensions, AdvertisesTheExtensionsTheSaversAskFor) {
+    // hyperspace and microcosm walk this string with strstr, so it must never
+    // be null, and it has to name all three or their loaders give up as a unit.
     const GLubyte* extensions = glGetString(GL_EXTENSIONS);
     ASSERT_NE(extensions, nullptr);
-    EXPECT_STREQ(reinterpret_cast<const char*>(extensions), "");
+
+    const std::string names(reinterpret_cast<const char*>(extensions));
+    EXPECT_NE(names.find("GL_ARB_multitexture"), std::string::npos);
+    EXPECT_NE(names.find("GL_ARB_texture_cube_map"), std::string::npos);
+    EXPECT_NE(names.find("GL_ARB_shader_objects"), std::string::npos);
 }
 
-TEST(GlStubExtensions, ProcAddressLookupFails) {
-    EXPECT_EQ(wglGetProcAddress("glActiveTextureARB"), nullptr);
+TEST(GlStubExtensions, ResolvesTheAdvertisedEntryPointsAndNothingElse) {
+    // Advertising an extension without resolving its entry points would leave
+    // the savers holding null pointers they do not check - which is precisely
+    // how hyperspace crashes when the extensions really are absent.
+    EXPECT_NE(wglGetProcAddress("glActiveTextureARB"), nullptr);
+    EXPECT_NE(wglGetProcAddress("glCreateShaderObjectARB"), nullptr);
+    EXPECT_NE(wglGetProcAddress("glUniform3fARB"), nullptr);
+    EXPECT_NE(wglGetProcAddress("wglSwapIntervalEXT"), nullptr);
+
+    EXPECT_EQ(wglGetProcAddress("glSomethingNobodyImplements"), nullptr);
+    EXPECT_EQ(wglGetProcAddress(nullptr), nullptr);
 }

@@ -158,3 +158,35 @@ add_saver_test(helios SOURCES
     ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp
     ${IMPLICIT_SOURCES}
 )
+
+# hyperspace spreads over ten translation units, including its own extension
+# loader. That loader gets nullptr from the stub's wglGetProcAddress and an
+# empty extension string from glGetString, so initExtensions reports failure
+# and the saver takes its documented no-shader path (hyperspace.cpp:517).
+add_saver_test(hyperspace SOURCES
+    ${REPO_ROOT}/src/hyperspace/hyperspace.cpp
+    ${REPO_ROOT}/src/hyperspace/causticTextures.cpp
+    ${REPO_ROOT}/src/hyperspace/extensions.cpp
+    ${REPO_ROOT}/src/hyperspace/flare.cpp
+    ${REPO_ROOT}/src/hyperspace/goo.cpp
+    ${REPO_ROOT}/src/hyperspace/splinePath.cpp
+    ${REPO_ROOT}/src/hyperspace/starBurst.cpp
+    ${REPO_ROOT}/src/hyperspace/stretchedParticle.cpp
+    ${REPO_ROOT}/src/hyperspace/tunnel.cpp
+    ${REPO_ROOT}/src/hyperspace/wavyNormalCubeMaps.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/rsMath/rsVec.cpp
+    ${REPO_ROOT}/libs/rsMath/rsMatrix.cpp
+    ${REPO_ROOT}/libs/rsMath/rsQuat.cpp
+    ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp   # tunnel::make colours through hsl2rgb
+    ${IMPLICIT_SOURCES}                   # the goo is an implicit surface
+)
+
+add_saver_test(lattice SOURCES
+    ${REPO_ROOT}/src/lattice/lattice.cpp
+    ${REPO_ROOT}/src/lattice/camera.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/rsMath/rsVec.cpp
+    ${REPO_ROOT}/libs/rsMath/rsMatrix.cpp
+    ${REPO_ROOT}/libs/rsMath/rsQuat.cpp
+)

@@ -23,6 +23,9 @@
 #include <gl/GLU.h>
 
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
 
 #include "gl_stub.h"
@@ -43,6 +46,16 @@ void reset() { trace() = Trace(); }
 // entry points below can reach them.
 void record(const char* name)
 {
+	// Setting GL_STUB_TRACE in the environment echoes every call to stderr as
+	// it happens. The recorded trace is no help when a saver crashes mid-frame,
+	// because the process dies before any assertion can read it; this shows
+	// which call it got to. Off by default and checked once.
+	static const bool echo = std::getenv("GL_STUB_TRACE") != nullptr;
+	if (echo) {
+		std::fputs(name, stderr);
+		std::fputc('\n', stderr);
+		std::fflush(stderr);
+	}
 	trace().calls.emplace_back(name);
 }
 
@@ -614,15 +627,69 @@ void APIENTRY glGetIntegerv(GLenum pname, GLint* params)
 const GLubyte* APIENTRY glGetString(GLenum name)
 {
 	REC(glGetString);
-	// An empty extension string is the point: hyperspace and microcosm walk it
-	// with strstr, find nothing, and take their documented no-shader fallback
-	// (hyperspace.cpp:517, microcosm.cpp:927). A null would crash the strstr.
+	// The extension string decides which path hyperspace and microcosm take,
+	// and the three below are the ones their initExtensions asks for
+	// (hyperspace/extensions.cpp:76, microcosm/extensions.cpp:76).
+	//
+	// Advertising them rather than reporting none is deliberate. Every GPU
+	// since about 2002 has all three, so the shader path is the one that
+	// actually ships - and the fallback is not merely less covered but broken:
+	// hyperspace's draw() calls glActiveTextureARB unconditionally at
+	// hyperspace.cpp:231-235, outside the if(dShaders) guard around every other
+	// use, so with the pointers left null it crashes on its first frame. See
+	// docs/MAINTENANCE.md.
 	switch (name) {
 		case GL_VENDOR:   return reinterpret_cast<const GLubyte*>("Really Slick Screensavers tests");
 		case GL_RENDERER: return reinterpret_cast<const GLubyte*>("gl_stub");
-		case GL_VERSION:  return reinterpret_cast<const GLubyte*>("1.1.0");
-		default:          return reinterpret_cast<const GLubyte*>("");
+		case GL_VERSION:  return reinterpret_cast<const GLubyte*>("1.3.0");
+		case GL_EXTENSIONS:
+			return reinterpret_cast<const GLubyte*>(
+			    "GL_ARB_multitexture GL_ARB_texture_cube_map GL_ARB_shader_objects");
+		default: return reinterpret_cast<const GLubyte*>("");
 	}
+}
+
+// --- ARB entry points, reached only through wglGetProcAddress ---------------
+//
+// These are not linked against; the savers hold them as function pointers that
+// their own extensions.cpp fills in. Shaders never compile here - the stub does
+// no rendering - but the handles have to be non-zero, because a saver that got
+// zero back would conclude the driver had failed.
+
+void APIENTRY glActiveTextureARB(GLenum)                  { REC(glActiveTextureARB); }
+void APIENTRY glCompileShaderARB(GLuint)                  { REC(glCompileShaderARB); }
+void APIENTRY glAttachObjectARB(GLuint, GLuint)           { REC(glAttachObjectARB); }
+void APIENTRY glLinkProgramARB(GLuint)                    { REC(glLinkProgramARB); }
+void APIENTRY glUseProgramObjectARB(GLuint)               { REC(glUseProgramObjectARB); }
+void APIENTRY glUniform1iARB(GLint, GLint)                { REC(glUniform1iARB); }
+void APIENTRY glUniform3fARB(GLint, GLfloat, GLfloat, GLfloat) { REC(glUniform3fARB); }
+void APIENTRY glShaderSourceARB(GLuint, GLsizei, const char**, const GLint*) { REC(glShaderSourceARB); }
+
+GLuint APIENTRY glCreateShaderObjectARB(GLenum)
+{
+	REC(glCreateShaderObjectARB);
+	static GLuint next = 1;
+	return next++;
+}
+
+GLuint APIENTRY glCreateProgramObjectARB(void)
+{
+	REC(glCreateProgramObjectARB);
+	static GLuint next = 1000;
+	return next++;
+}
+
+GLint APIENTRY glGetUniformLocationARB(GLuint, const char*)
+{
+	REC(glGetUniformLocationARB);
+	// Zero is a perfectly good uniform location; -1 would mean "not found".
+	return 0;
+}
+
+BOOL WINAPI wglSwapIntervalEXT(int)
+{
+	REC(wglSwapIntervalEXT);
+	return TRUE;
 }
 
 }  // extern "C"
@@ -730,11 +797,42 @@ BOOL WINAPI wglDeleteContext(HGLRC)        { REC(wglDeleteContext);    return TR
 BOOL WINAPI wglMakeCurrent(HDC, HGLRC)     { REC(wglMakeCurrent);      return TRUE; }
 BOOL WINAPI wglSwapLayerBuffers(HDC, UINT) { REC(wglSwapLayerBuffers); return TRUE; }
 
-PROC WINAPI wglGetProcAddress(LPCSTR)
+PROC WINAPI wglGetProcAddress(LPCSTR name)
 {
 	REC(wglGetProcAddress);
-	// nullptr means "extension unavailable", which every call site null-checks.
-	// That exercises the fallback path rather than crashing.
+
+	// Resolves the entry points for the extensions glGetString advertises, and
+	// nothing else. An unknown name still gets nullptr, which is what a driver
+	// does and what every call site here null-checks.
+	//
+	// The alternative - answering nullptr for everything - is not the safe
+	// default it looks like: hyperspace calls glActiveTextureARB outside its
+	// own dShaders guard and would call through a null pointer on the first
+	// frame. See the note on glGetString above.
+	struct Entry {
+		const char* name;
+		PROC address;
+	};
+	static const Entry table[] = {
+	    {"glActiveTextureARB",       reinterpret_cast<PROC>(glActiveTextureARB)},
+	    {"glCreateShaderObjectARB",  reinterpret_cast<PROC>(glCreateShaderObjectARB)},
+	    {"glShaderSourceARB",        reinterpret_cast<PROC>(glShaderSourceARB)},
+	    {"glCompileShaderARB",       reinterpret_cast<PROC>(glCompileShaderARB)},
+	    {"glCreateProgramObjectARB", reinterpret_cast<PROC>(glCreateProgramObjectARB)},
+	    {"glAttachObjectARB",        reinterpret_cast<PROC>(glAttachObjectARB)},
+	    {"glLinkProgramARB",         reinterpret_cast<PROC>(glLinkProgramARB)},
+	    {"glUseProgramObjectARB",    reinterpret_cast<PROC>(glUseProgramObjectARB)},
+	    {"glGetUniformLocationARB",  reinterpret_cast<PROC>(glGetUniformLocationARB)},
+	    {"glUniform1iARB",           reinterpret_cast<PROC>(glUniform1iARB)},
+	    {"glUniform3fARB",           reinterpret_cast<PROC>(glUniform3fARB)},
+	    {"wglSwapIntervalEXT",       reinterpret_cast<PROC>(wglSwapIntervalEXT)},
+	};
+
+	if (name != nullptr) {
+		for (const Entry& entry : table) {
+			if (std::strcmp(entry.name, name) == 0) return entry.address;
+		}
+	}
 	return nullptr;
 }
 

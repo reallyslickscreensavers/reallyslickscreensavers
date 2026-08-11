@@ -60,6 +60,19 @@ protected:
         glstub::reset();
     }
 
+    // Like start(), but leaves the trace holding what initSaver emitted instead
+    // of clearing it, and draws no warm-up frame.
+    //
+    // Several savers build their geometry into display lists at startup and
+    // only call those lists per frame, so setup is the one place those vertices
+    // exist. Same for one-off state like fog parameters. Assertions about
+    // either are impossible after start() has reset the trace.
+    void startCapturingSetup() {
+        glstub::reset();
+        initSaver(testsupport::hostWindow());
+        started_ = true;
+    }
+
     void stop() {
         if (started_) {
             cleanUp(testsupport::hostWindow());
