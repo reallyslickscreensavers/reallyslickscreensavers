@@ -34,6 +34,15 @@ extern int dIllumination;
 extern int dSound;
 extern int readyToDraw;
 
+// Seconds since the last frame. idleProc sets it from an rsTimer
+// (skyrocket.cpp:910), but the tests call draw() directly, so it stays at its
+// initial 0.0f unless a test drives it - and at zero the simulation is frozen.
+extern float frameTime;
+
+// How many particles are live. Rockets, explosions, smoke and shockwaves are
+// all particles, so this is how a test tells whether anything actually flew.
+extern unsigned int last_particle;
+
 void setDefaults();
 void readRegistry();
 void initControls(HWND hdlg);
@@ -48,6 +57,12 @@ void cleanup(HWND hwnd);
 void cleanUp(HWND hwnd) { cleanup(hwnd); }
 
 namespace {
+
+// A plausible frame at 30fps, and enough of them for rockets to launch, climb
+// and burst. Both numbers are deliberately modest: the point is to reach the
+// explosion, smoke and shockwave paths once, not to simulate a display.
+constexpr float kFrameSeconds = 1.0f / 30.0f;
+constexpr int kSimulatedFrames = 60;
 
 // Sound off by default. The engine is exercised deliberately in its own case
 // below; everywhere else it is noise in the trace.
@@ -216,9 +231,22 @@ TEST_F(Skyrocket, StarfieldIsBuiltOnlyWhenAskedFor) {
 TEST_F(Skyrocket, KeepsDrawingCoherentlyWhileRocketsFly) {
     // One frame catches an empty sky; the interesting states - explosions,
     // smoke, shockwaves - only appear once rockets have launched and burst.
+    //
+    // Which needs time to pass. draw() spends frameTime rather than measuring
+    // it (skyrocket.cpp:693), and only idleProc sets it, so a loop of bare
+    // draw() calls redraws one frozen instant. This test used to do exactly
+    // that for 120 frames: every one emitted an identical 9,940 vertices, it
+    // covered nothing the first frame had not, and it cost nine minutes of the
+    // instrumented run. last_particle below is the guard against that
+    // returning - it stays at zero if the clock is not running.
     start();
-    for (int frame = 0; frame < 120; ++frame) draw();
+    for (int frame = 0; frame < kSimulatedFrames; ++frame) {
+        frameTime = kFrameSeconds;
+        draw();
+    }
 
+    EXPECT_GT(last_particle, 0u)
+        << "no rockets launched - is frameTime being driven?";
     EXPECT_TRUE(savertest::PrimitivesPaired());
     EXPECT_TRUE(savertest::VertexCountsLegal());
     EXPECT_TRUE(savertest::MatrixStackBalanced());
@@ -241,11 +269,20 @@ TEST_F(Skyrocket, DrivesTheSoundEngineWhenAsked) {
     // Against tests/support/al_stub.cpp: the device, context, buffers and
     // sources all report success, so the engine builds and plays as it would
     // on a machine with audio.
+    //
+    // Fewer frames than the drawing case above: the particle paths are that
+    // test's job, and this one only needs launches and bursts to reach the
+    // engine. Running the same long loop twice was pure duplication, and the
+    // two together were 46% of the whole instrumented run.
     stop();
     dSound = 100;
     start();
-    for (int frame = 0; frame < 120; ++frame) draw();
+    for (int frame = 0; frame < kSimulatedFrames / 2; ++frame) {
+        frameTime = kFrameSeconds;
+        draw();
+    }
 
+    EXPECT_GT(last_particle, 0u) << "nothing flew, so nothing could be heard";
     EXPECT_TRUE(savertest::PrimitivesPaired());
     EXPECT_TRUE(savertest::MatrixStackBalanced());
 }

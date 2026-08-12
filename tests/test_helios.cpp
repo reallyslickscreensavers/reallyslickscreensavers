@@ -24,6 +24,11 @@ extern int dSurface;
 extern int dBlur;
 extern int readyToDraw;
 
+// Seconds since the last frame. idleProc sets it from an rsTimer
+// (helios.cpp:740), but the tests call draw() directly, so it stays at its
+// initial 0.0f unless a test drives it - and at zero nothing evolves.
+extern float frameTime;
+
 void setDefaults();
 void readRegistry();
 void initControls(HWND hdlg);
@@ -115,16 +120,34 @@ TEST_F(Helios, DrawsIonsThroughTheBillboardDisplayList) {
 }
 
 TEST_F(Helios, ReleasesMoreIonsAsTimePasses) {
+    // Time has to be driven for this to mean anything. draw() spends frameTime
+    // (helios.cpp:537) but only idleProc sets it (helios.cpp:740), so a loop of
+    // bare draw() calls redraws one frozen instant.
+    //
+    // This test used to do exactly that and assert GE, which a frozen clock
+    // satisfies by leaving the two counts equal - it passed while testing
+    // nothing. The assertion below is strict for that reason.
+    // The step is coarse on purpose. helios spreads the whole ion release over
+    // two minutes - releaseTime += 120.0f / dIons at helios.cpp:542 - so with
+    // the 60 ions this fixture uses that is two seconds each. A realistic 1/30
+    // second frame would need hundreds of iterations to release a single one;
+    // half-second steps reach several in twenty.
+    constexpr float kCoarseStep = 0.5f;
+
     start();
     draw();
     const int early = glstub::trace().countCalls("glCallList");
 
-    for (int frame = 0; frame < 20; ++frame) draw();
+    for (int frame = 0; frame < 20; ++frame) {
+        frameTime = kCoarseStep;
+        draw();
+    }
     glstub::reset();
+    frameTime = kCoarseStep;
     draw();
     const int later = glstub::trace().countCalls("glCallList");
 
-    EXPECT_GE(later, early);
+    EXPECT_GT(later, early) << "no ions released - is frameTime being driven?";
     EXPECT_LE(later, dIons) << "the release loop is bounded by dIons";
 }
 
@@ -219,7 +242,10 @@ TEST_F(Helios, IonReleaseCountSurvivesARestart) {
     // Recorded in docs/MAINTENANCE.md; fixing it means resetting the counter in
     // doSaver, which is a saver change rather than a test change.
     start();
-    for (int frame = 0; frame < 10; ++frame) draw();
+    for (int frame = 0; frame < 10; ++frame) {
+        frameTime = 0.5f;  // see ReleasesMoreIonsAsTimePasses for the step size
+        draw();
+    }
 
     stop();
     dIons = 200;  // larger, so the stale counter stays in bounds
