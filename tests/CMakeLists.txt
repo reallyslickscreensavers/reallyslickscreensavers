@@ -140,11 +140,17 @@ add_saver_test(euphoria SOURCES
 # microcosm later. Listed here rather than in each add_saver_test call because
 # the set is the whole Implicit library plus the rsMath types it works in.
 set(IMPLICIT_SOURCES
+    ${REPO_ROOT}/libs/Implicit/impCapsule.cpp
     ${REPO_ROOT}/libs/Implicit/impCubeTables.cpp
     ${REPO_ROOT}/libs/Implicit/impCubeVolume.cpp
+    ${REPO_ROOT}/libs/Implicit/impEllipsoid.cpp
+    ${REPO_ROOT}/libs/Implicit/impHexahedron.cpp
+    ${REPO_ROOT}/libs/Implicit/impKnot.cpp
+    ${REPO_ROOT}/libs/Implicit/impRoundedHexahedron.cpp
     ${REPO_ROOT}/libs/Implicit/impShape.cpp
     ${REPO_ROOT}/libs/Implicit/impSphere.cpp
     ${REPO_ROOT}/libs/Implicit/impSurface.cpp
+    ${REPO_ROOT}/libs/Implicit/impTorus.cpp
 )
 
 # helios builds a marching-cubes shell around its emitters and steers its
@@ -206,6 +212,25 @@ add_saver_test(skyrocket SOURCES
 # inside initSaver and the process dies with 0xC00000FD before gtest can report
 # anything. Matching the shipped setting is the whole fix.
 target_link_options(test_skyrocket PRIVATE /STACK:10000000)
+
+# microcosm normally computes its implicit surfaces on two worker threads. The
+# suite sets gUseThreads false first, which takes the single-threaded branch at
+# microcosm.cpp:592 instead - a complete path, not a stub.
+add_saver_test(microcosm SOURCES
+    ${REPO_ROOT}/src/microcosm/microcosm.cpp
+    ${REPO_ROOT}/src/microcosm/extensions.cpp
+    ${REPO_ROOT}/src/microcosm/gizmo.cpp
+    ${REPO_ROOT}/src/microcosm/mirrorBox.cpp
+    ${REPO_ROOT}/src/microcosm/rsCamera.cpp
+    ${REPO_ROOT}/src/microcosm/texture1d.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/rsMath/rsVec.cpp
+    ${REPO_ROOT}/libs/rsMath/rsVec4.cpp    # Texture1D works in rsVec4
+    ${REPO_ROOT}/libs/rsMath/rsMatrix.cpp
+    ${REPO_ROOT}/libs/rsMath/rsQuat.cpp
+    ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp
+    ${IMPLICIT_SOURCES}
+)
 
 add_saver_test(lattice SOURCES
     ${REPO_ROOT}/src/lattice/lattice.cpp
