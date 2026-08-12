@@ -96,10 +96,14 @@ jobs:
       # --sources must be an absolute path. The MSVC CRT's own sources live
       # under paths containing \src\ (vctools\crt\vcruntime\src\...), so a bare
       # "src" filter pulls the entire runtime into the denominator and reports
-      # about 11% instead of 83%.
+      # roughly an eighth of the real figure.
       #
       # --cover_children is required because ctest runs each test as a child
       # process; without it the report comes back empty.
+      #
+      # No --timeout on this ctest: under instrumentation the heavier suites
+      # exceed a short per-test limit. The whole job now covers all thirteen
+      # savers, so it is the long pole in CI by design.
       - name: Run tests under coverage
         shell: pwsh
         run: |

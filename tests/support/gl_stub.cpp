@@ -24,7 +24,6 @@
 
 #include <cmath>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <vector>
 
@@ -50,7 +49,10 @@ void record(const char* name)
 	// it happens. The recorded trace is no help when a saver crashes mid-frame,
 	// because the process dies before any assertion can read it; this shows
 	// which call it got to. Off by default and checked once.
-	static const bool echo = std::getenv("GL_STUB_TRACE") != nullptr;
+	//
+	// GetEnvironmentVariable rather than getenv, which MSVC deprecates as
+	// unsafe; Windows.h is already included and this is Windows-only code.
+	static const bool echo = GetEnvironmentVariableA("GL_STUB_TRACE", nullptr, 0) != 0;
 	if (echo) {
 		std::fputs(name, stderr);
 		std::fputc('\n', stderr);
