@@ -17,7 +17,12 @@
 #include "support/saver_test_common.h"
 
 
+#include <vector>
+
 #include "resource.h"
+// For the gizmo list below. It is the saver's own header, reached through the
+// module include directory the same way resource.h is.
+#include "gizmo.h"
 
 // microcosm.cpp has no header; its contract with the framework is by name. See
 // the note on cpp:S5421 in test_fieldlines.cpp - these are declarations, not
@@ -42,10 +47,21 @@ extern bool gUseThreads;
 // Owned by tests/support/saver_shim.cpp, not by the saver.
 extern int doingPreview;
 
+// Built by initSaver and indexed by gGizmoIndex.
+extern std::vector<Gizmo*> gizmos;
+extern unsigned int gGizmoIndex;
+
 void setDefaults(int which);
 void readRegistry();
 void initControls(HWND hdlg);
-void chooseSpecificGizmo(int n);
+
+// The direct selector. chooseSpecificGizmo is not: it is the keypad handler for
+// typing a two-digit gizmo number, so it ignores anything above 9 and needs two
+// calls to select anything (microcosm.cpp:1456).
+//
+// The default argument lives on the definition, which is not part of the mangled
+// name, so declaring it without one links fine.
+void chooseGizmo(int index);
 LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm);
 INT_PTR CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm);
 INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm);
@@ -233,19 +249,63 @@ TEST_F(Microcosm, FogIsSetUpOnlyWhenAskedFor) {
 }
 
 TEST_F(Microcosm, EveryGizmoDrawsCoherently) {
-    // Sixteen gizmos share one draw path but build very different geometry, and
-    // only one of them would otherwise be reached by the suite.
+    // The gizmos share one draw path but build very different implicit
+    // geometry - metaballs, knots, tori, flowers, mirror-box kaleidoscopes -
+    // and the suite would otherwise reach whichever one initSaver happened to
+    // pick at random.
+    //
+    // The count comes from the list rather than being written down here, so
+    // adding a gizmo extends this test rather than silently escaping it.
     start();
-    for (int gizmo = 0; gizmo < 16; ++gizmo) {
-        chooseSpecificGizmo(gizmo);
+    ASSERT_GT(gizmos.size(), 1u) << "initSaver builds the list";
+
+    for (size_t index = 0; index < gizmos.size(); ++index) {
+        chooseGizmo(static_cast<int>(index));
+        ASSERT_EQ(gGizmoIndex, index) << "chooseGizmo must actually select it";
+
         glstub::reset();
         draw();
 
-        EXPECT_TRUE(savertest::PrimitivesPaired()) << "gizmo " << gizmo;
-        EXPECT_TRUE(savertest::VertexCountsLegal()) << "gizmo " << gizmo;
-        EXPECT_TRUE(savertest::MatrixStackBalanced()) << "gizmo " << gizmo;
-        EXPECT_TRUE(savertest::NoInvalidEnums()) << "gizmo " << gizmo;
+        EXPECT_TRUE(savertest::PrimitivesPaired()) << "gizmo " << index;
+        EXPECT_TRUE(savertest::VertexCountsLegal()) << "gizmo " << index;
+        EXPECT_TRUE(savertest::MatrixStackBalanced()) << "gizmo " << index;
+        EXPECT_TRUE(savertest::NoInvalidEnums()) << "gizmo " << index;
     }
+}
+
+TEST_F(Microcosm, GizmoListGrowsOnEveryRestart) {
+    // DEFECT, pinned rather than fixed.
+    //
+    // initSaver appends 55 gizmos to the vector, and the clear that should
+    // precede them is swallowed by the comment on the same line:
+    //
+    //     // initialize gizmos    gizmos.clear();     // microcosm.cpp:979
+    //
+    // so it never runs. cleanUp frees nothing either, so a second start leaves
+    // 110 entries and 55 leaked Gizmo objects, and chooseGizmo picks at random
+    // from the doubled range.
+    //
+    // Harmless in the shipped saver, which never restarts. Fixing it means
+    // splitting that line - and deleting the gizmos in cleanUp, which is a
+    // larger change since it frees nothing at all today.
+    // Asserted as a constant increment rather than a doubling, because any
+    // earlier case in the process has already grown the list and the ratio
+    // depends on how many.
+    start();
+    const size_t first = gizmos.size();
+    ASSERT_GT(first, 0u);
+
+    stop();
+    start();
+    const size_t second = gizmos.size();
+
+    stop();
+    start();
+    const size_t third = gizmos.size();
+
+    EXPECT_GT(second, first)
+        << "if this now fails the list is being cleared and the defect is gone";
+    EXPECT_EQ(second - first, third - second) << "one whole list appended each time";
 }
 
 // --- framework entry points ------------------------------------------------
