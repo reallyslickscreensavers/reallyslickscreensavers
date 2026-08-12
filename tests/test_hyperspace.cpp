@@ -32,6 +32,10 @@ extern int dUseGoo;
 extern int dShaders;
 extern int readyToDraw;
 
+// How many frames the caustic and cube-map animations are built from
+// (hyperspace.cpp:92). Not a setting - no registry entry, no dialog control.
+extern int numAnimTexFrames;
+
 // Owned by tests/support/saver_shim.cpp, not by the saver.
 extern int doingPreview;
 
@@ -60,6 +64,18 @@ protected:
         // (hyperspace.cpp:115, 124) and drops it to 32x32, so it also walks
         // the preview branch in initSaver that nothing else reaches.
         doingPreview = 1;
+
+        // Even at preview size the caustic build dominates: hyperspace was 35%
+        // of the whole instrumented coverage run, at roughly 53 seconds a case,
+        // almost all of it here. It is gated by dUseTunnels
+        // (hyperspace.cpp:110), and only the two cases below are about tunnels
+        // at all, so the rest opt out rather than each paying for a texture set
+        // they never sample.
+        //
+        // Turning it on is opting in to that cost - see
+        // BuildsItsCausticTextures and TunnelsAndGooCanBeTurnedOff, which are
+        // what keep causticTextures.cpp and tunnel.cpp covered.
+        dUseTunnels = 0;
     }
 
     void TearDown() override {
@@ -271,6 +287,11 @@ TEST_F(Hyperspace, RestartingRebuildsTheGeneratedTextures) {
     // built" has to be cleared there too. It used to be a static inside
     // draw(), which left the second cycle drawing through freed pointers -
     // reliably an access violation.
+    //
+    // dUseTunnels has to be on: without it there are no caustic textures to
+    // free and rebuild, and the guard would pass while testing nothing.
+    stop();
+    dUseTunnels = 1;
     start();
     draw();
     stop();
@@ -280,16 +301,33 @@ TEST_F(Hyperspace, RestartingRebuildsTheGeneratedTextures) {
     EXPECT_TRUE(savertest::PrimitivesPaired());
 }
 
-TEST_F(Hyperspace, BuildsItsCausticTexturesAtSetup) {
-    // The caustic animation is rendered into textures once during setup
-    // (causticTextures.cpp), which is the only place those calls appear.
+TEST_F(Hyperspace, BuildsItsCausticTexturesOnTheFirstFrame) {
+    // The caustic animation is rendered into a texture set and read back, and
+    // this is the only test that reaches causticTextures.cpp at all.
+    //
+    // It happens on the first draw rather than in initSaver, because the
+    // textures are drawn and read back from the framebuffer and so need the
+    // context to be live (hyperspace.cpp:110-121). An earlier version of this
+    // test used startCapturingSetup() and asserted on texture calls, which
+    // initFlares satisfies on its own - so it passed without ever building a
+    // caustic texture.
+    // startCapturingSetup rather than start, because start() draws the warm-up
+    // frame and then clears the trace - which is exactly the frame the build
+    // happens in.
     stop();
+    dUseTunnels = 1;
     startCapturingSetup();
+    draw();
 
+    // One render-and-readback per animation frame (causticTextures.cpp:198),
+    // and nothing else in hyperspace reads the framebuffer back - so the count
+    // is exactly numAnimTexFrames.
+    //
+    // Not asserted against gluBuild2DMipmaps: the wavy normal cube maps upload
+    // through it too, six faces per frame, so that count is far higher.
+    EXPECT_EQ(glstub::trace().countCalls("glReadPixels"), numAnimTexFrames);
+    EXPECT_GE(glstub::trace().countCalls("gluBuild2DMipmaps"), numAnimTexFrames);
     EXPECT_GT(glstub::trace().texturesGenerated, 0);
-    EXPECT_GT(glstub::trace().countCalls("glTexImage2D") +
-                  glstub::trace().countCalls("glCopyTexSubImage2D"),
-              0);
 }
 
 // --- framework entry points ------------------------------------------------
