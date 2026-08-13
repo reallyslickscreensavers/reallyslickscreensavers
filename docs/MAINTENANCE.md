@@ -68,25 +68,71 @@ pwsh tests/tools/coverage-report.ps1 -ReportPath coverage.xml
 Do not pass `--timeout` to that `ctest`: under instrumentation the heavier tests
 exceed a short per-test limit, and the CI job passes no timeout for that reason.
 
-**That coverage run takes about 40 minutes**, against 56 seconds for the same
-tests uninstrumented. Instrumented execution is the whole cost, so the obvious
-speed-up does not work — measured, not assumed:
+**That coverage run is slow** — around 40 minutes originally, against well under a
+minute for the same tests uninstrumented. Instrumented execution is the whole
+cost. Three things have been tried; **two of the three made it worse or made no
+difference**, so measure before believing anything here.
 
-| Route | Processes | Time | Total |
-|---|---:|---:|---:|
-| `ctest`, one process per test | 297 | 40.0 min | 71.9% |
-| the 15 binaries directly | 15 | 40.3 min | 71.5% |
+### The thing that mattered most: the run was not repeatable at all
 
-Twenty times fewer process spawns bought nothing, and cost 0.4 points: running a
-whole binary in one process makes the history-dependent savers behave
-differently. `soundEngine.cpp` drops 74% → 51% and `helios.cpp` 80% → 73%,
-because the statics described under Task 20 carry across cases that `ctest` runs
-in separate processes. **Keep the `ctest` form** — the per-test isolation is
-load-bearing, not incidental.
+Every saver draws from the single generator in `rsMath`, which rslibs L4 seeds
+from `std::random_device`. **No two runs of the suite did the same work**, and the
+cost of that is unbounded rather than merely noisy: `skyrocket` picks a
+sucker-and-shockwave or stretcher-and-bigmama explosion on `if(!rsRandi(2500))`
+(`skyrocket.cpp:702`), each spawning enormous numbers of particles.
 
-If this needs to get faster, the lever is the work itself, not the harness:
-`hyperspace` and `microcosm` already use `doingPreview` to build cheap
-resources, and the same trick has not been applied to the rest.
+Measured on one commit with one command: **40 minutes, then 358 minutes.**
+Coverage moved between runs for the same reason, which means every per-module
+figure taken before this was a sample, not a measurement.
+
+`SaverFixture`'s constructor now seeds it to `kTestSeed`. Change that value only
+deliberately — the point is that a timing or coverage change means the code
+changed rather than the dice.
+
+### What else worked: stop doing pointless work
+
+The rest of the wins were in the tests, not the tooling.
+
+- `hyperspace` built its caustic texture set in all 15 cases although only two
+  are about tunnels. Gating it on `dUseTunnels` in the fixture: suite **13.6 s →
+  4.1 s** uninstrumented, and it was the single largest suite in the instrumented
+  run.
+- `skyrocket` pumped 120 frames in each of two tests with a **frozen clock** —
+  see the `frameTime` trap below — so they redrew one static instant 120 times.
+  Driving `frameTime` and cutting the loops: suite **17.5 s → 8.1 s**, and
+  coverage went *up*, `particle.cpp` 11.7% → 17.2%.
+
+### What did not work
+
+| Attempt | Result |
+|---|---|
+| run the 15 binaries directly, not `ctest`'s ~300 processes | 40.3 min vs 40.0, and **0.4 points less** coverage |
+| add `--modules` to restrict instrumentation to the test binaries | **far slower**: `fieldlines` went 53 s → 2,013 s |
+
+The direct-binary route loses coverage because a single-process run lets the
+history-dependent statics (Task 20) carry between cases; `soundEngine.cpp` drops
+74% → 51% and `helios.cpp` 80% → 73%. **Keep the `ctest` form** — per-test
+isolation is load-bearing, not incidental.
+
+`--modules` is the one that looks most like an obvious win and is the worst.
+OpenCppCoverage defaults it to `*` and genuinely does select every Windows DLL,
+so restricting it reads as pure hygiene. Measured, it is a 38× pessimisation on
+at least one suite. Do not re-add it without measuring.
+
+> **A warning about measuring this.** `ctest`'s `LastTest.log` is overwritten by
+> every run, instrumented or not, and `CTestCostData.txt` is a rolling average
+> across both — so it is very easy to attribute instrumented time using numbers
+> from a plain run. Worse, the file's per-test blocks do not line up one-to-one
+> with `Test time =` lines, so pasting the two lists together silently
+> misattributes everything. An earlier version of this section did exactly that
+> and named the wrong suites. Parse it by tracking the current test name, and
+> check the total is plausible before trusting the breakdown.
+
+If this needs to get faster still, the lever is the work itself, not the harness.
+`euphoria` is the next largest suite and nothing has been done to it; the two
+patterns that paid off above are the ones to reach for — `doingPreview`, which
+only `hyperspace` and `microcosm` currently use, and checking whether a loop is
+simulating anything at all before assuming its length is earning something.
 
 ---
 
@@ -1046,12 +1092,28 @@ These cost real time to find:
   10MB stack and needs it: against the linker's 1MB default, setup overflows the
   stack and the process dies with `0xC00000FD` before gtest reports anything.
   `implicitDemo` asks for 1GB, for whatever reason.
-- **`frameTime` is effectively zero under test.** Frames drawn back to back see
-  microseconds of elapsed time, so anything a saver ramps up over seconds stays at
-  its initial value. `microcosm` needs `gModeTransition` forced to 1.0 or its
-  volume never yields an isosurface, and `helios` releases almost no ions no
-  matter how many frames are pumped. Assert on structure, or set the state
-  directly.
+- **`frameTime` is exactly zero under test unless a test sets it — so a loop of
+  `draw()` calls simulates nothing.** Every saver *spends* `frameTime` but only
+  `idleProc` ever sets it, from an `rsTimer` tick. The suites call `draw()`
+  directly, so the clock never starts and each frame redraws one frozen instant.
+
+  This is the most expensive trap in the harness, because it fails silently and
+  looks like thoroughness. `skyrocket` had two tests pumping 120 frames each to
+  reach "explosions, smoke and shockwaves"; instrumenting them showed every frame
+  emitting an identical 9,940 vertices, no rocket ever launching, and the pair
+  costing **46% of the whole coverage run** for nothing. `helios` had a test
+  asserting `EXPECT_GE(later, early)`, which a frozen clock satisfies by leaving
+  both counts equal.
+
+  Drive it: `extern float frameTime;` then set it before each `draw()`. Assert
+  that something actually moved — `last_particle > 0`, a strictly greater count —
+  so the guard fails loudly if the clock stops again. Match the step to the
+  saver's own timescale: 1/30 s suits `skyrocket`, but `helios` spreads ion
+  release over two minutes and needs half-second steps to get anywhere.
+
+  `microcosm` is the exception that still wants its state set directly:
+  `gModeTransition` gates which surface function is chosen, and forcing it to 1.0
+  is clearer than simulating the ramp.
 - **`doingPreview` is a legitimate speed switch.** `hyperspace` and `microcosm`
   both branch on it to build much cheaper resources, which is the difference
   between 13 seconds and 129 for the hyperspace suite. It also covers the preview

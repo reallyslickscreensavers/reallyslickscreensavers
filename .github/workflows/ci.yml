@@ -101,9 +101,15 @@ jobs:
       # --cover_children is required because ctest runs each test as a child
       # process; without it the report comes back empty.
       #
+      # Deliberately NO --modules. It looks like the obvious tuning knob - the
+      # default is "*", so every loaded module including the whole Windows DLL
+      # set is selected - but restricting it to the test binaries made the run
+      # dramatically SLOWER when measured: the fieldlines suite went from 53
+      # seconds to 2,013. Whatever OpenCppCoverage does with modules outside the
+      # filter, it is not cheaper than instrumenting them. See docs/MAINTENANCE.md.
+      #
       # No --timeout on this ctest: under instrumentation the heavier suites
-      # exceed a short per-test limit. The whole job now covers all thirteen
-      # savers, so it is the long pole in CI by design.
+      # exceed a short per-test limit.
       - name: Run tests under coverage
         shell: pwsh
         run: |
