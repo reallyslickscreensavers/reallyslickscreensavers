@@ -24,8 +24,6 @@
 // SDK's gl/GL.h. One finding is better than six.
 #include <gl/GL.h>
 
-#include <rsMath/rsMath.h>
-
 #include "gl_stub.h"
 #include "test_window.h"
 
@@ -51,30 +49,28 @@ namespace savertest {
 // from the current globals rather than from what they allocated, so raising a
 // count and then calling cleanUp walks off the end of an array; solarWinds does
 // exactly that and blocks inside the heap. Always: stop, change, start.
-// Every saver draws from the one generator in rsMath, which rslibs L4 seeds
-// from std::random_device - so before this, no two runs of the suite did the
-// same work. That is worse than it sounds. It is not only the flakiness (the
-// fieldlines strip counts had to be reworked around it); the cost is unbounded.
+// The seed for savers that draw from rsMath's generator. Fixed so that a change
+// in timing or coverage means the code changed rather than the dice: rslibs L4
+// seeds that generator from std::random_device, and the cost of an unseeded run
+// is unbounded rather than merely noisy. skyrocket picks a mega-explosion on
+// `if(!rsRandi(2500))` (skyrocket.cpp:702), and one instrumented coverage run
+// that hit it took **358 minutes** against a normal 40.
 //
-// skyrocket picks a "sucker and shockwave" or "stretcher and bigmama" explosion
-// on `if(!rsRandi(2500))` (skyrocket.cpp:702), each spawning enormous numbers of
-// particles. Once the test clock is running that rare branch is reachable, and
-// one instrumented coverage run that happened to hit it took **six hours**
-// against a normal forty minutes. Coverage moved between runs for the same
-// reason.
+// Deliberately NOT applied from this header, and this header deliberately does
+// not include <rsMath/rsMath.h>. Seven savers carry their own global
+// `rsRandi`/`rsRandf` - and starfield its own `rsRandGen` - with bodies that
+// differ from rsMath's (starfield.cpp:79, cyclone.cpp:72, and see Task 12).
+// Pulling rsMath's definitions into a test binary alongside those is a
+// straight ODR violation: the linker keeps one arbitrarily, Debug and Release
+// choose differently, and starfield crashed in Release only.
 //
-// A fixed seed makes both reproducible. The value is arbitrary; what matters is
-// that it never changes, so a timing or coverage regression means the code
-// changed rather than the dice.
+// So each suite whose saver actually uses rsMath seeds it itself. The seven
+// with private copies cannot be seeded this way at all - six of them are on
+// plain rand() - which is one more reason Task 12 is worth doing.
 constexpr unsigned kTestSeed = 20260812u;
 
 class SaverFixture : public ::testing::Test {
 protected:
-    // In the constructor rather than SetUp, because every saver's fixture
-    // overrides SetUp and would have to remember to chain to this one. A base
-    // constructor always runs, and always before the derived SetUp.
-    SaverFixture() { rsRandGen().seed(kTestSeed); }
-
     void TearDown() override { stop(); }
 
     void start() {

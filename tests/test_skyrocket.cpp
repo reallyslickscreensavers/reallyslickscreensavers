@@ -13,6 +13,10 @@
 
 #include "support/saver_test_common.h"
 
+// Safe to include here: skyrocket uses rsMath's generator and carries no private
+// copy of it. Seven savers do carry one, which is why the shared header cannot
+// include this - see the note on kTestSeed there, and Task 12.
+#include <rsMath/rsMath.h>
 
 #include "resource.h"
 
@@ -79,6 +83,13 @@ constexpr int kBoundedRockets = 2;
 class Skyrocket : public savertest::SaverFixture {
 protected:
     void SetUp() override {
+        // Before setDefaults, and before anything reaches initSaver. Without it
+        // the rocket and explosion types are drawn from a random_device seed and
+        // the run time is unbounded: skyrocket picks a mega-explosion on
+        // if(!rsRandi(2500)), and one instrumented run that hit it took 358
+        // minutes against a normal 40.
+        rsRandGen().seed(savertest::kTestSeed);
+
         setDefaults();
         dSound = 0;
     }
@@ -284,13 +295,30 @@ TEST_F(Skyrocket, DrivesTheSoundEngineWhenAsked) {
     //
     // Far fewer frames than the drawing case above. The particle paths are that
     // test's job and this one duplicates them at full price - the two were 43%
-    // of the instrumented run between them. What this needs is a burst loud
-    // enough to reach the engine, which happens early.
+    // of the instrumented run between them. What this needs is a rocket in the
+    // air and then a while for it to burst.
+    //
+    // Driven by the simulation rather than a frame count, because a count is a
+    // guess about when the first launch happens and that is not a fixed number:
+    // rocketTimer is a static inside draw() and carries between cases in a
+    // process, so a count with no margin passes under ctest, which forks per
+    // test, and fails when the binary is run directly. A fixed ten did exactly
+    // that.
     stop();
     dSound = 100;
     dMaxrockets = kBoundedRockets;
     start();
-    for (int frame = 0; frame < kSimulatedFrames / 6; ++frame) {
+
+    int frames = 0;
+    while (last_particle == 0u && frames < kSimulatedFrames) {
+        frameTime = kFrameSeconds;
+        draw();
+        ++frames;
+    }
+    ASSERT_GT(last_particle, 0u) << "nothing launched within " << kSimulatedFrames << " frames";
+
+    // Then long enough for it to climb and burst, which is what the engine hears.
+    for (int frame = 0; frame < kSimulatedFrames / 2; ++frame) {
         frameTime = kFrameSeconds;
         draw();
     }

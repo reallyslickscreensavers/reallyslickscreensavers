@@ -93,19 +93,27 @@ the attempts made things worse and the failures are the useful part.
 
 ### The thing that mattered most: the run was not repeatable at all
 
-Every saver draws from the single generator in `rsMath`, which rslibs L4 seeds
-from `std::random_device`. **No two runs of the suite did the same work**, and the
-cost of that is unbounded rather than merely noisy: `skyrocket` picks a
-sucker-and-shockwave or stretcher-and-bigmama explosion on `if(!rsRandi(2500))`
-(`skyrocket.cpp:702`), each spawning enormous numbers of particles.
+Savers that use `rsMath`'s generator draw from one seeded by `std::random_device`
+since rslibs L4. **No two runs did the same work**, and the cost is unbounded
+rather than merely noisy: `skyrocket` picks a sucker-and-shockwave or
+stretcher-and-bigmama explosion on `if(!rsRandi(2500))` (`skyrocket.cpp:702`),
+each spawning enormous numbers of particles.
 
 Measured on one commit with one command: **40 minutes, then 358 minutes.**
 Coverage moved between runs for the same reason, which means every per-module
 figure taken before this was a sample, not a measurement.
 
-`SaverFixture`'s constructor now seeds it to `kTestSeed`. Change that value only
+Suites now seed it to `kTestSeed` themselves. Change that value only
 deliberately — the point is that a timing or coverage change means the code
 changed rather than the dice.
+
+**Only six savers can be seeded this way**, and the seeding cannot live in the
+shared fixture. Seven others carry private copies of `rsRandi`/`rsRandf` — and
+`starfield` its own `rsRandGen` — so including `<rsMath/rsMath.h>` in the common
+header put two definitions of the same inline function in one binary and crashed
+`starfield` in Release while Debug stayed green. That is Task 12, and this is
+what raised it from tidiness to undefined behaviour. Six of the seven are on
+plain `rand()`, so they are not seedable at all until it is fixed.
 
 ### What else worked: stop doing pointless work
 
@@ -180,7 +188,7 @@ simulating anything at all before assuming its length is earning something.
 | 9 | C++20 | open, blocked on 3 |
 | 10 | Reliability bugs | **partial** — the two cyclone BLOCKERs are proven unreachable; 10 bugs remain |
 | 11 | Registry values used unclamped | open |
-| 12 | Six savers carry private `rand()` copies | open |
+| **12** | **Seven savers carry private PRNG copies — an ODR violation that crashes Release** | open, **raised** |
 | 13 | Clear-text `http://` URLs | open |
 | 14 | `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY` | **done** — PR #44 |
 | 15 | `fieldlines` nests `glBegin`, silently losing its line widths | open |
@@ -518,16 +526,53 @@ the `cyclone` BLOCKER guard (Task 10) only bites where a key exists. Giving each
 saver a settings header with a pure clamp function makes both problems go away,
 because the clamp becomes testable without a registry at all.
 
-## Task 12 · Six savers carry private `rand()` copies
+## Task 12 · Seven savers carry private PRNG copies — and it is an ODR violation
+
+**Raised from tidiness. This is undefined behaviour that already changes
+behaviour between Debug and Release**, demonstrated below, and it is seven
+savers rather than six.
 
 ```bash
-grep -rln "return rand() % x\|float(rand()) / float(RAND_MAX)" src --include=*.cpp
+grep -rln "inline int rsRandi\|inline float rsRandf\|inline std::mt19937& rsRandGen" src --include=*.cpp
 ```
 
 | Saver | Private copy |
 |---|---|
-| `cyclone`, `fieldlines`, `flocks`, `flux`, `plasma` | both `rsRandi` and `rsRandf` |
+| `cyclone`, `fieldlines`, `flocks`, `flux`, `plasma` | both `rsRandi` and `rsRandf`, on plain `rand()` |
 | `solarwinds` | `rsRandf` only |
+| **`starfield`** | **`rsRandf` and its own `rsRandGen`** (`starfield.cpp:79`) |
+
+Each defines a function at global scope with the same name and signature as an
+`inline` one in `rsMath.h`, but a **different body**. Put both in a program and
+the One Definition Rule is broken: the linker keeps one COMDAT and discards the
+other, and it does not have to choose the same way twice.
+
+It is not theoretical. Adding `#include <rsMath/rsMath.h>` to the shared test
+fixture — to seed the generator — was enough to make the two definitions meet:
+
+- Debug: all 297 tests passed.
+- Release: `starfield` **access-violated**, taking out all eight of its cases
+  that call `initSaver`. Same source, same seed, same machine.
+
+The crash path is worth knowing, because it survives whichever definition wins.
+`starfield`'s private `rsRandf` is `uniform_real_distribution<float>(0.0f, x)`,
+which is undefined for a negative `x` — precisely the bug rslibs L4 fixed in the
+library version. A NaN out of it reaches:
+
+```cpp
+float size = float(dStarSize) * brightness;
+if(size < 1.0f) size = 1.0f;        // false for NaN, so no clamp
+auto bucket = int(size + 0.5f);     // INT_MIN
+if(bucket > maxStarSize) ...        // false, so no clamp either
+sizeBuckets[bucket].push_back(i);   // indexes far out of bounds
+```
+
+Both guards are comparisons that a NaN slips through. Worth a second look even
+after the PRNG is unified.
+
+Until it is fixed, **do not include `<rsMath/rsMath.h>` anywhere that links a
+saver carrying a private copy** — `tests/support/saver_test_common.h` cannot,
+which is why only the six clean savers can have a seeded generator.
 
 Each is a verbatim duplicate of what `rsMath.h` used to contain, carrying the
 same *"Don't forget to initialize with srand()"* comment. **rslibs L4 did not
