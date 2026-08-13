@@ -68,10 +68,28 @@ pwsh tests/tools/coverage-report.ps1 -ReportPath coverage.xml
 Do not pass `--timeout` to that `ctest`: under instrumentation the heavier tests
 exceed a short per-test limit, and the CI job passes no timeout for that reason.
 
-**That coverage run is slow** — around 40 minutes originally, against well under a
-minute for the same tests uninstrumented. Instrumented execution is the whole
-cost. Three things have been tried; **two of the three made it worse or made no
-difference**, so measure before believing anything here.
+**That coverage run was 40 minutes and is now under 6**, at unchanged coverage.
+Instrumented execution is the whole cost — the same tests run in about 20 seconds
+without it.
+
+| | Time | Coverage |
+|---|---:|---:|
+| original, serial | 40 min | 71.9% |
+| after the test-volume cuts below, serial | ~13 min | 72.1% |
+| **plus `ctest -j`** | **5.8 min** | **72.1%** |
+
+`-j` is most of the win and cost nothing: ~300 independent processes, so they
+parallelise almost linearly, and OpenCppCoverage merges concurrent children
+correctly — the totals agree to four significant figures across `-j 4` and
+`-j 8`. It is sized from `[Environment]::ProcessorCount` in CI rather than
+hardcoded. Note `-j 8` (5.4 min) is barely better than `-j 4` (5.8), so the
+debugger serialises somewhere and a hosted runner loses little to a development
+machine.
+
+**It should have been the first thing tried, not the last.** Two rounds of
+picking at test workloads came first and were worth about a third of what one
+flag was. Everything else here is the record of that detour, kept because two of
+the attempts made things worse and the failures are the useful part.
 
 ### The thing that mattered most: the run was not repeatable at all
 
@@ -91,7 +109,18 @@ changed rather than the dice.
 
 ### What else worked: stop doing pointless work
 
-The rest of the wins were in the tests, not the tooling.
+Worth roughly a third of what `-j` was, and every one of these reduced how many
+times a path repeats rather than which paths run — so coverage held. The
+settings live in each suite's fixture, and every default is still asserted by
+that suite's `SaverBodyWasActuallyCompiled` test, which is a plain `TEST` and so
+never sees the fixture.
+
+| Suite | Change | Effect |
+|---|---|---|
+| `euphoria` | `dDensity` 35 → 12 | 121 s → 9.6 s; the wisp mesh is `(dDensity + 1)²` per wisp, so this falls away quadratically |
+| `lattice` | `dDepth` 5 → 2 | cells tested per frame 3,375 → 729 |
+| `fieldlines` | `dMaxSteps` 300 → 100 | 54 s → 23 s |
+| `hyperspace` | `numAnimTexFrames` 20 → 16 | almost nothing, ~1%; 16 is the floor anyway, since `causticTextures` clamps to `numKeys * 2` |
 
 - `hyperspace` built its caustic texture set in all 15 cases although only two
   are about tunnels. Gating it on `dUseTunnels` in the fixture: suite **13.6 s →

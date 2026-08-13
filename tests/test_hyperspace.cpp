@@ -76,11 +76,19 @@ protected:
         // BuildsItsCausticTextures and TunnelsAndGooCanBeTurnedOff, which are
         // what keep causticTextures.cpp and tunnel.cpp covered.
         dUseTunnels = 0;
+
+        // The three cases that do want tunnels still pay for the caustic build,
+        // and it is one render-and-readback per animation frame. Sixteen is the
+        // floor, not a round number: causticTextures clamps numFrames up to
+        // numKeys * 2 and the saver passes 8 keys (causticTextures.cpp:48), so
+        // anything lower is silently ignored.
+        numAnimTexFrames = 16;
     }
 
     void TearDown() override {
         savertest::SaverFixture::TearDown();
         doingPreview = 0;
+        numAnimTexFrames = 20;
     }
 };
 

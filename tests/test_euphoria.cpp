@@ -36,7 +36,16 @@ namespace {
 // DEFAULTS1 is "Regular", euphoria's baseline preset.
 class Euphoria : public savertest::SaverFixture {
 protected:
-    void SetUp() override { setDefaults(DEFAULTS1); }
+    void SetUp() override {
+        setDefaults(DEFAULTS1);
+
+        // Each wisp is a (dDensity + 1) squared mesh (euphoria.cpp:116-119), so
+        // the shipped 35 costs 1,296 vertices per wisp per frame and the cost
+        // falls away quadratically. Twelve still draws a real mesh and reaches
+        // the same code; the default itself is asserted in the harness test,
+        // and the two cases that compare densities set their own values.
+        dDensity = 12;
+    }
 };
 
 }  // namespace

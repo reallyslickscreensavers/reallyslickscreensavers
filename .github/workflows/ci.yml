@@ -108,18 +108,29 @@ jobs:
       # seconds to 2,013. Whatever OpenCppCoverage does with modules outside the
       # filter, it is not cheaper than instrumenting them. See docs/MAINTENANCE.md.
       #
+      # -j is what makes this job affordable. The tests are ~300 independent
+      # processes and instrumentation is the whole cost, so they parallelise
+      # almost linearly: 13 minutes serial against 5.4 at -j 8 locally, for a
+      # coverage total identical to four significant figures. OpenCppCoverage
+      # merges concurrent children correctly - that was measured, not assumed.
+      #
+      # Sized from the runner rather than hardcoded, since hosted runners have
+      # far fewer cores than a development machine.
+      #
       # No --timeout on this ctest: under instrumentation the heavier suites
       # exceed a short per-test limit.
       - name: Run tests under coverage
         shell: pwsh
         run: |
           $occ = "$env:ProgramFiles\OpenCppCoverage\OpenCppCoverage.exe"
+          $jobs = [Environment]::ProcessorCount
+          Write-Host "Running the suite with -j $jobs"
           & $occ `
             --sources "$env:GITHUB_WORKSPACE\src" `
             --excluded_sources "$env:GITHUB_WORKSPACE\tests" `
             --cover_children `
             --export_type "cobertura:$env:GITHUB_WORKSPACE\coverage.xml" `
-            -- ctest --test-dir tests/build -C Debug --output-on-failure
+            -- ctest --test-dir tests/build -C Debug -j $jobs --output-on-failure
           if ($LASTEXITCODE -ne 0) { throw "tests failed under coverage" }
 
       - name: Report coverage

@@ -44,7 +44,17 @@ namespace {
 // DEFAULTS1 is "Regular", lattice's baseline preset.
 class Lattice : public savertest::SaverFixture {
 protected:
-    void SetUp() override { setDefaults(DEFAULTS1); }
+    void SetUp() override {
+        setDefaults(DEFAULTS1);
+
+        // draw() walks a cube of cells (2 * (dDepth + 2) + 1) on a side and
+        // frustum-culls each one (lattice.cpp:589-592), so the shipped 5 tests
+        // 3,375 cells a frame against 729 at 2. The cells that survive culling
+        // are drawn from the same display lists either way, so the same code
+        // runs. The default is asserted in the harness test, and the case that
+        // compares depths sets its own values.
+        dDepth = 2;
+    }
 };
 
 }  // namespace

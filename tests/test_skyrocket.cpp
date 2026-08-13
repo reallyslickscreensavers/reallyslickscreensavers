@@ -282,15 +282,15 @@ TEST_F(Skyrocket, DrivesTheSoundEngineWhenAsked) {
     // sources all report success, so the engine builds and plays as it would
     // on a machine with audio.
     //
-    // Fewer frames than the drawing case above: the particle paths are that
-    // test's job, and this one only needs launches and bursts to reach the
-    // engine. Running the same long loop twice was pure duplication, and the
-    // two together were 46% of the whole instrumented run.
+    // Far fewer frames than the drawing case above. The particle paths are that
+    // test's job and this one duplicates them at full price - the two were 43%
+    // of the instrumented run between them. What this needs is a burst loud
+    // enough to reach the engine, which happens early.
     stop();
     dSound = 100;
     dMaxrockets = kBoundedRockets;
     start();
-    for (int frame = 0; frame < kSimulatedFrames / 2; ++frame) {
+    for (int frame = 0; frame < kSimulatedFrames / 6; ++frame) {
         frameTime = kFrameSeconds;
         draw();
     }
