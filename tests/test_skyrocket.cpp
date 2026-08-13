@@ -64,6 +64,16 @@ namespace {
 constexpr float kFrameSeconds = 1.0f / 30.0f;
 constexpr int kSimulatedFrames = 60;
 
+// Bounds the work per frame. Every live rocket becomes hundreds of particles on
+// bursting, each of them drawn, and the cost of that is what decides how long
+// the instrumented run takes - one unlucky seed with the shipped eight rockets
+// turned a forty-minute coverage run into a six-hour one.
+//
+// The seed is fixed now (see kTestSeed in saver_test_common.h), so this is belt
+// and braces: it keeps the worst case affordable if the seed ever changes. Two
+// rockets still launch, burst and smoke, which is all the coverage needs.
+constexpr int kBoundedRockets = 2;
+
 // Sound off by default. The engine is exercised deliberately in its own case
 // below; everywhere else it is noise in the trace.
 class Skyrocket : public savertest::SaverFixture {
@@ -239,6 +249,8 @@ TEST_F(Skyrocket, KeepsDrawingCoherentlyWhileRocketsFly) {
     // covered nothing the first frame had not, and it cost nine minutes of the
     // instrumented run. last_particle below is the guard against that
     // returning - it stays at zero if the clock is not running.
+    stop();
+    dMaxrockets = kBoundedRockets;
     start();
     for (int frame = 0; frame < kSimulatedFrames; ++frame) {
         frameTime = kFrameSeconds;
@@ -276,6 +288,7 @@ TEST_F(Skyrocket, DrivesTheSoundEngineWhenAsked) {
     // two together were 46% of the whole instrumented run.
     stop();
     dSound = 100;
+    dMaxrockets = kBoundedRockets;
     start();
     for (int frame = 0; frame < kSimulatedFrames / 2; ++frame) {
         frameTime = kFrameSeconds;

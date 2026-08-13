@@ -24,6 +24,8 @@
 // SDK's gl/GL.h. One finding is better than six.
 #include <gl/GL.h>
 
+#include <rsMath/rsMath.h>
+
 #include "gl_stub.h"
 #include "test_window.h"
 
@@ -49,8 +51,30 @@ namespace savertest {
 // from the current globals rather than from what they allocated, so raising a
 // count and then calling cleanUp walks off the end of an array; solarWinds does
 // exactly that and blocks inside the heap. Always: stop, change, start.
+// Every saver draws from the one generator in rsMath, which rslibs L4 seeds
+// from std::random_device - so before this, no two runs of the suite did the
+// same work. That is worse than it sounds. It is not only the flakiness (the
+// fieldlines strip counts had to be reworked around it); the cost is unbounded.
+//
+// skyrocket picks a "sucker and shockwave" or "stretcher and bigmama" explosion
+// on `if(!rsRandi(2500))` (skyrocket.cpp:702), each spawning enormous numbers of
+// particles. Once the test clock is running that rare branch is reachable, and
+// one instrumented coverage run that happened to hit it took **six hours**
+// against a normal forty minutes. Coverage moved between runs for the same
+// reason.
+//
+// A fixed seed makes both reproducible. The value is arbitrary; what matters is
+// that it never changes, so a timing or coverage regression means the code
+// changed rather than the dice.
+constexpr unsigned kTestSeed = 20260812u;
+
 class SaverFixture : public ::testing::Test {
 protected:
+    // In the constructor rather than SetUp, because every saver's fixture
+    // overrides SetUp and would have to remember to chain to this one. A base
+    // constructor always runs, and always before the derived SetUp.
+    SaverFixture() { rsRandGen().seed(kTestSeed); }
+
     void TearDown() override { stop(); }
 
     void start() {
