@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 Terence M. Welsh's Really Slick Screensavers, imported from SourceForge SVN and kept building on
-current Visual Studio. Thirteen OpenGL screensavers under `src/`, each a self-contained Win32
+current Visual Studio. Fourteen OpenGL screensavers under `src/`, each a self-contained Win32
 executable, plus `implicitDemo` (a freeglut demo, not a saver). Supporting libraries live in the
 `libs` submodule ([rslibs](https://github.com/reallyslickscreensavers/rslibs)).
 
@@ -105,6 +105,11 @@ Each `src/<name>/` is one `.vcxproj` producing one executable: a `.cpp` of the s
 build implicit surfaces through `libs/Implicit` (marching cubes); `skyrocket` is the only one with
 sound (OpenAL). Because every module defines `draw()`, `idleProc()` and friends at global scope,
 two savers can never share a binary.
+
+`ribbons` is the newest and the only one written against the contract above from the start: it
+clamps every registry value where it reads it, draws from `rsMath`'s generator rather than a
+private copy, and its `cleanUp` resets what it frees, so it is the one saver that survives being
+restarted in a single process. Copy it, not an older saver, when adding another.
 
 ### Test harness (`tests/`)
 
