@@ -4,6 +4,17 @@ on:
   pull_request:
     branches: ['*']
 
+# One run per pull request. Pushing again supersedes whatever is still running:
+# the older commit's result is no longer the answer to any question, and these
+# runs are expensive — the coverage job alone is ~6 minutes of instrumented
+# execution on top of two full solution builds.
+#
+# Grouped by ref rather than by SHA, so consecutive pushes to the same branch
+# cancel each other while unrelated pull requests run in parallel.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # Drop all permissions by default — each job grants only what it needs
 permissions: {}
 
