@@ -9,6 +9,7 @@
 
 #include "support/saver_test_common.h"
 
+#include <array>
 
 #include "resource.h"
 
@@ -65,8 +66,8 @@ TEST(EuphoriaHarness, SaverBodyWasActuallyCompiled) {
 }
 
 TEST(EuphoriaHarness, EveryPresetLeavesTheSettingsUsable) {
-    const int presets[] = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4,
-                           DEFAULTS5, DEFAULTS6, DEFAULTS7};
+    constexpr std::array presets = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4,
+                                    DEFAULTS5, DEFAULTS6, DEFAULTS7};
     for (int preset : presets) {
         setDefaults(preset);
         EXPECT_GT(dWisps + dBackground, 0) << "preset " << preset << ": nothing would draw";
@@ -255,8 +256,8 @@ TEST(EuphoriaDialogs, ConfigureDialogHandlesTheStandardMessages) {
 }
 
 TEST(EuphoriaDialogs, EveryPresetButtonRestoresItsPreset) {
-    const int buttons[] = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4,
-                           DEFAULTS5, DEFAULTS6, DEFAULTS7};
+    constexpr std::array buttons = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4,
+                                    DEFAULTS5, DEFAULTS6, DEFAULTS7};
     for (int button : buttons) {
         setDefaults(button);
         const int expected = dWisps;

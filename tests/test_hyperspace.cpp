@@ -15,6 +15,7 @@
 
 #include "support/saver_test_common.h"
 
+#include <array>
 
 #include "resource.h"
 
@@ -210,8 +211,8 @@ TEST_F(Hyperspace, ReadsBackAProjectionItCanProjectWith) {
     start();
     draw();
 
-    float projection[16];
-    glstub::currentMatrix(GL_PROJECTION, projection);
+    std::array<float, 16> projection{};
+    glstub::currentMatrix(GL_PROJECTION, projection.data());
 
     EXPECT_FLOAT_EQ(projection[11], -1.0f) << "the fourth row must take w from z";
     EXPECT_GT(projection[0], 0.0f);
@@ -225,14 +226,14 @@ TEST_F(Hyperspace, WiderFieldOfViewFlattensTheProjection) {
     stop();
     dFov = 30;
     start();
-    float narrow[16];
-    glstub::currentMatrix(GL_PROJECTION, narrow);
+    std::array<float, 16> narrow{};
+    glstub::currentMatrix(GL_PROJECTION, narrow.data());
 
     stop();
     dFov = 90;
     start();
-    float wide[16];
-    glstub::currentMatrix(GL_PROJECTION, wide);
+    std::array<float, 16> wide{};
+    glstub::currentMatrix(GL_PROJECTION, wide.data());
 
     EXPECT_GT(narrow[0], wide[0]);
 }
@@ -241,8 +242,8 @@ TEST_F(Hyperspace, LeavesTheModelviewFiniteAfterAFrame) {
     start();
     draw();
 
-    float modelview[16];
-    glstub::currentMatrix(GL_MODELVIEW, modelview);
+    std::array<float, 16> modelview{};
+    glstub::currentMatrix(GL_MODELVIEW, modelview.data());
     for (int i = 0; i < 16; ++i) {
         EXPECT_TRUE(std::isfinite(modelview[i])) << "modelview element " << i;
     }

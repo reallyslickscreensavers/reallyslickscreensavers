@@ -17,6 +17,7 @@
 #include "support/saver_test_common.h"
 
 
+#include <array>
 #include <vector>
 
 #include "resource.h"
@@ -373,7 +374,7 @@ TEST(MicrocosmDialogs, ConfigureDialogHandlesTheStandardMessages) {
 TEST(MicrocosmDialogs, EveryPresetButtonRestoresItsPreset) {
     // The three buttons map to setDefaults(0), (1) and (2)
     // (microcosm.cpp:1384-1395) rather than passing their own control id.
-    const int buttons[] = {DEFAULTS0, DEFAULTS1, DEFAULTS2};
+    constexpr std::array buttons = {DEFAULTS0, DEFAULTS1, DEFAULTS2};
     for (int i = 0; i < 3; ++i) {
         setDefaults(i);
         const int expected = dResolution;

@@ -9,6 +9,7 @@
 
 #include "support/saver_test_common.h"
 
+#include <array>
 
 #include "resource.h"
 
@@ -61,7 +62,7 @@ TEST(FluxHarness, SaverBodyWasActuallyCompiled) {
 TEST(FluxHarness, EveryPresetLeavesTheSettingsUsable) {
     // The six presets are the only way flux sets its defaults; a preset that
     // left a count at zero would divide by zero in initSaver.
-    const int presets[] = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
+    constexpr std::array presets = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
     for (int preset : presets) {
         setDefaults(preset);
         EXPECT_GT(dFluxes, 0) << "preset " << preset;
@@ -269,7 +270,7 @@ TEST(FluxDialogs, ConfigureDialogHandlesTheStandardMessages) {
 TEST(FluxDialogs, EveryPresetButtonRestoresItsPreset) {
     // flux has six preset buttons rather than one Defaults button, and each
     // arm of that switch is a separate line of coverage.
-    const int buttons[] = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
+    constexpr std::array buttons = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
     for (int button : buttons) {
         setDefaults(button);
         const int expected = dFluxes;

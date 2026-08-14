@@ -52,8 +52,7 @@ void record(const char* name)
 	//
 	// GetEnvironmentVariable rather than getenv, which MSVC deprecates as
 	// unsafe; Windows.h is already included and this is Windows-only code.
-	static const bool echo = GetEnvironmentVariableA("GL_STUB_TRACE", nullptr, 0) != 0;
-	if (echo) {
+	if (static const bool echo = GetEnvironmentVariableA("GL_STUB_TRACE", nullptr, 0) != 0; echo) {
 		std::fputs(name, stderr);
 		std::fputc('\n', stderr);
 		std::fflush(stderr);
@@ -163,10 +162,16 @@ struct Mat {
 	float m[16];
 };
 
+// The project is C++17, so there is no <numbers> to take this from.
+constexpr double kPi = 3.14159265358979323846;
+
 Mat identityMat()
 {
 	Mat r = {};
-	r.m[0] = r.m[5] = r.m[10] = r.m[15] = 1.0f;
+	r.m[0] = 1.0f;
+	r.m[5] = 1.0f;
+	r.m[10] = 1.0f;
+	r.m[15] = 1.0f;
 	return r;
 }
 
@@ -247,7 +252,7 @@ Mat rotation(float angleDegrees, float x, float y, float z)
 	y /= len;
 	z /= len;
 
-	const float rad = angleDegrees * 3.14159265358979323846f / 180.0f;
+	const float rad = angleDegrees * float(kPi) / 180.0f;
 	const float c = std::cos(rad);
 	const float s = std::sin(rad);
 	const float t = 1.0f - c;
@@ -439,6 +444,12 @@ void APIENTRY glBitmap(GLsizei, GLsizei, GLfloat, GLfloat, GLfloat, GLfloat, con
 // Added for the second half of the rollout - flux, euphoria, helios, lattice,
 // hyperspace, skyrocket and microcosm. All pure recorders; the ones that carry
 // state are grouped separately below.
+//
+// SonarCloud reports cpp:S107 (too many parameters) on glCopyTexSubImage2D,
+// glTexImage1D and gluProject. Those signatures are OpenGL's, not ours - a stub
+// that took fewer arguments would not satisfy the calls it exists to satisfy.
+// Left as findings rather than silenced, for the same reason as the S3630s
+// further down.
 void APIENTRY glClipPlane(GLenum, const GLdouble*)           { REC(glClipPlane); }
 void APIENTRY glColor4fv(const GLfloat*)                     { REC(glColor4fv); }
 void APIENTRY glCopyTexSubImage2D(GLenum, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei) { REC(glCopyTexSubImage2D); }
@@ -584,8 +595,7 @@ void APIENTRY glFrustum(GLdouble left, GLdouble right, GLdouble bottom,
 void APIENTRY glGetFloatv(GLenum pname, GLfloat* params)
 {
 	REC(glGetFloatv);
-	glstub::Mat m;
-	if (glstub::readMatrix(pname, &m)) {
+	if (glstub::Mat m; glstub::readMatrix(pname, &m)) {
 		for (int i = 0; i < 16; ++i) params[i] = m.m[i];
 		return;
 	}
@@ -599,8 +609,7 @@ void APIENTRY glGetFloatv(GLenum pname, GLfloat* params)
 void APIENTRY glGetDoublev(GLenum pname, GLdouble* params)
 {
 	REC(glGetDoublev);
-	glstub::Mat m;
-	if (glstub::readMatrix(pname, &m)) {
+	if (glstub::Mat m; glstub::readMatrix(pname, &m)) {
 		for (int i = 0; i < 16; ++i) params[i] = double(m.m[i]);
 		return;
 	}
@@ -618,8 +627,7 @@ void APIENTRY glGetIntegerv(GLenum pname, GLint* params)
 		for (int i = 0; i < 4; ++i) params[i] = glstub::state().viewport[i];
 		return;
 	}
-	glstub::Mat m;
-	if (glstub::readMatrix(pname, &m)) {
+	if (glstub::Mat m; glstub::readMatrix(pname, &m)) {
 		for (int i = 0; i < 16; ++i) params[i] = GLint(m.m[i]);
 		return;
 	}
@@ -726,7 +734,7 @@ GLint APIENTRY gluBuild1DMipmaps(GLenum, GLint, GLsizei, GLenum, GLenum, const v
 void APIENTRY gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 {
 	REC(gluPerspective);
-	const double halfHeight = zNear * std::tan(fovy * 3.14159265358979323846 / 360.0);
+	const double halfHeight = zNear * std::tan(fovy * glstub::kPi / 360.0);
 	const double halfWidth = halfHeight * aspect;
 	glstub::applyToTop(glstub::frustumMat(-halfWidth, halfWidth,
 	                                      -halfHeight, halfHeight, zNear, zFar));
@@ -768,7 +776,9 @@ GLint APIENTRY gluProject(GLdouble objx, GLdouble objy, GLdouble objz,
 	}
 
 	if (clip[3] == 0.0) {
-		*winx = *winy = *winz = 0.0;
+		*winx = 0.0;
+		*winy = 0.0;
+		*winz = 0.0;
 		return GL_FALSE;
 	}
 
@@ -806,6 +816,12 @@ PROC WINAPI wglGetProcAddress(LPCSTR name)
 	// Resolves the entry points for the extensions glGetString advertises, and
 	// nothing else. An unknown name still gets nullptr, which is what a driver
 	// does and what every call site here null-checks.
+	//
+	// SonarCloud reports cpp:S3630 on every entry below and there is nothing to
+	// do about it: wglGetProcAddress returns PROC, so handing back a function
+	// pointer means converting between function pointer types, and
+	// reinterpret_cast is the only cast in C++ that does that. static_cast and
+	// friends do not apply. Left as findings rather than silenced.
 	//
 	// The alternative - answering nullptr for everything - is not the safe
 	// default it looks like: hyperspace calls glActiveTextureARB outside its

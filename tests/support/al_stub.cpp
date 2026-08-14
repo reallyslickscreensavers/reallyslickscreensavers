@@ -49,6 +49,9 @@ ALCcontext* ALC_APIENTRY alcCreateContext(ALCdevice*, const ALCint*)
 ALCboolean ALC_APIENTRY alcMakeContextCurrent(ALCcontext*) { return ALC_TRUE; }
 void ALC_APIENTRY alcDestroyContext(ALCcontext*) { /* intentionally empty */ }
 
+// SonarCloud reports cpp:S6188 on the next two, asking for the count-and-pointer
+// pair to become a std::span. It cannot: these signatures are OpenAL's, and
+// std::span is C++20 while this project is C++17. Left as findings.
 void AL_APIENTRY alGenBuffers(ALsizei n, ALuint* buffers)
 {
 	static ALuint next = 1;

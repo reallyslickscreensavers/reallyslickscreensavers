@@ -18,6 +18,8 @@
 // include this - see the note on kTestSeed there, and Task 12.
 #include <rsMath/rsMath.h>
 
+#include <array>
+
 #include "resource.h"
 
 // skyrocket.cpp has no header; its contract with the framework is by name. See
@@ -156,8 +158,8 @@ TEST_F(Skyrocket, ReadsBackAProjectionItCanProjectWith) {
     start();
     draw();
 
-    float projection[16];
-    glstub::currentMatrix(GL_PROJECTION, projection);
+    std::array<float, 16> projection{};
+    glstub::currentMatrix(GL_PROJECTION, projection.data());
 
     EXPECT_FLOAT_EQ(projection[11], -1.0f) << "the fourth row must take w from z";
     EXPECT_GT(projection[0], 0.0f);
@@ -171,8 +173,8 @@ TEST_F(Skyrocket, LeavesTheModelviewFiniteAfterAFrame) {
     start();
     draw();
 
-    float modelview[16];
-    glstub::currentMatrix(GL_MODELVIEW, modelview);
+    std::array<float, 16> modelview{};
+    glstub::currentMatrix(GL_MODELVIEW, modelview.data());
     for (int i = 0; i < 16; ++i) {
         EXPECT_TRUE(std::isfinite(modelview[i])) << "modelview element " << i;
     }

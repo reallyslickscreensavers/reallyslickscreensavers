@@ -14,6 +14,7 @@
 
 #include "support/saver_test_common.h"
 
+#include <array>
 
 #include "resource.h"
 
@@ -74,7 +75,7 @@ TEST(LatticeHarness, SaverBodyWasActuallyCompiled) {
 }
 
 TEST(LatticeHarness, EveryPresetLeavesTheSettingsUsable) {
-    const int presets[] = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
+    constexpr std::array presets = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
     for (int preset : presets) {
         setDefaults(preset);
         EXPECT_GT(dLongitude, 0) << "preset " << preset << ": the torus is built from this";
@@ -165,8 +166,8 @@ TEST_F(Lattice, BuildsAProjectionThatCanBeReadBack) {
     // the saver actually built.
     start();
 
-    float projection[16];
-    glstub::currentMatrix(GL_PROJECTION, projection);
+    std::array<float, 16> projection{};
+    glstub::currentMatrix(GL_PROJECTION, projection.data());
 
     // A perspective projection: w comes from -z, and the near/far terms are
     // negative. cot(fov/2) with the default 90 degree field of view is 1.
@@ -183,14 +184,14 @@ TEST_F(Lattice, WiderFieldOfViewFlattensTheProjection) {
     stop();
     dFov = 60;
     start();
-    float narrow[16];
-    glstub::currentMatrix(GL_PROJECTION, narrow);
+    std::array<float, 16> narrow{};
+    glstub::currentMatrix(GL_PROJECTION, narrow.data());
 
     stop();
     dFov = 120;
     start();
-    float wide[16];
-    glstub::currentMatrix(GL_PROJECTION, wide);
+    std::array<float, 16> wide{};
+    glstub::currentMatrix(GL_PROJECTION, wide.data());
 
     EXPECT_GT(narrow[0], wide[0]);
 }
@@ -199,8 +200,8 @@ TEST_F(Lattice, LeavesTheCameraSomewhereFiniteAfterAFrame) {
     start();
     draw();
 
-    float modelview[16];
-    glstub::currentMatrix(GL_MODELVIEW, modelview);
+    std::array<float, 16> modelview{};
+    glstub::currentMatrix(GL_MODELVIEW, modelview.data());
     for (int i = 0; i < 16; ++i) {
         EXPECT_TRUE(std::isfinite(modelview[i])) << "modelview element " << i;
     }
@@ -359,7 +360,7 @@ TEST(LatticeDialogs, ConfigureDialogHandlesTheStandardMessages) {
 }
 
 TEST(LatticeDialogs, EveryPresetButtonRestoresItsPreset) {
-    const int buttons[] = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
+    constexpr std::array buttons = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
     for (int button : buttons) {
         setDefaults(button);
         const int expected = dLongitude;

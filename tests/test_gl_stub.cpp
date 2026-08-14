@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <string>
 
 #include <Windows.h>
@@ -160,7 +161,10 @@ TEST_F(GlStubMatrix, LoadMatrixReplacesRatherThanCompounds) {
     glTranslatef(4.0f, 4.0f, 4.0f);
 
     float replacement[16] = {};
-    replacement[0] = replacement[5] = replacement[10] = replacement[15] = 1.0f;
+    replacement[0] = 1.0f;
+    replacement[5] = 1.0f;
+    replacement[10] = 1.0f;
+    replacement[15] = 1.0f;
     replacement[12] = 8.0f;
     glLoadMatrixf(replacement);
 
@@ -183,10 +187,10 @@ TEST_F(GlStubMatrix, GetFloatvAnswersTheMatrixQuery) {
 
 TEST_F(GlStubMatrix, GetFloatvLeavesTheBufferAloneForAnEnumItCannotAnswer) {
     // GL_MODELVIEW is the mode, not the matrix query - the mistake lattice made.
-    float m[16];
-    for (int i = 0; i < 16; ++i) m[i] = -1.0f;
+    std::array<float, 16> m{};
+    for (float& element : m) element = -1.0f;
 
-    glGetFloatv(GL_MODELVIEW, m);
+    glGetFloatv(GL_MODELVIEW, m.data());
 
     for (int i = 0; i < 16; ++i) EXPECT_FLOAT_EQ(m[i], -1.0f) << "element " << i;
     ASSERT_EQ(glstub::trace().invalidEnums.size(), 1u);
