@@ -1001,6 +1001,17 @@ suites and `tests/support/saver_shim.cpp`. Two things were established:
 Doing this task properly is therefore the only thing that clears them, which is
 another small argument for it beyond the rating.
 
+**After the full rollout that count is 79**, across the thirteen suites, and
+they are deliberately **left open**. They are `extern` *declarations*; the tests
+cannot make the savers' globals const, and the two workarounds above are already
+ruled out by measurement. No suppression file, no `NOSONAR`, no rule exclusion —
+the number honestly reports that the savers expose their settings as mutable
+globals, and it drops to zero when this task lands.
+
+One thing to keep true: **`src/` should gain no new ones.** PR #46 briefly added
+a single global to `hyperspace` and it was removed again in `7e36902` by keying
+off pointers that already carried the state.
+
 ## Task 7 · `libs` submodule — DONE
 
 rslibs L1 (`EditAndContinue`), L2 (`DLGPROC` signature), L3 (C++17), L4 (PRNG),
