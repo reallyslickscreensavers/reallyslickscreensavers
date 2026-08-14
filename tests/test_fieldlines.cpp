@@ -37,7 +37,17 @@ namespace {
 
 class Fieldlines : public savertest::SaverFixture {
 protected:
-    void SetUp() override { setDefaults(); }
+    void SetUp() override {
+        setDefaults();
+
+        // Each field line walks up to dMaxSteps segments (fieldlines.cpp:183),
+        // and in the default mode reopens a primitive on every one of them - so
+        // the shipped 300, across eight lines per ion, is tens of thousands of
+        // recorded primitives a frame. A hundred still walks lines, terminates
+        // some early on hitting an ion, and nests glBegin the same way. The
+        // default is asserted in the harness test.
+        dMaxSteps = 100;
+    }
 };
 
 }  // namespace

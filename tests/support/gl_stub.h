@@ -48,12 +48,31 @@ struct Trace {
 	// the saver leaked GL state, which shows up as another saver rendering wrong.
 	std::vector<std::pair<unsigned, int>> enables;
 
+	// Every capability passed to glEnable, in order. `enables` nets out to zero
+	// for a well-behaved frame, which cannot answer "was this branch taken at
+	// all" - a bracketed glEnable/glDisable pair is invisible there.
+	std::vector<unsigned> enabled;
+
+	// Vertex-array drawing, kept apart from `primitives` because it does not go
+	// through glBegin/glEnd and must not disturb the pairing counts. The
+	// Implicit library draws its marching-cubes mesh this way, so helios and
+	// microcosm put most of their geometry here rather than in `primitives`.
+	std::vector<Primitive> arrayPrimitives;
+
 	// Resources
 	int texturesGenerated = 0;
 	int listsGenerated = 0;
 
+	// Readback calls handed an enum this stub does not answer, as
+	// {function name, enum}. Real GL raises GL_INVALID_ENUM and leaves the
+	// caller's buffer untouched, so whatever the caller does next is reading
+	// uninitialised memory. lattice did exactly that - see test_lattice.cpp.
+	std::vector<std::pair<std::string, unsigned>> invalidEnums;
+
 	unsigned long long totalVertices() const;
+	unsigned long long totalArrayVertices() const;
 	int netEnable(unsigned cap) const;
+	int countEnables(unsigned cap) const;
 	int countCalls(const char* name) const;
 	bool matrixBalanced() const { return matrixDepth == 0 && pushes == pops; }
 	bool primitivesBalanced() const { return begins == ends && !insideBegin; }
@@ -67,6 +86,29 @@ void reset();
 // GL_TRIANGLES divisible by 3, GL_QUADS by 4, GL_LINES by 2, and so on.
 // Reports the first offender in `why` when it fails.
 bool primitiveVertexCountsLegal(std::string* why = nullptr);
+
+// --- matrix state ----------------------------------------------------------
+//
+// The stub keeps real 4x4 stacks for GL_MODELVIEW, GL_PROJECTION and
+// GL_TEXTURE, because hyperspace, lattice and skyrocket read the matrices back
+// and feed them into arithmetic that decides where things land on screen.
+// Returning zeros there produces NaN or a divide by zero, so "record the call
+// and move on" is not enough for those three.
+//
+// This state is deliberately NOT cleared by reset(): reset() clears the
+// recording, not the context. A saver builds its projection in initSaver and
+// relies on it in every later draw(), exactly as it would against a real
+// driver.
+
+// Copies the top of `mode`'s stack, column-major as OpenGL stores it.
+void currentMatrix(unsigned mode, float out[16]);
+
+// Entries on `mode`'s stack. One means nothing has been pushed.
+int matrixStackDepth(unsigned mode);
+
+// Clears all three stacks back to a single identity. For tests that want to
+// start from a known context rather than inherit one.
+void resetMatrices();
 
 }  // namespace glstub
 

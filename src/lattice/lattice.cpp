@@ -484,10 +484,6 @@ void draw(){
 	static int seg = 0;  // Section of path
 	static float where = 0.0f;  // Position on path
 	static float rollVel = 0.0f, rollAcc = 0.0f;
-	rsQuat cullQuat;
-	float cullMat[16];
-	float transMat[16];
-	rsVec cull[5];  // storage for transformed culling vectors
 	static int drawDepth = dDepth + 2;
 
 	where += float(dSpeed) * 0.05f * frameTime;
@@ -575,9 +571,7 @@ void draw(){
 	// Apply transformations
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(rotMat);
-	glGetFloatv(GL_MODELVIEW, cullMat);
 	glTranslatef(-xyz[0], -xyz[1], -xyz[2]);
-	glGetFloatv(GL_MODELVIEW, transMat);
 
 	// Just in case display lists contain no colors
 	glColor3f(1.0f, 1.0f, 1.0f);

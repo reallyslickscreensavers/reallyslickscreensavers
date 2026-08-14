@@ -15,9 +15,18 @@ All counts below were re-verified against `main` at `bd7b5d8`, and the
 SonarCloud figures against the analysis of that commit. Re-check them before
 starting; `grep` commands are given with each task.
 
-**Since the last revision, six savers gained tests (Task 17) and that work found
-three real defects — Tasks 14, 15 and 16, of which 14 is now fixed.** Prefer
-covering a saver before changing it; that is how all three turned up.
+**Task 17 is finished: all thirteen savers now have tests.** That rollout found
+**nine** real defects in total — Tasks 14 to 16 from the first two batches, and
+Tasks 18 to 23 from the last one. Five are fixed. Prefer covering a saver before
+changing it; every one of the nine turned up that way, and none of them had
+surfaced in thirteen years of the savers running.
+
+One theme runs through six of the nine and is worth reading before touching any
+saver: **none of these savers was written to be shut down and started again in
+the same process.** Teardown frees memory but leaves the counters, flags and
+function-local statics that index it exactly where they were. Harmless in a
+screensaver, which exits instead of restarting — and the reason the harness
+finds them, because a test fixture restarts constantly.
 
 ## Building and verifying
 
@@ -59,6 +68,109 @@ pwsh tests/tools/coverage-report.ps1 -ReportPath coverage.xml
 Do not pass `--timeout` to that `ctest`: under instrumentation the heavier tests
 exceed a short per-test limit, and the CI job passes no timeout for that reason.
 
+**That coverage run was 40 minutes and is now under 6**, at unchanged coverage.
+Instrumented execution is the whole cost — the same tests run in about 20 seconds
+without it.
+
+| | Time | Coverage |
+|---|---:|---:|
+| original, serial | 40 min | 71.9% |
+| after the test-volume cuts below, serial | ~13 min | 72.1% |
+| **plus `ctest -j`** | **5.8 min** | **72.1%** |
+
+`-j` is most of the win and cost nothing: ~300 independent processes, so they
+parallelise almost linearly, and OpenCppCoverage merges concurrent children
+correctly — the totals agree to four significant figures across `-j 4` and
+`-j 8`. It is sized from `[Environment]::ProcessorCount` in CI rather than
+hardcoded. Note `-j 8` (5.4 min) is barely better than `-j 4` (5.8), so the
+debugger serialises somewhere and a hosted runner loses little to a development
+machine.
+
+**It should have been the first thing tried, not the last.** Two rounds of
+picking at test workloads came first and were worth about a third of what one
+flag was. Everything else here is the record of that detour, kept because two of
+the attempts made things worse and the failures are the useful part.
+
+### The thing that mattered most: the run was not repeatable at all
+
+Savers that use `rsMath`'s generator draw from one seeded by `std::random_device`
+since rslibs L4. **No two runs did the same work**, and the cost is unbounded
+rather than merely noisy: `skyrocket` picks a sucker-and-shockwave or
+stretcher-and-bigmama explosion on `if(!rsRandi(2500))` (`skyrocket.cpp:702`),
+each spawning enormous numbers of particles.
+
+Measured on one commit with one command: **40 minutes, then 358 minutes.**
+Coverage moved between runs for the same reason, which means every per-module
+figure taken before this was a sample, not a measurement.
+
+Suites now seed it to `kTestSeed` themselves. Change that value only
+deliberately — the point is that a timing or coverage change means the code
+changed rather than the dice.
+
+**Only six savers can be seeded this way**, and the seeding cannot live in the
+shared fixture. Seven others carry private copies of `rsRandi`/`rsRandf` — and
+`starfield` its own `rsRandGen` — so including `<rsMath/rsMath.h>` in the common
+header put two definitions of the same inline function in one binary and crashed
+`starfield` in Release while Debug stayed green. That is Task 12, and this is
+what raised it from tidiness to undefined behaviour. Six of the seven are on
+plain `rand()`, so they are not seedable at all until it is fixed.
+
+### What else worked: stop doing pointless work
+
+Worth roughly a third of what `-j` was, and every one of these reduced how many
+times a path repeats rather than which paths run — so coverage held. The
+settings live in each suite's fixture, and every default is still asserted by
+that suite's `SaverBodyWasActuallyCompiled` test, which is a plain `TEST` and so
+never sees the fixture.
+
+| Suite | Change | Effect |
+|---|---|---|
+| `euphoria` | `dDensity` 35 → 12 | 121 s → 9.6 s; the wisp mesh is `(dDensity + 1)²` per wisp, so this falls away quadratically |
+| `lattice` | `dDepth` 5 → 2 | cells tested per frame 3,375 → 729 |
+| `fieldlines` | `dMaxSteps` 300 → 100 | 54 s → 23 s |
+| `hyperspace` | `numAnimTexFrames` 20 → 16 | almost nothing, ~1%; 16 is the floor anyway, since `causticTextures` clamps to `numKeys * 2` |
+
+- `hyperspace` built its caustic texture set in all 15 cases although only two
+  are about tunnels. Gating it on `dUseTunnels` in the fixture: suite **13.6 s →
+  4.1 s** uninstrumented, and it was the single largest suite in the instrumented
+  run.
+- `skyrocket` pumped 120 frames in each of two tests with a **frozen clock** —
+  see the `frameTime` trap below — so they redrew one static instant 120 times.
+  Driving `frameTime` and cutting the loops: suite **17.5 s → 8.1 s**, and
+  coverage went *up*, `particle.cpp` 11.7% → 17.2%.
+
+### What did not work
+
+| Attempt | Result |
+|---|---|
+| run the 15 binaries directly, not `ctest`'s ~300 processes | 40.3 min vs 40.0, and **0.4 points less** coverage |
+| add `--modules` to restrict instrumentation to the test binaries | **far slower**: `fieldlines` went 53 s → 2,013 s |
+
+The direct-binary route loses coverage because a single-process run lets the
+history-dependent statics (Task 20) carry between cases; `soundEngine.cpp` drops
+74% → 51% and `helios.cpp` 80% → 73%. **Keep the `ctest` form** — per-test
+isolation is load-bearing, not incidental.
+
+`--modules` is the one that looks most like an obvious win and is the worst.
+OpenCppCoverage defaults it to `*` and genuinely does select every Windows DLL,
+so restricting it reads as pure hygiene. Measured, it is a 38× pessimisation on
+at least one suite. Do not re-add it without measuring.
+
+> **A warning about measuring this.** `ctest`'s `LastTest.log` is overwritten by
+> every run, instrumented or not, and `CTestCostData.txt` is a rolling average
+> across both — so it is very easy to attribute instrumented time using numbers
+> from a plain run. Worse, the file's per-test blocks do not line up one-to-one
+> with `Test time =` lines, so pasting the two lists together silently
+> misattributes everything. An earlier version of this section did exactly that
+> and named the wrong suites. Parse it by tracking the current test name, and
+> check the total is plausible before trusting the breakdown.
+
+If this needs to get faster still, the lever is the work itself, not the harness.
+`euphoria` is the next largest suite and nothing has been done to it; the two
+patterns that paid off above are the ones to reach for — `doingPreview`, which
+only `hyperspace` and `microcosm` currently use, and checking whether a loop is
+simulating anything at all before assuming its length is earning something.
+
 ---
 
 # Status at a glance
@@ -76,17 +188,28 @@ exceed a short per-test limit, and the CI job passes no timeout for that reason.
 | 9 | C++20 | open, blocked on 3 |
 | 10 | Reliability bugs | **partial** — the two cyclone BLOCKERs are proven unreachable; 10 bugs remain |
 | 11 | Registry values used unclamped | open |
-| 12 | Six savers carry private `rand()` copies | open |
+| **12** | **Seven savers carry private PRNG copies — an ODR violation that crashes Release** | open, **raised** |
 | 13 | Clear-text `http://` URLs | open |
 | 14 | `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY` | **done** — PR #44 |
-| **15** | **`fieldlines` nests `glBegin`, silently losing its line widths** | **new, open** |
+| 15 | `fieldlines` nests `glBegin`, silently losing its line widths | open |
 | 16 | Destructors sized from live globals | **done** |
-| **17** | **Test coverage rollout — 6 of 14 savers** | **new, in progress** |
+| 17 | Test coverage rollout — all 13 savers | **done** |
+| **18** | **`hyperspace` drew through freed texture objects after teardown** | **new, done** |
+| **19** | **`skyrocket` indexed an emptied particle vector after teardown** | **new, done** |
+| **20** | **`helios` keeps two restart-unsafe statics, one an out-of-bounds read** | **new, open** |
+| **21** | **`hyperspace` calls `glActiveTextureARB` with no extension check** | **new, open** |
+| **22** | **`lattice` disabled texture generation it never enabled** | **new, open** |
+| **23** | **`lattice` carried a dead frustum-culling block with two invalid GL calls** | **new, done** |
+| **24** | **Three savers deviate from the entry-point contract** | **new, open** |
+| **25** | **`skyrocket` will not start without `OpenAL32.dll`** | **new, open** |
+| **26** | **`microcosm` appends 55 gizmos on every `initSaver`; the clear is commented out** | **new, open** |
 
-Tasks 10–13 came out of the rslibs work and a re-read of SonarCloud. Tasks
-14–16 came out of building the test harness (PRs #42, #43): all three are real
-defects that thirteen years of running the savers never surfaced, and each is
-now pinned by a test asserting current behaviour so the fix has a tripwire.
+Tasks 10–13 came out of the rslibs work and a re-read of SonarCloud. Tasks 14–16
+came out of the first two harness batches (PRs #42, #43) and Tasks 18–25 out of
+the last one. Every one is a real defect that thirteen years of running the
+savers never surfaced, and each that is still open is pinned by a test asserting
+**current** behaviour, so the fix has a tripwire. The test says so in its own
+comment.
 
 ---
 
@@ -99,17 +222,29 @@ the guide here — see the note at the end of this section.
 
 ## First — correctness
 
-1. **Task 16.** Destructors that size their frees from the current globals
-   rather than from what they allocated. The same class of hazard as Task 14,
-   which is **done**, but slightly more work — and the one that survives in
-   `solarWinds` after that fix.
+1. **Task 20.** `helios` sums an array past its end on every sample of a 70³
+   volume once its cached sphere count and the array disagree. The only open item
+   here that is an out-of-bounds *read* rather than a latent trap, and the fix is
+   two lines. Tasks 16, 18 and 19 are the same family and are all **done**, so
+   this is the last one standing.
 2. **Task 10, what remains.** The two `cyclone` BLOCKERs are **resolved** — see
    below — so what is left is `lattice.cpp:703` (uninitialised field) and the
    six `cpp:S836` findings in `skyrocket/particle.cpp`, all "garbage value
-   returned to caller".
-3. **Task 15.** `fieldlines` loses its per-segment line widths to nested
+   returned to caller". `skyrocket` now has a test binary, but `particle.cpp`
+   itself is only 12% covered, so **extend that suite before touching these** —
+   see the note under Task 10.
+3. **Task 21.** `hyperspace` calls through a null function pointer on its first
+   frame if the ARB extensions are absent. Unreachable on any GPU made this
+   century, so it ranks below the reads above — but it is a crash, the fix is to
+   move three lines inside an `if` that already exists, and until it is done the
+   no-extension path cannot be tested at all.
+4. **Task 15.** `fieldlines` loses its per-segment line widths to nested
    `glBegin` calls. Visible only as a subtly wrong render, so lower than the
    memory bugs, but it is a genuine rendering defect rather than a lint.
+5. **Task 25.** `skyrocket` will not start on a machine without OpenAL
+   installed. Not a memory bug, but it is the only item on this list that makes a
+   saver completely unusable for a real user, and shipping the redistributable is
+   a packaging change rather than a code one.
 
 ## Second — cheap, mechanical, high value per minute
 
@@ -304,10 +439,23 @@ there or leave them with this note attached. Do not "fix" them by adding casts.
 | `lattice.cpp:275` | `cpp:S836` | Garbage value returned to caller |
 | `cyclone.cpp:348` | `cpp:S2193` | MINOR |
 
-The `skyrocket` cluster is the biggest single group left and none of it is
-covered by tests yet — `skyrocket` is late in the Task 17 rollout precisely
-because it is the hardest module. Consider pulling it forward if these are to
-be fixed.
+The `skyrocket` cluster is the biggest single group left. `skyrocket` now has a
+test binary, and `tests/test_skyrocket.cpp` drives 120 frames in two cases
+specifically to reach explosions, smoke and shockwaves — but **`particle.cpp` is
+still only 12% covered**, the worst figure in the tree and 1,154 lines of it.
+
+That is not an oversight, it is the shape of the file: it is a switch over a
+dozen rocket types, each firing only under its own random conditions, and a
+handful of frames reaches very few of them. Getting real coverage there means
+driving the particle types directly rather than waiting for the simulation to
+produce them. **Do that before fixing the six `cpp:S836` findings** — otherwise
+the fixes go in unguarded, which is the situation this whole rollout existed to
+avoid.
+
+`lattice.cpp:703` (`cpp:S2107`, uninitialised field) is **not** the dead culling
+block removed under Task 23 — that was at `lattice.cpp:488`, in `draw()` rather
+than a constructor. Re-check the line number against a fresh analysis before
+starting: Task 23 deleted six lines above it.
 
 Remaining lower-severity rules: `cpp:S6232` (type punning, ×4), `cpp:S1763`
 (unreachable code, ×2), `cpp:S836` (garbage value returned, ×2).
@@ -378,16 +526,53 @@ the `cyclone` BLOCKER guard (Task 10) only bites where a key exists. Giving each
 saver a settings header with a pure clamp function makes both problems go away,
 because the clamp becomes testable without a registry at all.
 
-## Task 12 · Six savers carry private `rand()` copies
+## Task 12 · Seven savers carry private PRNG copies — and it is an ODR violation
+
+**Raised from tidiness. This is undefined behaviour that already changes
+behaviour between Debug and Release**, demonstrated below, and it is seven
+savers rather than six.
 
 ```bash
-grep -rln "return rand() % x\|float(rand()) / float(RAND_MAX)" src --include=*.cpp
+grep -rln "inline int rsRandi\|inline float rsRandf\|inline std::mt19937& rsRandGen" src --include=*.cpp
 ```
 
 | Saver | Private copy |
 |---|---|
-| `cyclone`, `fieldlines`, `flocks`, `flux`, `plasma` | both `rsRandi` and `rsRandf` |
+| `cyclone`, `fieldlines`, `flocks`, `flux`, `plasma` | both `rsRandi` and `rsRandf`, on plain `rand()` |
 | `solarwinds` | `rsRandf` only |
+| **`starfield`** | **`rsRandf` and its own `rsRandGen`** (`starfield.cpp:79`) |
+
+Each defines a function at global scope with the same name and signature as an
+`inline` one in `rsMath.h`, but a **different body**. Put both in a program and
+the One Definition Rule is broken: the linker keeps one COMDAT and discards the
+other, and it does not have to choose the same way twice.
+
+It is not theoretical. Adding `#include <rsMath/rsMath.h>` to the shared test
+fixture — to seed the generator — was enough to make the two definitions meet:
+
+- Debug: all 297 tests passed.
+- Release: `starfield` **access-violated**, taking out all eight of its cases
+  that call `initSaver`. Same source, same seed, same machine.
+
+The crash path is worth knowing, because it survives whichever definition wins.
+`starfield`'s private `rsRandf` is `uniform_real_distribution<float>(0.0f, x)`,
+which is undefined for a negative `x` — precisely the bug rslibs L4 fixed in the
+library version. A NaN out of it reaches:
+
+```cpp
+float size = float(dStarSize) * brightness;
+if(size < 1.0f) size = 1.0f;        // false for NaN, so no clamp
+auto bucket = int(size + 0.5f);     // INT_MIN
+if(bucket > maxStarSize) ...        // false, so no clamp either
+sizeBuckets[bucket].push_back(i);   // indexes far out of bounds
+```
+
+Both guards are comparisons that a NaN slips through. Worth a second look even
+after the PRNG is unified.
+
+Until it is fixed, **do not include `<rsMath/rsMath.h>` anywhere that links a
+saver carrying a private copy** — `tests/support/saver_test_common.h` cannot,
+which is why only the six clean savers can have a seeded generator.
 
 Each is a verbatim duplicate of what `rsMath.h` used to contain, carrying the
 same *"Don't forget to initialize with srand()"* comment. **rslibs L4 did not
@@ -509,6 +694,248 @@ the live globals. Pinned by
 
 ---
 
+# P0 (new) — Restarting a saver in the same process
+
+Tasks 18, 19, 20 and 26 are one defect wearing four hats, and Task 16 above was
+the first sighting. **Teardown releases memory but leaves the things that index it
+untouched** — counters, "already built" flags, function-local statics, and in one
+case the container itself. The next `initSaver` starts from a clean allocation and
+a dirty bookkeeping state.
+
+None of it can happen in the shipped savers, where the process exits rather than
+restarting. All of it happens immediately under a test fixture, which is why four
+of these turned up in one afternoon. Worth knowing before writing any new
+teardown code: **if `cleanUp` frees it, `cleanUp` owns resetting whatever counts
+it.**
+
+`microcosm`'s `cleanUp` is worth singling out: it frees **nothing**, and neither
+does `helios`'s `textwriter` or `skyrocket`'s `theWorld`. Irrelevant at process
+exit, but it means none of these savers has a working teardown to build on.
+
+## Task 18 · `hyperspace` drew through freed texture objects — DONE
+
+`draw()` built its caustic textures and wavy normal cube maps on the first frame,
+guarded by a `static int first` inside the function, because they are rendered
+into the framebuffer and read back. `cleanUp` deleted both. The flag stayed set,
+so the next frame after a restart used the freed pointers.
+
+Reliably an access violation, plus heap corruption from the second `delete`.
+
+**Fixed:** the flag is now a file-scope `texturesBuilt`, cleared in both
+`cleanUp` overloads alongside the deletes, and the two pointers are nulled.
+Pinned by `Hyperspace.RestartingRebuildsTheGeneratedTextures`.
+
+## Task 19 · `skyrocket` indexed an emptied particle vector — DONE
+
+`cleanup()` called `particles.clear()` and left `last_particle`, `numRockets`,
+`numFlares` and `zoomRocket` alone. `addParticle()` then did:
+
+```cpp
+if(last_particle < particles.size())   // 5 < 0 is false
+    ++last_particle;
+return &(particles[last_particle-1]);  // index 4 of an empty vector
+```
+
+The guard that would have grown the vector back cannot help either:
+
+```cpp
+if(particles.size() - int(last_particle) < 1000)
+```
+
+is unsigned arithmetic, so an emptied vector against a non-zero counter wraps to
+about four billion rather than going negative, and the resize never fires. Two
+bugs holding each other up.
+
+**Fixed:** all four counters are reset in `cleanup()`. The unsigned comparison is
+left as it is — correct once the counter is zero — but it is fragile and worth a
+look if that code is touched.
+
+## Task 20 · `helios` keeps two restart-unsafe statics — OPEN
+
+Both are function-local statics that survive `cleanUp`, and the second is an
+out-of-bounds read rather than merely wrong output:
+
+1. **`ionsReleased`** (`helios.cpp:452`) counts how many ions have been let out
+   and is never reset, while `doSaver` reallocates `ilist` to the current
+   `dIons`. Restarting with a **smaller** `dIons` leaves the draw loop at
+   `helios.cpp:629` walking past the end of the array.
+2. **`points`** in `surfaceFunction` (`helios.cpp:440`) is
+   `static int points = dEmitters + dAttracters;`, initialised on the first call
+   in the process and never updated, while `doSaver` sizes the `spheres` array
+   from the current settings (`helios.cpp:857`). Restarting with fewer emitters
+   leaves it summing `spheres` past the end — on **every sample of a 70×70×70
+   volume**.
+
+A test written to demonstrate the second **access-violates rather than failing an
+assertion**, which is how it was confirmed and why it is documented here instead
+of pinned. Deliberately triggering an out-of-bounds read does not belong in CI.
+
+The fixes are one line each: assign `points` in `doSaver`, and reset
+`ionsReleased` there too. Both want the statics hoisted to file scope, the same
+shape as the Task 18 fix.
+
+There is a visible consequence in the test suite: `helios` can only build its
+implicit surface once per process, so `tests/test_helios.cpp` asserts that the
+surface **branch** is taken rather than that a mesh comes out. Fixing this task
+would let that assertion be strengthened.
+
+## Task 26 · `microcosm` appends its gizmo list instead of rebuilding it — OPEN
+
+`initSaver` pushes 55 gizmos onto `gizmos`, and the `clear()` that should come
+first is inside the comment on the line above them:
+
+```cpp
+	// initialize gizmos	gizmos.clear();      // microcosm.cpp:979
+	{ Metaballs* gizmo = new Metaballs(7);  gizmos.push_back(gizmo); }
+```
+
+A tab, not a newline, between the comment text and the statement. So it never
+runs: a second `initSaver` leaves 110 entries, and `chooseGizmo` then picks at
+random from the doubled range. `cleanUp` frees nothing at all, so the 55 original
+`Gizmo` objects leak as well.
+
+The last entry is an easter-egg gizmo that `chooseGizmo` deliberately withholds
+unless `gTennisAvailable`, by dropping one off the top of its random range. With
+the list doubled that guard still excludes only the *final* entry — so the first
+copy's easter egg becomes reachable at random. That is the one visible
+consequence beyond the leak.
+
+Splitting the line is a one-character fix. Freeing the gizmos in `cleanUp` is the
+larger half, since it frees nothing today. Pinned by
+`Microcosm.GizmoListGrowsOnEveryRestart`.
+
+## Task 21 · `hyperspace` calls `glActiveTextureARB` unguarded — OPEN
+
+`initSaver` degrades properly when the extensions are missing:
+
+```cpp
+if(!initExtensions())
+    dShaders = 0;          // hyperspace.cpp:517
+```
+
+and every use of the ARB entry points sits inside `if(dShaders)` — except three:
+
+```cpp
+glActiveTextureARB(GL_TEXTURE2_ARB);   // hyperspace.cpp:231
+glActiveTextureARB(GL_TEXTURE1_ARB);   // 233
+glActiveTextureARB(GL_TEXTURE0_ARB);   // 235
+```
+
+Those are function pointers that `initExtensions` only fills in on success, so
+without `GL_ARB_multitexture` the first frame calls through address zero. The
+"graceful fallback" is a crash.
+
+Unreachable in practice — no GPU since roughly 2002 lacks the three extensions
+the loader asks for — which is why it has never been reported. The fix is to move
+the three calls inside the existing `if(dShaders)`, or guard on the pointer.
+
+**Consequence for the harness:** the GL stub therefore *advertises*
+`GL_ARB_multitexture`, `GL_ARB_texture_cube_map` and `GL_ARB_shader_objects` and
+resolves their entry points, rather than reporting none. That is the path real
+hardware takes anyway, but it means the no-extension path is **untested** in both
+`hyperspace` and `microcosm`. `microcosm` has a genuine non-shader fallback
+(`microcosm.cpp:634`) and is covered for it by
+`Microcosm.RendersWithoutShadersToo`; `hyperspace` cannot be until this is fixed.
+
+## Task 22 · `lattice` disables texture generation it never enabled — OPEN
+
+The enable is conditional on a reflective texture:
+
+```cpp
+if(dTexture == 2 || dTexture == 3 || ... ){   // lattice.cpp:580
+    glEnable(GL_TEXTURE_GEN_S);
+    glEnable(GL_TEXTURE_GEN_T);
+}
+```
+
+and the matching disable, ninety lines later, is not:
+
+```cpp
+glDisable(GL_TEXTURE_GEN_S);   // lattice.cpp:613
+glDisable(GL_TEXTURE_GEN_T);
+```
+
+With any other texture the frame disables something it never enabled. Entirely
+harmless — disabling an already-disabled capability is a no-op in GL — and the
+only reason it is written down is that it is the one exception to the
+`NoEnableStateLeaked` frame invariant, so anyone tightening that check will trip
+over it. Two lines: move the disable inside the same condition.
+
+Pinned by `Lattice.DisablesTextureCoordinateGenerationItNeverEnabled`, which
+asserts the net comes out at −1 and says to delete itself when that changes.
+
+## Task 23 · `lattice` carried a dead frustum-culling block — DONE
+
+`draw()` declared `cullQuat`, `cullMat`, `transMat` and `cull[5]` — commented
+"storage for transformed culling vectors" — and read none of them. The culling
+was never written. Two `glGetFloatv` calls existed only to fill two of the four,
+and they were wrong as well:
+
+```cpp
+glGetFloatv(GL_MODELVIEW, cullMat);   // GL_MODELVIEW is the mode, 0x1700
+```
+
+`GL_MODELVIEW_MATRIX` (`0x0BA6`) is the query. A real driver raises
+`GL_INVALID_ENUM` and leaves the buffer untouched, so the destinations held
+uninitialised stack even before anyone read them.
+
+**Fixed by deletion** — correcting the enum would have kept two pointless calls
+per frame feeding variables nobody reads. Found by the stub, which records
+readbacks handed an enum it cannot answer; `Lattice.ReadsBackNoInvalidEnums` is
+the regression guard, and every other suite carries the same assertion.
+
+---
+
+# P2 (new) — Consistency, found while building the harness
+
+## Task 24 · Three savers deviate from the entry-point contract — OPEN
+
+Twelve savers expose `draw()`, `idleProc()`, `initSaver(HWND)`, `cleanUp(HWND)`
+and `LONG screenSaverProc(...)`. Three do not, and each cost a link error to
+discover:
+
+| Saver | Deviation |
+|---|---|
+| `helios` | initialiser is `doSaver(HWND)` (`helios.cpp:747`); there is no `initSaver` at all |
+| `skyrocket` | teardown is `cleanup(HWND)`, lowercase u (`skyrocket.cpp:964`) |
+| `flux` | `LRESULT screenSaverProc` where the other twelve use `LONG` (`flux.cpp:1097`) |
+
+`setDefaults` splits too, and less arbitrarily: `(int which)` in the six savers
+with presets, `()` in the seven without.
+
+Renaming the first two is a two-line change each plus their call sites in
+`screenSaverProc`. `LRESULT` and `LONG` are the same type on Win32, so `flux` is
+cosmetic — but the inconsistency is what makes the framework contract implicit
+instead of declared, and it is the thing that would have to be settled first if
+these savers ever got a shared header.
+
+The harness works around all three with one-line shims in the test files rather
+than touching saver source, so nothing depends on this being fixed.
+
+## Task 25 · `skyrocket` will not start without `OpenAL32.dll` — OPEN
+
+`skyrocket.vcxproj` links `OpenAL32.lib` as a normal import, so the DLL is a
+load-time dependency of the executable. On a machine without OpenAL installed —
+which is most of them now; it has not shipped with Windows and the repo carries
+headers but no redistributable — `bin\skyrocket.exe` exits immediately with
+`0xC0000135` (`STATUS_DLL_NOT_FOUND`) and no message.
+
+Confirmed on the development machine while verifying this branch: `lattice` and
+`hyperspace` both return `-1` from `/x` as they should, and `skyrocket` returns
+`-1073741515`. Nothing in the repo's own code runs before the failure.
+
+`dSound = 0` does not help — the dependency is in the import table, not in
+whether a `SoundEngine` is constructed. Fixing it properly means loading
+`OpenAL32.dll` with `LoadLibrary` and resolving the nineteen entry points at
+runtime, degrading to silence when it is absent; the cheap alternative is to ship
+the redistributable in `bin\`.
+
+Not found by the harness — the tests link `tests/support/al_stub.cpp` instead and
+so never touch the real DLL, which is exactly why this needed a manual run to
+catch.
+
+---
+
 # P2 — Larger, needs judgement
 
 ## Task 6 · Encapsulate mutable module globals (SonarCloud `cpp:S5421`)
@@ -574,6 +1001,17 @@ suites and `tests/support/saver_shim.cpp`. Two things were established:
 Doing this task properly is therefore the only thing that clears them, which is
 another small argument for it beyond the rating.
 
+**After the full rollout that count is 79**, across the thirteen suites, and
+they are deliberately **left open**. They are `extern` *declarations*; the tests
+cannot make the savers' globals const, and the two workarounds above are already
+ruled out by measurement. No suppression file, no `NOSONAR`, no rule exclusion —
+the number honestly reports that the savers expose their settings as mutable
+globals, and it drops to zero when this task lands.
+
+One thing to keep true: **`src/` should gain no new ones.** PR #46 briefly added
+a single global to `hyperspace` and it was removed again in `7e36902` by keying
+off pointers that already carried the state.
+
 ## Task 7 · `libs` submodule — DONE
 
 rslibs L1 (`EditAndContinue`), L2 (`DLGPROC` signature), L3 (C++17), L4 (PRNG),
@@ -612,38 +1050,100 @@ fix was `tests/support/saver_test_common.h`, which cut 260 lines. Any new saver
 suite should use it rather than copy an existing file — with seven savers still
 to add, copying would put the gate straight back into failure.
 
-## Task 17 · Test coverage rollout — IN PROGRESS
+## Task 17 · Test coverage rollout — DONE
 
-Before PR #42 nothing in `src/` was tested. Six savers now are.
+Before PR #42 nothing in `src/` was tested. **All thirteen savers now are**, at
+297 tests across fifteen binaries.
 
-| Saver | Coverage (CI) | |
+Measured locally at the end of the rollout. Each figure is for the saver's own
+translation unit; several savers link many more, and those are listed separately
+below — a saver spread over ten files says nothing useful as a single number.
+
+| Saver | Coverage | Batch |
 |---|---:|---|
-| `plasma` | 82.7% | PR #42 |
-| `cyclone` | 80.6% | PR #42 |
-| `flocks` | 70.1% | PR #42 |
-| `fieldlines` | 76.2% | PR #43 |
-| `solarWinds` | 79.0% | PR #43 |
-| `starfield` | 75.2% | PR #43 |
-| **Total** | **77.3%** | against a 60% target |
+| `plasma` | 88.4% | #42 |
+| `cyclone` | 85.5% | #42 |
+| `solarWinds` | 85.2% | #43 |
+| `fieldlines` | 82.8% | #43 |
+| `starfield` | 80.2% | #43 |
+| `helios` | 80.2% | final |
+| `flux` | 79.5% | final |
+| `flocks` | 76.8% | #42 |
+| `euphoria` | 75.3% | final |
+| `lattice` | 74.7% | final |
+| `hyperspace` | 74.6% | final |
+| `microcosm` | 68.5% | final |
+| `skyrocket` | 47.1% | final |
+| **Whole of `src/`** | **71.9%** | 9,083 of 12,631 lines, target 60% |
 
-Coverage reads about five points higher locally, for the registry reason under
-Task 11. A CI job posts a self-updating per-module table on every PR; it is
-**reported, not gated**, because a threshold would fail every PR that adds a
-saver before its tests.
+The supporting units, which carry much of the real geometry:
 
-**Remaining, in the intended order:** `flux`, `euphoria`, `helios`, then
-`lattice`, `hyperspace`, `skyrocket`, then `microcosm`. `implicitDemo` is a
-freeglut demo rather than a saver and needs a different shape.
+| Unit | Coverage | Belongs to |
+|---|---:|---|
+| `world.cpp` | 99.3% | `skyrocket` |
+| `mirrorBox.cpp`, `texture1d.cpp`, `rsCamera.cpp` | 98–99% | `microcosm` |
+| `goo.cpp`, `wavyNormalCubeMaps.cpp`, `stretchedParticle.cpp` | 98–100% | `hyperspace` |
+| `camera.cpp` | 100% | `lattice` |
+| every gizmo header | 66–100% | `microcosm` |
+| `smoke.cpp` | 94.5% | `skyrocket` |
+| `splinePath.cpp`, `tunnel.cpp` | 81–86% | `hyperspace` |
+| `soundEngine.cpp` | 74.1% | `skyrocket` |
+| `causticTextures.cpp` | 63.7% | `hyperspace` |
+| `flare.cpp` ×2, `starBurst.cpp`, `shockwave.cpp` | 38–52% | `hyperspace`, `skyrocket` |
+| `particle.cpp` | **11.7%** | `skyrocket` |
 
-Two of those need harness work first:
+**Read the two low numbers before drawing conclusions from the total.**
+`skyrocket.cpp` at 47.1% and `particle.cpp` at 11.7% are 2,011 lines between
+them and cost the overall figure roughly six points. Both have the same shape: a
+switch over a dozen rocket and particle types that each fire only under their own
+random conditions, so pumping frames reaches very few of them. Driving those
+types directly is the highest-value work left here — and Task 10's remaining
+findings live in exactly that file.
 
-- `lattice`, `hyperspace` and `skyrocket` call `gluProject`, `glGetFloatv` and
-  `glGetDoublev` and feed the results into real maths. The stub returns nothing
-  meaningful, so they need either a minimal matrix stack in it or their
-  projection maths extracted into pure functions. The second is the smaller
-  change and was the original recommendation.
-- `microcosm` starts two worker threads with four `while(1)` condvar loops
-  (`microcosm.cpp:275-342`). A test that reaches the thread-start path hangs.
+The total is **lower than the 77.3% this section used to record, and nothing
+regressed.** The six savers measured then were the small ones; adding
+`skyrocket`, `hyperspace`, `microcosm` and `lattice` roughly doubled the
+denominator.
+
+Coverage reads about five points higher locally than in CI, for the registry
+reason under Task 11, so expect roughly 67% there. A CI job posts a
+self-updating per-module table on every PR; it is **reported, not gated**,
+because a threshold would have failed every PR that added a saver before its
+tests. With the rollout finished that argument no longer holds, and gating at
+the 60% the target already names is now worth considering.
+
+### `implicitDemo` is excluded, deliberately
+
+It is a freeglut demo, not a saver: `int main(int argc, char** argv)` calling
+`glutInit`/`glutMainLoop` (`implicitDemo.cpp:267`), with `display()`/`reshape()`
+instead of `draw()`/`initSaver()`, no registry and no dialogs. Testing it means
+defining `main` away and adding a glut stub to reach 293 lines that are mostly
+window plumbing, and its real payload is in `libs/Implicit` — rslibs, not `src/`.
+The rollout is complete at **13 savers**, not 14.
+
+### Two predictions from the plan that were wrong
+
+Both were recorded here as blockers and neither survived contact:
+
+- **"`lattice`, `hyperspace` and `skyrocket` need their projection maths
+  extracted into pure functions."** They needed a matrix stack in the stub
+  instead — three real 4×4 stacks with the fixed-function operations and coherent
+  `glGetFloatv`/`glGetDoublev`/`gluProject`, about 250 lines of well-understood
+  arithmetic. Extraction would have meant refactoring shipped rendering code,
+  which is the larger change, not the smaller one. `tests/test_gl_stub.cpp` checks
+  the stack against hand-worked values, because a transposed multiply there would
+  fail no saver test while quietly invalidating every assertion built on it.
+- **"`microcosm` starts two worker threads, and a test reaching the thread-start
+  path hangs."** True, and irrelevant: `gUseThreads` (`microcosm.cpp:163`) is an
+  ordinary global, and setting it `false` before `initSaver` selects a
+  single-threaded branch (`microcosm.cpp:592`) that computes the surfaces inline.
+  That branch is a **complete implementation**, not a fallback stub, and it is the
+  more deterministic of the two — the threaded path draws a frame behind. The
+  saver budgeted as hardest was an ordinary batch member.
+
+`skyrocket`'s sound turned out the same way: `dSound` gates the `SoundEngine`
+entirely (`skyrocket.cpp:955`), so most cases never reach OpenAL, and the
+nineteen entry points `soundEngine.cpp` links against are trivial to stub.
 
 ### Traps worth knowing before adding a saver
 
@@ -665,6 +1165,55 @@ These cost real time to find:
   MSVC CRT's own sources live under paths containing `\src\`, so a bare filter
   drags in the whole runtime and reports about 11% instead of 77%.
 - **Change a setting only while nothing is allocated** — see Task 16.
+- **`AL_BUILD_LIBRARY` is the `_GDI32_` of OpenAL.** `3rdparty/openal/include/al.h`
+  declares every entry point `__declspec(dllimport)` without it, and a dllimport
+  function cannot be defined, so the stub satisfies nothing. Same trap, different
+  header.
+- **Three savers deviate from the entry-point contract** — `helios` has no
+  `initSaver`, `skyrocket` spells teardown `cleanup`, `flux` returns `LRESULT`.
+  See Task 24. Each is a link error, and each is worked around with a one-line
+  shim in the test file rather than by touching saver source.
+- **Match `<StackReserveSize>` if a project sets one.** `skyrocket` links with a
+  10MB stack and needs it: against the linker's 1MB default, setup overflows the
+  stack and the process dies with `0xC00000FD` before gtest reports anything.
+  `implicitDemo` asks for 1GB, for whatever reason.
+- **`frameTime` is exactly zero under test unless a test sets it — so a loop of
+  `draw()` calls simulates nothing.** Every saver *spends* `frameTime` but only
+  `idleProc` ever sets it, from an `rsTimer` tick. The suites call `draw()`
+  directly, so the clock never starts and each frame redraws one frozen instant.
+
+  This is the most expensive trap in the harness, because it fails silently and
+  looks like thoroughness. `skyrocket` had two tests pumping 120 frames each to
+  reach "explosions, smoke and shockwaves"; instrumenting them showed every frame
+  emitting an identical 9,940 vertices, no rocket ever launching, and the pair
+  costing **46% of the whole coverage run** for nothing. `helios` had a test
+  asserting `EXPECT_GE(later, early)`, which a frozen clock satisfies by leaving
+  both counts equal.
+
+  Drive it: `extern float frameTime;` then set it before each `draw()`. Assert
+  that something actually moved — `last_particle > 0`, a strictly greater count —
+  so the guard fails loudly if the clock stops again. Match the step to the
+  saver's own timescale: 1/30 s suits `skyrocket`, but `helios` spreads ion
+  release over two minutes and needs half-second steps to get anywhere.
+
+  `microcosm` is the exception that still wants its state set directly:
+  `gModeTransition` gates which surface function is chosen, and forcing it to 1.0
+  is clearer than simulating the ramp.
+- **`doingPreview` is a legitimate speed switch.** `hyperspace` and `microcosm`
+  both branch on it to build much cheaper resources, which is the difference
+  between 13 seconds and 129 for the hyperspace suite. It also covers the preview
+  branch nothing else reaches.
+- **Geometry built at setup is invisible in a frame.** Several savers compile
+  everything into display lists in `initSaver` and only call them per frame, so
+  settings that change geometry show up nowhere in a frame trace. That is what
+  `startCapturingSetup()` in the fixture is for.
+- **`GL_STUB_TRACE=1` echoes every GL call to stderr as it happens.** The recorded
+  trace is no use when a saver crashes mid-frame, because the process dies before
+  an assertion can read it. This is how Tasks 18, 19 and 21 were each located in
+  about a minute.
+- **`libs/Implicit` draws through vertex arrays**, not `glBegin`/`glEnd`, so its
+  geometry lands in `arrayPrimitives` rather than `primitives` and must not
+  disturb the begin/end pairing counts. A survey of `src/` alone misses this.
 
 ## Task 9 · C++20 — only after Task 3
 

@@ -965,6 +965,16 @@ void cleanup(HWND hwnd){
 	// Free memory
 	particles.clear();
 
+	// The counters that index into it have to go back with it. last_particle
+	// left above zero against an emptied vector makes addParticle return
+	// &particles[last_particle-1] on an empty vector, and the guard that would
+	// have grown it again is unsigned arithmetic that wraps rather than going
+	// negative.
+	last_particle = 0;
+	numRockets = 0;
+	numFlares = 0;
+	zoomRocket = ZOOMROCKETINACTIVE;
+
 	// clean up sound data structures
 	if(dSound)
 		delete soundengine;

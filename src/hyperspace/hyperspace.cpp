@@ -105,30 +105,37 @@ starBurst* theStarBurst;
 
 
 void draw(){
-	static int first = 1;
-	if(first){
-		if(dUseTunnels){  // only tunnels use caustic textures
-			glDisable(GL_FOG);
-			// Caustic textures can only be created after rendering context has been created
-			// because they have to be drawn and then read back from the framebuffer.
+	// Caustic textures and wavy normal cube maps are built on the first frame
+	// rather than in initSaver, because they are rendered into the framebuffer
+	// and read back, which needs a live context.
+	//
+	// The pointers are the record of whether that has happened. A separate
+	// "already built" flag was tried and is worse in both directions: as a
+	// static inside this function it survived cleanUp and the next frame drew
+	// through freed pointers, and hoisted to file scope it was one more mutable
+	// global of exactly the kind Task 6 is about. cleanUp nulls both, so these
+	// guards restore themselves.
+	//
+	// No viewport restore here: causticTextures saves and restores it around
+	// its own render (causticTextures.cpp:93, 219), and wavyNormalCubeMaps
+	// never touches it.
+	if(dUseTunnels && !theCausticTextures){
+		glDisable(GL_FOG);
 #ifdef WIN32
-			if(doingPreview) // super fast for Windows previewer
-				theCausticTextures = new causticTextures(8, numAnimTexFrames, 32, 32, 1.0f, 0.01f, 10.0f);
-			else  // normal
+		if(doingPreview) // super fast for Windows previewer
+			theCausticTextures = new causticTextures(8, numAnimTexFrames, 32, 32, 1.0f, 0.01f, 10.0f);
+		else  // normal
 #endif
-				theCausticTextures = new causticTextures(8, numAnimTexFrames, 100, 256, 1.0f, 0.01f, 20.0f);
-			glEnable(GL_FOG);
-		}
-		if(dShaders){
+			theCausticTextures = new causticTextures(8, numAnimTexFrames, 100, 256, 1.0f, 0.01f, 20.0f);
+		glEnable(GL_FOG);
+	}
+	if(dShaders && !theWNCM){
 #ifdef WIN32
-			if(doingPreview) // super fast for Windows previewer
-				theWNCM = new wavyNormalCubeMaps(numAnimTexFrames, 32);
-			else  // normal
+		if(doingPreview) // super fast for Windows previewer
+			theWNCM = new wavyNormalCubeMaps(numAnimTexFrames, 32);
+		else  // normal
 #endif
-				theWNCM = new wavyNormalCubeMaps(numAnimTexFrames, 128);
-		}
-		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-		first = 0;
+			theWNCM = new wavyNormalCubeMaps(numAnimTexFrames, 128);
 	}
 
 	// Variables for printing text
@@ -651,9 +658,11 @@ void cleanUp(){
 	if(dUseTunnels){
 		delete theTunnel;
 		delete theCausticTextures;
+		theCausticTextures = NULL;
 	}
 	delete thePath;
 	delete theWNCM;
+	theWNCM = NULL;
 }
 #endif
 
@@ -666,9 +675,11 @@ void cleanUp(HWND hwnd){
 	if(dUseTunnels){
 		delete theTunnel;
 		delete theCausticTextures;
+		theCausticTextures = NULL;
 	}
 	delete thePath;
 	delete theWNCM;
+	theWNCM = NULL;
 
 	// Kill device context
 	ReleaseDC(hwnd, hdc);

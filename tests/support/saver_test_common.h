@@ -49,6 +49,26 @@ namespace savertest {
 // from the current globals rather than from what they allocated, so raising a
 // count and then calling cleanUp walks off the end of an array; solarWinds does
 // exactly that and blocks inside the heap. Always: stop, change, start.
+// The seed for savers that draw from rsMath's generator. Fixed so that a change
+// in timing or coverage means the code changed rather than the dice: rslibs L4
+// seeds that generator from std::random_device, and the cost of an unseeded run
+// is unbounded rather than merely noisy. skyrocket picks a mega-explosion on
+// `if(!rsRandi(2500))` (skyrocket.cpp:702), and one instrumented coverage run
+// that hit it took **358 minutes** against a normal 40.
+//
+// Deliberately NOT applied from this header, and this header deliberately does
+// not include <rsMath/rsMath.h>. Seven savers carry their own global
+// `rsRandi`/`rsRandf` - and starfield its own `rsRandGen` - with bodies that
+// differ from rsMath's (starfield.cpp:79, cyclone.cpp:72, and see Task 12).
+// Pulling rsMath's definitions into a test binary alongside those is a
+// straight ODR violation: the linker keeps one arbitrarily, Debug and Release
+// choose differently, and starfield crashed in Release only.
+//
+// So each suite whose saver actually uses rsMath seeds it itself. The seven
+// with private copies cannot be seeded this way at all - six of them are on
+// plain rand() - which is one more reason Task 12 is worth doing.
+constexpr unsigned kTestSeed = 20260812u;
+
 class SaverFixture : public ::testing::Test {
 protected:
     void TearDown() override { stop(); }
@@ -58,6 +78,19 @@ protected:
         started_ = true;
         draw();               // warm-up, discarded
         glstub::reset();
+    }
+
+    // Like start(), but leaves the trace holding what initSaver emitted instead
+    // of clearing it, and draws no warm-up frame.
+    //
+    // Several savers build their geometry into display lists at startup and
+    // only call those lists per frame, so setup is the one place those vertices
+    // exist. Same for one-off state like fog parameters. Assertions about
+    // either are impossible after start() has reset the trace.
+    void startCapturingSetup() {
+        glstub::reset();
+        initSaver(testsupport::hostWindow());
+        started_ = true;
     }
 
     void stop() {
@@ -117,6 +150,21 @@ inline ::testing::AssertionResult VertexCountsLegal() {
         return ::testing::AssertionSuccess();
     }
     return ::testing::AssertionFailure() << why;
+}
+
+// Every readback the stub could not answer. In a real driver each of these is
+// GL_INVALID_ENUM and the caller's buffer is left holding whatever was on the
+// stack, so a hit here means the saver is computing with uninitialised memory.
+inline ::testing::AssertionResult NoInvalidEnums() {
+    const glstub::Trace& t = glstub::trace();
+    if (t.invalidEnums.empty()) {
+        return ::testing::AssertionSuccess();
+    }
+    ::testing::AssertionResult failure = ::testing::AssertionFailure();
+    for (const auto& [function, value] : t.invalidEnums) {
+        failure << function << " was handed enum 0x" << std::hex << value << std::dec << "; ";
+    }
+    return failure;
 }
 
 // Anything enabled during a frame must be disabled again by the end of it.
