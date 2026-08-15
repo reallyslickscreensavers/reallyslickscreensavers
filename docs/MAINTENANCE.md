@@ -17,7 +17,7 @@ starting; `grep` commands are given with each task.
 
 **Task 17 is finished: all thirteen savers now have tests.** That rollout found
 **nine** real defects in total — Tasks 14 to 16 from the first two batches, and
-Tasks 18 to 23 from the last one. Five are fixed. Prefer covering a saver before
+Tasks 18 to 23 from the last one. Six are fixed. Prefer covering a saver before
 changing it; every one of the nine turned up that way, and none of them had
 surfaced in thirteen years of the savers running.
 
@@ -198,7 +198,7 @@ simulating anything at all before assuming its length is earning something.
 | **19** | **`skyrocket` indexed an emptied particle vector after teardown** | **new, done** |
 | **20** | **`helios` keeps two restart-unsafe statics, one an out-of-bounds read** | **new, open** |
 | **21** | **`hyperspace` calls `glActiveTextureARB` with no extension check** | **new, open** |
-| **22** | **`lattice` disabled texture generation it never enabled** | **new, open** |
+| **22** | **`lattice` disabled texture generation it never enabled** | **new, done** |
 | **23** | **`lattice` carried a dead frustum-culling block with two invalid GL calls** | **new, done** |
 | **24** | **Three savers deviate from the entry-point contract** | **new, open** |
 | **25** | **`skyrocket` will not start without `OpenAL32.dll`** | **new, open** |
@@ -837,9 +837,9 @@ hardware takes anyway, but it means the no-extension path is **untested** in bot
 (`microcosm.cpp:634`) and is covered for it by
 `Microcosm.RendersWithoutShadersToo`; `hyperspace` cannot be until this is fixed.
 
-## Task 22 · `lattice` disables texture generation it never enabled — OPEN
+## Task 22 · `lattice` disables texture generation it never enabled — DONE
 
-The enable is conditional on a reflective texture:
+The enable was conditional on a reflective texture:
 
 ```cpp
 if(dTexture == 2 || dTexture == 3 || ... ){   // lattice.cpp:580
@@ -848,21 +848,39 @@ if(dTexture == 2 || dTexture == 3 || ... ){   // lattice.cpp:580
 }
 ```
 
-and the matching disable, ninety lines later, is not:
+and the matching disable, thirty lines later, was not:
 
 ```cpp
 glDisable(GL_TEXTURE_GEN_S);   // lattice.cpp:613
 glDisable(GL_TEXTURE_GEN_T);
 ```
 
-With any other texture the frame disables something it never enabled. Entirely
+With any other texture the frame disabled something it never enabled. Entirely
 harmless — disabling an already-disabled capability is a no-op in GL — and the
-only reason it is written down is that it is the one exception to the
-`NoEnableStateLeaked` frame invariant, so anyone tightening that check will trip
-over it. Two lines: move the disable inside the same condition.
+only reason it was written down is that it was the one exception to the
+`NoEnableStateLeaked` frame invariant in the *disable* direction.
 
-Pinned by `Lattice.DisablesTextureCoordinateGenerationItNeverEnabled`, which
-asserts the net comes out at −1 and says to delete itself when that changes.
+**Fixed:** `draw()` computes the predicate once into a local `envMapped` and
+hangs both the enable and the disable off it. The original shape kept the same
+five-way test in two places thirty lines apart, so a texture id added to one and
+not the other would have brought the defect back silently; there is now one list.
+
+The pinning test was **inverted rather than deleted**, against the advice in its
+own comment. `Lattice.DisablesTextureCoordinateGenerationOnlyWhenItEnabledIt`
+walks `dTexture` 0 to 8 — every value a frame can see, since 9 means "random"
+and `initSaver` resolves it — and asserts the net is 0 for each with the enable
+happening only for 2 to 6. Deleting it would have left the line unguarded.
+`Lattice.LeaksNoOtherEnableState` now covers a plain texture as well as a
+reflective one, and `Lattice.EnvironmentMappedTexturesTurnOnCoordinateGeneration`
+was folded into the two of them, being wholly subsumed. The suite is 24 cases and
+the tree 296 tests as a result; the two figures of 297 elsewhere in this document
+are measurements of specific past runs and are left as recorded.
+
+**The invariant was not tightened repo-wide, and cannot be.** `flux` is still an
+exception in the other direction: it establishes its blend state at the top of
+every frame and never disables it (`flux.cpp:445-462`), which is legal, and
+`Flux.EnableStateIsTheSameEveryFrame` holds that instead. `NoEnableStateLeaked`
+stays an opt-in per suite.
 
 ## Task 23 · `lattice` carried a dead frustum-culling block — DONE
 
