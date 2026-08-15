@@ -294,3 +294,7 @@ __pycache__/
 *.tlog
 installer/output/*.exe
 lib/*.lib
+
+# Claude Code worktree storage — the agent and command definitions under
+# .claude/ are tracked, but the worktrees themselves are not
+.claude/worktrees/
