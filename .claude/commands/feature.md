@@ -16,15 +16,21 @@ implementation step, you have taken someone else's job.
 
 Task as given by the user: `$ARGUMENTS` (may be empty — then ask).
 
-## Two mechanical rules the whole workflow depends on
+## Three mechanical rules the whole workflow depends on
 
 1. **Every `Agent` call passes `run_in_background: false`.** Subagents run in the background by
    default and report back later by notification. This workflow is strictly sequential — the
-   reviewer cannot start before the planner has returned — so each handover must block. A
+   reviewer cannot start before the planner has returned — so every *spawn* must block. A
    backgrounded spawn here does not slow the loop down, it breaks it.
 2. **Never pass a `model` parameter to the `Agent` tool.** That argument overrides the agent
    file's frontmatter, which is where each role's model is deliberately assigned. Passing one
    silently discards that assignment.
+3. **`SendMessage` is the one handover that cannot block, and that is expected.** It takes no
+   `run_in_background` parameter and always resumes the agent in the background, returning an
+   acknowledgement immediately rather than the revised plan. Rule 1 does not apply to it and
+   cannot. Wait for the completion notification carrying the planner's reply — do not re-send,
+   do not spawn a replacement `planner`, and do not read the empty return as a refusal or a
+   dropped handover.
 
 ---
 
@@ -71,7 +77,8 @@ For each round:
      stop and tell the user; do not keep spending rounds on a reviewer that is not answering.
 3. `SendMessage` the findings to the **existing planner agent id** — not a fresh `planner`. It
    still holds the plan and its reasoning, so it revises rather than re-deriving. Ask it for the
-   full revised Plan Document with an incremented `PLAN-VERSION`.
+   full revised Plan Document with an incremented `PLAN-VERSION`. This call returns an
+   acknowledgement, not the plan; the revision arrives later as a notification (rule 3).
 4. Tell the user, in one line, what happened: `Review 2/5: CHANGES REQUIRED — 1 BLOCKER, 2 MAJOR
    (pinned test, restart safety). Planner revising.` The loop must never be a black box.
 
