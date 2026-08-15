@@ -17,7 +17,7 @@ starting; `grep` commands are given with each task.
 
 **Task 17 is finished: all thirteen savers now have tests.** That rollout found
 **nine** real defects in total — Tasks 14 to 16 from the first two batches, and
-Tasks 18 to 23 from the last one. Six are fixed. Prefer covering a saver before
+Tasks 18 to 23 from the last one. Seven are fixed. Prefer covering a saver before
 changing it; every one of the nine turned up that way, and none of them had
 surfaced in thirteen years of the savers running.
 
@@ -146,8 +146,8 @@ never sees the fixture.
 | run the 15 binaries directly, not `ctest`'s ~300 processes | 40.3 min vs 40.0, and **0.4 points less** coverage |
 | add `--modules` to restrict instrumentation to the test binaries | **far slower**: `fieldlines` went 53 s → 2,013 s |
 
-The direct-binary route loses coverage because a single-process run lets the
-history-dependent statics (Task 20) carry between cases; `soundEngine.cpp` drops
+The direct-binary route loses coverage because a single-process run lets
+history-dependent statics carry between cases; `soundEngine.cpp` drops
 74% → 51% and `helios.cpp` 80% → 73%. **Keep the `ctest` form** — per-test
 isolation is load-bearing, not incidental.
 
@@ -196,7 +196,7 @@ simulating anything at all before assuming its length is earning something.
 | 17 | Test coverage rollout — all 13 savers | **done** |
 | **18** | **`hyperspace` drew through freed texture objects after teardown** | **new, done** |
 | **19** | **`skyrocket` indexed an emptied particle vector after teardown** | **new, done** |
-| **20** | **`helios` keeps two restart-unsafe statics, one an out-of-bounds read** | **new, open** |
+| **20** | **`helios` keeps two restart-unsafe statics, one an out-of-bounds read** | **new, done** |
 | **21** | **`hyperspace` calls `glActiveTextureARB` with no extension check** | **new, open** |
 | **22** | **`lattice` disabled texture generation it never enabled** | **new, done** |
 | **23** | **`lattice` carried a dead frustum-culling block with two invalid GL calls** | **new, done** |
@@ -222,26 +222,21 @@ the guide here — see the note at the end of this section.
 
 ## First — correctness
 
-1. **Task 20.** `helios` sums an array past its end on every sample of a 70³
-   volume once its cached sphere count and the array disagree. The only open item
-   here that is an out-of-bounds *read* rather than a latent trap, and the fix is
-   two lines. Tasks 16, 18 and 19 are the same family and are all **done**, so
-   this is the last one standing.
-2. **Task 10, what remains.** The two `cyclone` BLOCKERs are **resolved** — see
+1. **Task 10, what remains.** The two `cyclone` BLOCKERs are **resolved** — see
    below — so what is left is `lattice.cpp:703` (uninitialised field) and the
    six `cpp:S836` findings in `skyrocket/particle.cpp`, all "garbage value
    returned to caller". `skyrocket` now has a test binary, but `particle.cpp`
    itself is only 12% covered, so **extend that suite before touching these** —
    see the note under Task 10.
-3. **Task 21.** `hyperspace` calls through a null function pointer on its first
+2. **Task 21.** `hyperspace` calls through a null function pointer on its first
    frame if the ARB extensions are absent. Unreachable on any GPU made this
    century, so it ranks below the reads above — but it is a crash, the fix is to
    move three lines inside an `if` that already exists, and until it is done the
    no-extension path cannot be tested at all.
-4. **Task 15.** `fieldlines` loses its per-segment line widths to nested
+3. **Task 15.** `fieldlines` loses its per-segment line widths to nested
    `glBegin` calls. Visible only as a subtly wrong render, so lower than the
    memory bugs, but it is a genuine rendering defect rather than a lint.
-5. **Task 25.** `skyrocket` will not start on a machine without OpenAL
+4. **Task 25.** `skyrocket` will not start on a machine without OpenAL
    installed. Not a memory bug, but it is the only item on this list that makes a
    saver completely unusable for a real user, and shipping the redistributable is
    a packaging change rather than a code one.
@@ -750,34 +745,66 @@ bugs holding each other up.
 left as it is — correct once the counter is zero — but it is fragile and worth a
 look if that code is touched.
 
-## Task 20 · `helios` keeps two restart-unsafe statics — OPEN
+## Task 20 · `helios` keeps two restart-unsafe statics — DONE
 
-Both are function-local statics that survive `cleanUp`, and the second is an
+Both were function-local statics that survived `cleanUp`, and the second was an
 out-of-bounds read rather than merely wrong output:
 
-1. **`ionsReleased`** (`helios.cpp:452`) counts how many ions have been let out
-   and is never reset, while `doSaver` reallocates `ilist` to the current
-   `dIons`. Restarting with a **smaller** `dIons` leaves the draw loop at
+1. **`ionsReleased`** (was `helios.cpp:452`) counted how many ions had been let
+   out and was never reset, while `doSaver` reallocates `ilist` to the current
+   `dIons`. Restarting with a **smaller** `dIons` left the draw loop at
    `helios.cpp:629` walking past the end of the array.
-2. **`points`** in `surfaceFunction` (`helios.cpp:440`) is
+2. **`points`** in `surfaceFunction` (was `helios.cpp:440`) was
    `static int points = dEmitters + dAttracters;`, initialised on the first call
    in the process and never updated, while `doSaver` sizes the `spheres` array
-   from the current settings (`helios.cpp:857`). Restarting with fewer emitters
-   leaves it summing `spheres` past the end — on **every sample of a 70×70×70
+   from the current settings (`helios.cpp:863`). Restarting with fewer emitters
+   left it summing `spheres` past the end — on **every sample of a 70×70×70
    volume**.
 
-A test written to demonstrate the second **access-violates rather than failing an
-assertion**, which is how it was confirmed and why it is documented here instead
-of pinned. Deliberately triggering an out-of-bounds read does not belong in CI.
+A test written to demonstrate the second **access-violated rather than failing an
+assertion**, which is how it was confirmed. Deliberately triggering an
+out-of-bounds read does not belong in CI, which is why the replacement test
+below stays inside the fixed array bounds and pins the counter's value instead.
 
-The fixes are one line each: assign `points` in `doSaver`, and reset
-`ionsReleased` there too. Both want the statics hoisted to file scope, the same
-shape as the Task 18 fix.
+**Fixed:** both statics are now file-scope `int`s — `ionsReleased` and
+`surfacePoints` — assigned where the arrays they index are allocated in
+`doSaver`: `ionsReleased = 0` right after `ilist = new ion[dIons]`, and
+`surfacePoints = dEmitters + dAttracters` right after
+`spheres = new impSphere[dEmitters + dAttracters]`. `ionsReleased` is also
+reset in `cleanUp`, since `delete[] ilist` there is unconditional; `surfacePoints`
+is not, since `cleanUp` frees `spheres` only under `if(dSurface)` and has no
+meaningful value to give it at teardown — `doSaver` alone is what keeps the
+count and the array inseparable.
 
-There is a visible consequence in the test suite: `helios` can only build its
-implicit surface once per process, so `tests/test_helios.cpp` asserts that the
-surface **branch** is taken rather than that a mesh comes out. Fixing this task
-would let that assertion be strengthened.
+The old pinning test, `Helios.IonReleaseCountSurvivesARestart`, never actually
+observed `ionsReleased`: its `EXPECT_GT(glCallList calls, 0)` was satisfied by
+the un-reset `releaseTime` schedule regardless of whether the counter was reset,
+so it passed identically before and after this fix. It is replaced by
+`Helios.RestartResetsTheIonReleaseCount`, which drives both the first cycle and
+the restart past the entire 120 s release schedule (`kReleaseEverythingStep`)
+so the two paths are told apart by the exact ion count drawn, not by timing.
+`Helios.SurfaceModeTakesTheSurfaceBranch` is strengthened to
+`Helios.SurfaceModeBuildsAndDrawsTheMesh`, now asserting `glDrawElements` and
+non-zero vertex counts rather than only the texture-generation branch, and a
+new case, `Helios.RestartWithFewerSpheresRebuildsTheSurface`, restarts with
+fewer emitters/attracters and asserts `surfacePoints` matches the newly
+allocated count and that a mesh is still drawn. The `Helios` fixture now seeds
+`rsRandGen()` to `kTestSeed` so these mesh assertions are a fixed outcome
+rather than a probable one.
+
+**What remains history-dependent in `helios`, for the next person here:**
+`draw()`'s camera, colour, release-schedule (`releaseTime`) and
+pattern-interpolation statics (`wait`, `preinterp`, `interpconst`, `newTarget`)
+all still survive `cleanUp` and were deliberately left alone — see Risks in the
+task's implementation notes. `releaseTime` in particular is what made the old
+pinning test look like it worked: it is a float schedule rather than an index,
+so a stale value can only shift release *timing*, bounded by the
+`ionsReleased < dIons` guard, never cause an out-of-bounds access on its own.
+Separately, `rsVec`'s default constructor leaves `v[]` uninitialised
+(`libs/rsMath/rsVec.cpp:25`), so a restarted saver blends freshly allocated
+emitters from indeterminate `oldpos`/`targetpos` until `setTargets` runs again
+— which is why the new tests drive `frameTime` well past `preinterp`'s PI
+threshold before asserting anything about the mesh.
 
 ## Task 26 · `microcosm` appends its gizmo list instead of rebuilding it — OPEN
 
