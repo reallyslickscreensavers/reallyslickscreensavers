@@ -13,6 +13,22 @@ executable, plus `implicitDemo` (a freeglut demo, not a saver). Supporting libra
 `grep` commands. **Read it before changing anything in `src/`**; most non-obvious constraints
 below are recorded there in full. `docs/MAINTENANCE-rslibs.md` is the same for the submodule.
 
+## Worktrees
+
+`libs` and the three `3rdparty/*` directories are git submodules (see `.gitmodules`). `git worktree
+add` does **not** populate submodules in the new worktree — they show up as empty directories, and
+anything under `## Building` or `## Tests` fails until they're initialized there too. After creating
+or switching into a worktree, run from inside it:
+
+```bash
+git submodule update --init --recursive
+```
+
+Every worktree needs this once; it is not something the main checkout satisfies on the worktree's
+behalf, and it is not optional preparation — a worktree with unpopulated submodules will fail the
+build or test commands below in ways that look unrelated to submodules (missing headers, missing
+libs) unless this has already been run.
+
 ## Building
 
 ```bash
