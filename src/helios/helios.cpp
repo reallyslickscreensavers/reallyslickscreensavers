@@ -88,6 +88,12 @@ impCubeVolume* volume;
 impSurface* surface;
 impSphere* spheres;
 
+// Counts for the two arrays doSaver sizes from the settings. Both were
+// function-local statics, which a restart in the same process left indexing
+// arrays that had been reallocated smaller - see docs/MAINTENANCE.md Task 20.
+int surfacePoints = 0;
+int ionsReleased = 0;
+
 
 
 class particle{
@@ -437,10 +443,9 @@ void setTargets(int whichTarget){
 float surfaceFunction(float* position){
 	static int i;
 	static float value;
-	static int points = dEmitters + dAttracters;
 
 	value = 0.0f;
-	for(i=0; i<points; i++)
+	for(i=0; i<surfacePoints; i++)
 		value += spheres[i].value(position);
 
 	return(value);
@@ -449,7 +454,6 @@ float surfaceFunction(float* position){
 
 void draw(){
 	int i;
-	static int ionsReleased = 0;
 	static float releaseTime = 0.0f;
 
 	// Camera movements
@@ -842,6 +846,7 @@ void doSaver(HWND hwnd){
 	elist = new emitter[dEmitters];
 	alist = new attracter[dAttracters];
 	ilist = new ion[dIons];
+	ionsReleased = 0;
 
 	// Initialize surface
 	if(dSurface){
@@ -855,6 +860,7 @@ void doSaver(HWND hwnd){
 		volume->function = surfaceFunction;
 		surface = volume->getSurface();
 		spheres = new impSphere[dEmitters + dAttracters];
+		surfacePoints = dEmitters + dAttracters;
 		float sphereScaleFactor = 1.0f / sqrtf(float(2 * dEmitters + dAttracters));
 		for(i=0; i<dEmitters; i++)
 			spheres[i].setThickness(400.0f * sphereScaleFactor);
@@ -871,6 +877,7 @@ void cleanUp(HWND hwnd){
 	delete[] elist;
 	delete[] alist;
 	delete[] ilist;
+	ionsReleased = 0;
 	if(dSurface){
 		delete[] spheres;
 		delete surface;

@@ -9,6 +9,12 @@
 
 #include "support/saver_test_common.h"
 
+// Safe to include here: helios uses rsMath's generator and carries no private
+// copy of it (checked with grep -n "rsRandi\|rsRandf" src/helios/helios.cpp,
+// which shows call sites only - see Task 12 and the note on kTestSeed in
+// saver_test_common.h). Seeding is what makes the isosurface assertions below
+// a fixed outcome rather than a probable one.
+#include <rsMath/rsMath.h>
 
 #include "resource.h"
 
@@ -23,6 +29,12 @@ extern int dSpeed;
 extern int dSurface;
 extern int dBlur;
 extern int readyToDraw;
+
+// The sphere count surfaceFunction sums over, written where doSaver allocates
+// spheres (helios.cpp:863). Was a function-local static that a restart with
+// fewer emitters/attracters left indexing spheres past its end - Task 20 in
+// docs/MAINTENANCE.md.
+extern int surfacePoints;
 
 // Seconds since the last frame. idleProc sets it from an rsTimer
 // (helios.cpp:740), but the tests call draw() directly, so it stays at its
@@ -45,10 +57,35 @@ void initSaver(HWND hwnd) { doSaver(hwnd); }
 
 namespace {
 
+// helios spreads the whole ion release over 120 s
+// (releaseTime += 120.0f / float(dIons), helios.cpp:546), so any step past 120
+// releases every ion whatever dIons is, and whatever releaseTime was left
+// holding. Used to drive a restart past the entire release schedule so the
+// fixed and unfixed paths are told apart by ionsReleased, not by timing.
+constexpr float kReleaseEverythingStep = 200.0f;
+
+// preinterp += frameTime * float(dSpeed) * interpconst (helios.cpp:556)
+// advances 0.01 per second at dSpeed 10 and interpconst 0.001, so only a step
+// past ~315 s carries preinterp over PI and re-runs setTargets
+// (helios.cpp:559-566); it must also clear the 10 s wait. Without it the
+// freshly allocated emitters are positioned from uninitialised
+// oldpos/targetpos (rsVec's default constructor leaves v[] uninitialised,
+// libs/rsMath/rsVec.cpp:25) and no isosurface forms.
+constexpr float kPatternStep = 400.0f;
+
 // helios has a single set of defaults rather than presets, and no argument.
 class Helios : public savertest::SaverFixture {
 protected:
     void SetUp() override {
+        // Before setDefaults, and before anything reaches initSaver. helios
+        // draws targets and colours from rsMath's generator (helios.cpp:114,
+        // 131, 151, 157, 160, ...); seeding it is what makes the isosurface
+        // assertions in SurfaceModeBuildsAndDrawsTheMesh and
+        // RestartWithFewerSpheresRebuildsTheSurface a fixed outcome rather
+        // than a probable one - see the note on kTestSeed in
+        // saver_test_common.h.
+        rsRandGen().seed(savertest::kTestSeed);
+
         setDefaults();
         // The shipped default of 1500 ions makes every case here several times
         // slower for no extra coverage; the count itself is asserted below.
@@ -159,18 +196,24 @@ TEST_F(Helios, ReleasesMoreIonsAsTimePasses) {
 //
 // These are two separate cases rather than one before/after, because helios
 // keeps its simulation in function-local statics inside draw() - interp, wait,
-// newTarget, and surfaceFunction's own `points` (helios.cpp:440, 452, 520-568).
-// Those survive cleanUp, so a frame drawn with dSurface off leaves the emitters
-// somewhere that produces no isosurface when it is turned back on in the same
-// process. ctest runs every case in its own process, which is what makes the
-// split work. See IonReleaseCountSurvivesARestart for the same root cause.
+// newTarget (helios.cpp:551-572) - that survive cleanUp, so a frame drawn with
+// dSurface off leaves the emitters wherever they were. ctest runs every case in
+// its own process, which is what makes the split work. See
+// RestartResetsTheIonReleaseCount for the same root cause.
+//
+// Task 20 fixed surfaceFunction's cached sphere count (formerly the
+// function-local static `points`, now the file-scope surfacePoints assigned
+// where doSaver allocates spheres), so the mesh itself can now be asserted
+// rather than only the branch that builds it. frameTime is driven to
+// kPatternStep before start() so the fixture's warm-up frame re-runs
+// setTargets and the emitters actually form a cluster - see kPatternStep above
+// for why, and Task 20's note in docs/MAINTENANCE.md on rsVec's uninitialised
+// default construction.
 
-TEST_F(Helios, SurfaceModeTakesTheSurfaceBranch) {
+TEST_F(Helios, SurfaceModeBuildsAndDrawsTheMesh) {
     // The branch turns on sphere-map texture generation around the mesh
     // (helios.cpp:636-659), which is observable no matter where the emitters
-    // have drifted to. Asserting on glDrawElements instead would depend on
-    // whether the isosurface happens to form this frame, which is exactly the
-    // history dependence described above.
+    // have drifted to.
     stop();
     dSurface = 0;
     start();
@@ -180,30 +223,59 @@ TEST_F(Helios, SurfaceModeTakesTheSurfaceBranch) {
 
     stop();
     dSurface = 1;
+    frameTime = kPatternStep;  // re-run setTargets on the warm-up frame
     start();
     draw();
     EXPECT_EQ(glstub::trace().countEnables(GL_TEXTURE_GEN_S), 1);
     EXPECT_EQ(glstub::trace().countEnables(GL_TEXTURE_GEN_T), 1);
     EXPECT_TRUE(savertest::NoEnableStateLeaked())
         << "the branch must switch texture generation back off";
+
+    // impSurface::draw returns before glDrawElements when index_offset == 0
+    // (libs/Implicit/impSurface.cpp:188), so a non-zero count is exactly "a
+    // mesh came out" - not just "the branch that builds one was taken".
+    EXPECT_GT(glstub::trace().countCalls("glDrawElements"), 0)
+        << "impSurface draws the marching-cubes mesh through vertex arrays";
+    EXPECT_GT(glstub::trace().totalArrayVertices(), 0u);
 }
 
-// There is deliberately no test that the mesh itself comes out, even though
-// impSurface draws it through glDrawElements and that path is worth covering.
-// helios can only build a surface once per process:
-//
-//   - surfaceFunction caches its sphere count in a function-local static
-//     (helios.cpp:440) while doSaver sizes the spheres array from the current
-//     settings (helios.cpp:857). Restarting with fewer emitters leaves it
-//     summing spheres past the end of the array, on every sample of a 70x70x70
-//     volume. A test written to demonstrate that access-violates rather than
-//     failing an assertion - which is how it was confirmed, and why it is
-//     recorded in docs/MAINTENANCE.md instead of pinned here.
-//   - even at unchanged settings a second cycle produces no isosurface, so the
-//     cached count is not the only thing draw() carries across a restart.
-//
-// microcosm drives the same impSurface vertex-array path, so asserting only on
-// the branch here loses no coverage of the library.
+TEST_F(Helios, RestartWithFewerSpheresRebuildsTheSurface) {
+    // Task 20, the other half of the fix: surfaceFunction used to sum over a
+    // function-local static `points`, cached once from dEmitters + dAttracters
+    // and never updated, while doSaver reallocated spheres to whatever the
+    // current, possibly smaller, settings were. A restart with fewer spheres
+    // then summed spheres past the end of the array on every sample of the
+    // volume. This pins the fix: surfacePoints must equal the count the
+    // spheres array was actually allocated with, and a mesh must still come
+    // out at the smaller count.
+    //
+    // 2 emitters + 1 attracter rather than 1 + 1: makeSurface's crawl only
+    // ever steps ++i and abandons a crawl point once i >= w with the cube
+    // still fully inside (libs/Implicit/impCubeVolume.cpp:250-256);
+    // crawlfromsides is false by default and helios never turns it on, so
+    // there is no fallback scan. At 2 + 1 the scale factor is 1/sqrt(5),
+    // giving an emitter thickness of 179 and a lone-sphere iso radius of about
+    // 283 against a 875 half-extent and a maximum centre of 500 - 92 units of
+    // margin, versus under one cube at 1 + 1. Never use dEmitters = 0;
+    // setTargets divides by counts derived from it (helios.cpp:291, 305, 321).
+    stop();
+    dEmitters = 3;
+    dAttracters = 3;
+    frameTime = kPatternStep;
+    start();  // cycle 1: dSurface 1, 3 emitters + 3 attracters (6 spheres)
+
+    stop();
+    dEmitters = 2;  // three spheres where cycle 1 allocated six
+    dAttracters = 1;
+    frameTime = kPatternStep;
+    start();
+    draw();
+
+    EXPECT_EQ(surfacePoints, dEmitters + dAttracters)
+        << "surfaceFunction must sum the array doSaver just allocated";
+    EXPECT_GT(glstub::trace().countCalls("glDrawElements"), 0)
+        << "the mesh is rebuilt at the smaller sphere count";
+}
 
 TEST_F(Helios, BlurDrawsTheFadingQuadInsteadOfClearing) {
     // With dBlur the frame is dimmed by drawing a translucent screen-filling
@@ -224,37 +296,44 @@ TEST_F(Helios, BlurDrawsTheFadingQuadInsteadOfClearing) {
         << "the blur path pushes on both the projection and modelview stacks";
 }
 
-TEST_F(Helios, IonReleaseCountSurvivesARestart) {
-    // DEFECT, pinned rather than fixed.
+TEST_F(Helios, RestartResetsTheIonReleaseCount) {
+    // Task 20: ionsReleased used to be a function-local static inside draw()
+    // (formerly helios.cpp:452), never reset across a restart in the same
+    // process, while doSaver reallocated ilist to the current, possibly
+    // smaller, dIons. A restart with a SMALLER dIons then indexed ilist past
+    // its end - the old pinning test here could not observe that, because its
+    // EXPECT_GT(calls, 0) was satisfied by the un-reset releaseTime
+    // (helios.cpp:453 at the time), not by ionsReleased: it passed identically
+    // whether the counter was reset or not.
     //
-    // ionsReleased is a function-local static inside draw() (helios.cpp:452),
-    // so it is never reset. doSaver reallocates ilist to the current dIons but
-    // leaves the counter where it was, and the draw loop still runs to it
-    // (helios.cpp:629).
+    // This version discriminates. One glCallList is emitted per released ion
+    // (helios.cpp:275; kStatistics is 0 in the shim, so nothing else calls
+    // it), which makes ionsReleased observable. kReleaseEverythingStep drives
+    // both the first cycle and the restart's warm-up frame past the entire
+    // 120 s release schedule, so the fixed path always reaches exactly dIons
+    // ions whatever releaseTime carried in, while a regressed path that never
+    // resets the counter would see `60 < 20` (dIons already "exceeded") and
+    // release nothing, drawing the stale 60 over a 20-element array instead.
     //
-    // Restarting with a SMALLER dIons therefore indexes ilist past its end.
-    // This test does not do that - an out-of-bounds read is undefined and a
-    // deliberate one does not belong in CI - it pins the cause instead: after a
-    // restart the counter is still above zero, where a fresh saver would draw
-    // nothing on its first frame.
-    //
-    // Harmless in the shipped saver, where settings only change between runs.
-    // Recorded in docs/MAINTENANCE.md; fixing it means resetting the counter in
-    // doSaver, which is a saver change rather than a test change.
-    start();
-    for (int frame = 0; frame < 10; ++frame) {
-        frameTime = 0.5f;  // see ReleasesMoreIonsAsTimePasses for the step size
-        draw();
-    }
+    // A regression here most likely fails this assertion cleanly (40 stale
+    // entries past a 20-element array usually stays inside the heap block),
+    // but could instead access-violate reading ilist out of bounds during the
+    // cycle-2 warm-up; ctest reports that as a failed test too, so it is not
+    // silent.
+    start();  // fixture sets dIons = 60
+    const int firstCycleIons = dIons;
+    frameTime = kReleaseEverythingStep;
+    draw();
+    ASSERT_EQ(glstub::trace().countCalls("glCallList"), firstCycleIons)
+        << "the first cycle must release every ion, or the restart proves nothing";
 
     stop();
-    dIons = 200;  // larger, so the stale counter stays in bounds
-    start();
-    glstub::reset();
+    dIons = 20;  // fewer than the first cycle released
+    start();     // warm-up runs at the same big step
     draw();
 
-    EXPECT_GT(glstub::trace().countCalls("glCallList"), 0)
-        << "if this now fails the counter is being reset and the defect is gone";
+    EXPECT_EQ(glstub::trace().countCalls("glCallList"), dIons)
+        << "the release counter restarts from zero; this loop indexes ilist";
 }
 
 // --- framework entry points ------------------------------------------------
