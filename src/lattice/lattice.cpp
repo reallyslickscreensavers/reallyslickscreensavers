@@ -577,7 +577,8 @@ void draw(){
 	glColor3f(1.0f, 1.0f, 1.0f);
 
 	// Environment mapping for crystal, chrome, brass, shiny, and ghostly
-	if(dTexture == 2 || dTexture == 3 || dTexture == 4  || dTexture == 5 || dTexture == 6){
+	const bool envMapped = (dTexture == 2 || dTexture == 3 || dTexture == 4  || dTexture == 5 || dTexture == 6);
+	if(envMapped){
 		glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
 		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
 		glEnable(GL_TEXTURE_GEN_S);
@@ -610,8 +611,10 @@ void draw(){
 		}
 	}
 
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
+	if(envMapped){
+		glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+	}
 
 	// print text
 	static float totalTime = 0.0f;

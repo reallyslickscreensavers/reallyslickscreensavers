@@ -8,7 +8,7 @@
  *
  * This is the first suite to lean on the stub's matrix stack. lattice loads its
  * projection as a hand-built matrix rather than through gluPerspective
- * (lattice.cpp:690-696) and steers with glLoadMatrixf, so a stub that only
+ * (lattice.cpp:693-699) and steers with glLoadMatrixf, so a stub that only
  * recorded those calls could not say anything about where the camera ended up.
  */
 
@@ -49,7 +49,7 @@ protected:
         setDefaults(DEFAULTS1);
 
         // draw() walks a cube of cells (2 * (dDepth + 2) + 1) on a side and
-        // frustum-culls each one (lattice.cpp:589-592), so the shipped 5 tests
+        // frustum-culls each one (lattice.cpp:590-593), so the shipped 5 tests
         // 3,375 cells a frame against 729 at 2. The cells that survive culling
         // are drawn from the same display lists either way, so the same code
         // runs. The default is asserted in the harness test, and the case that
@@ -106,36 +106,55 @@ TEST_F(Lattice, PrimitiveVertexCountsAreLegal) {
     EXPECT_TRUE(savertest::VertexCountsLegal());
 }
 
-TEST_F(Lattice, DisablesTextureCoordinateGenerationItNeverEnabled) {
-    // DEFECT, pinned rather than fixed - lattice is the exception to
-    // NoEnableStateLeaked, and in the harmless direction.
+TEST_F(Lattice, DisablesTextureCoordinateGenerationOnlyWhenItEnabledIt) {
+    // Was a pinned defect: the enable was conditional on a reflective texture
+    // and the disable was not, so a frame with any other texture disabled
+    // something it never enabled and the net came out at -1. Both sides now
+    // hang off one predicate - Task 22 in docs/MAINTENANCE.md.
     //
-    // The enable is conditional on dTexture being one of the reflective ones
-    // (lattice.cpp:580-585) while the matching disable is unconditional
-    // (lattice.cpp:613-614). With any other texture the frame disables
-    // something it never enabled, so the net comes out at -1.
+    // Textures 2 to 6 - crystal, chrome, brass, shiny, ghostly - are the
+    // reflective ones and the only ones that sphere-map. dTexture 9 means
+    // "random" and initSaver resolves it to rsRandi(9) (lattice.cpp:679-680),
+    // so 0 to 8 is every value a frame can ever see.
     //
-    // Disabling an already-disabled capability is a no-op in GL, which is why
-    // this has never shown. Fixing it means moving the disable inside the same
-    // condition. Recorded in docs/MAINTENANCE.md.
-    stop();
-    dTexture = 0;
-    start();
-    draw();
+    // countEnables is asserted alongside netEnable because a net of 0 is also
+    // what an unconditional enable paired with an unconditional disable would
+    // give; the pair has to be absent, not merely balanced.
+    //
+    // dDensity is dropped for the same reason the fixture drops dDepth: this
+    // restarts the saver nine times and the display lists are the expensive
+    // part. It changes no enable state.
+    for (int texture = 0; texture <= 8; ++texture) {
+        stop();
+        dTexture = texture;
+        dDensity = 20;
+        start();
+        draw();
 
-    EXPECT_EQ(glstub::trace().netEnable(GL_TEXTURE_GEN_S), -1)
-        << "if this now fails the disable has been made conditional too";
-    EXPECT_EQ(glstub::trace().netEnable(GL_TEXTURE_GEN_T), -1);
+        const int expected = (texture >= 2 && texture <= 6) ? 1 : 0;
+        EXPECT_EQ(glstub::trace().countEnables(GL_TEXTURE_GEN_S), expected) << "dTexture " << texture;
+        EXPECT_EQ(glstub::trace().countEnables(GL_TEXTURE_GEN_T), expected) << "dTexture " << texture;
+        EXPECT_EQ(glstub::trace().netEnable(GL_TEXTURE_GEN_S), 0) << "dTexture " << texture;
+        EXPECT_EQ(glstub::trace().netEnable(GL_TEXTURE_GEN_T), 0) << "dTexture " << texture;
+    }
 }
 
 TEST_F(Lattice, LeaksNoOtherEnableState) {
-    // Everything except the texture-generation pair above must balance.
-    stop();
-    dTexture = 3;  // reflective, so the enable and disable pair up
-    start();
-    draw();
-
-    EXPECT_TRUE(savertest::NoEnableStateLeaked());
+    // Before Task 22 the texture-generation pair was an exception to this and
+    // the case above held it separately. It is not any more, so the whole
+    // frame balances with a plain texture and with a reflective one alike.
+    //
+    // Still a per-suite assertion rather than a repo-wide rule: flux enables
+    // its blend state at the top of every frame and never disables it, which
+    // is legal and is held by Flux.EnableStateIsTheSameEveryFrame instead.
+    constexpr std::array textures = {0, 3};  // plain, then reflective
+    for (int texture : textures) {
+        stop();
+        dTexture = texture;
+        start();
+        draw();
+        EXPECT_TRUE(savertest::NoEnableStateLeaked()) << "dTexture " << texture;
+    }
 }
 
 TEST_F(Lattice, ReadsBackNoInvalidEnums) {
@@ -150,7 +169,7 @@ TEST_F(Lattice, ReadsBackNoInvalidEnums) {
 TEST_F(Lattice, DrawsTheLatticeThroughDisplayLists) {
     // Every cell of the lattice is one of the shapes compiled into display
     // lists in initSaver (lattice.cpp:302), called per visible cell
-    // (lattice.cpp:606). The frame itself emits no vertices.
+    // (lattice.cpp:607). The frame itself emits no vertices.
     start();
     draw();
 
@@ -263,26 +282,8 @@ TEST_F(Lattice, BuildsTheTorusFromLongitudeAndLatitude) {
     EXPECT_GT(fine, coarse);
 }
 
-TEST_F(Lattice, EnvironmentMappedTexturesTurnOnCoordinateGeneration) {
-    // Textures 2 to 6 are the reflective ones and switch on sphere mapping
-    // around the lattice (lattice.cpp:583-584, 613-614).
-    stop();
-    dTexture = 0;
-    start();
-    draw();
-    EXPECT_EQ(glstub::trace().countEnables(GL_TEXTURE_GEN_S), 0);
-
-    stop();
-    dTexture = 3;
-    start();
-    draw();
-    EXPECT_EQ(glstub::trace().countEnables(GL_TEXTURE_GEN_S), 1);
-    EXPECT_EQ(glstub::trace().countEnables(GL_TEXTURE_GEN_T), 1);
-    EXPECT_TRUE(savertest::NoEnableStateLeaked());
-}
-
 TEST_F(Lattice, FogIsSetUpOnlyWhenAskedFor) {
-    // Fog is configured once in initSaver (lattice.cpp:726-732), so it has to
+    // Fog is configured once in initSaver (lattice.cpp:729-735), so it has to
     // be captured there rather than in a frame.
     stop();
     dFog = FALSE;
