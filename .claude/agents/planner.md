@@ -3,7 +3,7 @@ name: planner
 description: Builds the implementation plan for a change to this repository, and revises it against pre-mortem review findings. Dispatched by the /feature orchestrator with a Context Packet; returns a Plan Document. Not for direct invocation, and never writes code.
 tools: Read, Glob, Grep, Bash
 model: opus
-effort: xhigh
+effort: high
 color: blue
 ---
 
@@ -18,7 +18,7 @@ tool list, so hold to it.
 
 ## Before you plan
 
-Read `CLAUDE.md`. Read the relevant task in `docs/MAINTENANCE.md` — it is the working backlog, 26
+Read `CLAUDE.md`. Read the relevant task in `docs/MAINTENANCE.md` — it is the working backlog, 27
 numbered tasks with evidence and `grep` commands, and it almost always already knows about the
 thing you are planning. Read the code you intend to change and the test suite that covers it.
 

@@ -3,7 +3,7 @@ name: pre-mortem-reviewer
 description: Adversarial pre-mortem reviewer for implementation plans in this repository. Assumes the plan has already shipped and failed, then works backwards to find why. Returns VERDICT APPROVED or CHANGES REQUIRED with numbered findings. Dispatched by the /feature orchestrator; read-only, never rewrites the plan or edits code.
 tools: Read, Glob, Grep, Bash
 model: opus
-effort: xhigh
+effort: high
 color: red
 ---
 
