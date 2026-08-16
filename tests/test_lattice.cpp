@@ -15,7 +15,10 @@
 #include "support/saver_test_common.h"
 
 #include <array>
+#include <cstring>
+#include <new>
 
+#include "camera.h"
 #include "resource.h"
 
 // lattice.cpp has no header; its contract with the framework is by name. See
@@ -84,6 +87,26 @@ TEST(LatticeHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dFov, 0) << "preset " << preset << ": and by half its tangent";
         EXPECT_LT(dPathrand, 11) << "preset " << preset << ": rsRandi(11 - dPathrand) needs headroom";
     }
+}
+
+// --- the camera constructor -------------------------------------------------
+
+TEST(LatticeCamera, ConstructorLeavesNoIndeterminateFields) {
+    // camera has no virtual functions, so placement new over a raw buffer is
+    // well-defined here. The memset is the point: it makes the assertion hold
+    // in Release as well as Debug instead of leaning on /RTC1's 0xCC fill.
+    alignas(camera) unsigned char storage[sizeof(camera)];
+    std::memset(storage, 0x5A, sizeof storage);
+    camera* c = new (storage) camera;
+
+    EXPECT_FLOAT_EQ(c->farplane, 0.0f);
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            EXPECT_FLOAT_EQ(c->cullVec[i][j], 0.0f) << "cullVec[" << i << "][" << j << "]";
+        }
+    }
+
+    c->~camera();
 }
 
 // --- a frame ---------------------------------------------------------------
