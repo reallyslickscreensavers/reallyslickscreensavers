@@ -628,6 +628,27 @@ TEST_F(Skyrocket, PopFunctionsStillGrantTheOccasionalLongLife) {
     EXPECT_TRUE(sawLongLife) << "the 1-in-100 long-life branch never fired in 500 tries";
 }
 
+TEST_F(Skyrocket, PopFunctionsAddNothingWhenAskedForNoParticles) {
+    // Frozen: no draw(). No shipped call site passes a non-positive count -
+    // see skyrocket.cpp and particle.cpp's own callers - so this is about the
+    // four pop* functions' declared parameter domain rather than a reachable
+    // crash. Written as one loop over the four calls rather than four
+    // near-identical bodies, per the duplication gate.
+    start();
+    particle* p = addParticle();
+    place(p, 1000.0f);
+    rsVec colour(1.0f, 0.8f, 0.6f);
+
+    const unsigned int before = last_particle;
+    for (int i = 0; i < 200; ++i) {
+        p->popSphere(0, 100.0f, colour);
+        p->popSplitSphere(0, 100.0f, colour);
+        p->popMultiColorSphere(0, 100.0f);
+        p->popRing(0, 100.0f, colour);
+    }
+    EXPECT_EQ(last_particle, before);
+}
+
 // --- sound -----------------------------------------------------------------
 
 TEST_F(Skyrocket, RunsWithoutASoundEngine) {
