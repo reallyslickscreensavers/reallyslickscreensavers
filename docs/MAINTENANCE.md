@@ -203,10 +203,14 @@ simulating anything at all before assuming its length is earning something.
 | **24** | **Three savers deviate from the entry-point contract** | **new, open** |
 | **25** | **`skyrocket` will not start without `OpenAL32.dll`** | **new, open** |
 | **26** | **`microcosm` appends 55 gizmos on every `initSaver`; the clear is commented out** | **new, open** |
+| **27** | **`skyrocket` has two more restart-unsafe statics (dangling `soundengine`, stale `rocketTimeConst`)** | **new, open** |
 
 Tasks 10–13 came out of the rslibs work and a re-read of SonarCloud. Tasks 14–16
 came out of the first two harness batches (PRs #42, #43) and Tasks 18–25 out of
-the last one. Every one is a real defect that thirteen years of running the
+the last one. Task 27 came out of implementing Task 10 itself — the same
+restart-safety pattern turning up again while writing tests that call
+`skyrocket`'s particle functions directly. Every one is a real defect that
+thirteen years of running the
 savers never surfaced, and each that is still open is pinned by a test asserting
 **current** behaviour, so the fix has a tripwire. The test says so in its own
 comment.
@@ -730,8 +734,8 @@ the live globals. Pinned by
 
 # P0 (new) — Restarting a saver in the same process
 
-Tasks 18, 19, 20 and 26 are one defect wearing four hats, and Task 16 above was
-the first sighting. **Teardown releases memory but leaves the things that index it
+Tasks 18, 19, 20, 26 and 27 are one defect wearing five hats, and Task 16 above
+was the first sighting. **Teardown releases memory but leaves the things that index it
 untouched** — counters, "already built" flags, function-local statics, and in one
 case the container itself. The next `initSaver` starts from a clean allocation and
 a dirty bookkeeping state.
@@ -869,6 +873,47 @@ consequence beyond the leak.
 Splitting the line is a one-character fix. Freeing the gizmos in `cleanUp` is the
 larger half, since it frees nothing today. Pinned by
 `Microcosm.GizmoListGrowsOnEveryRestart`.
+
+## Task 27 · `skyrocket` has two more restart-unsafe statics — OPEN
+
+Found while implementing Task 10, not fixed there — out of scope for a
+SonarCloud-bug pass, and neither is reachable from the shipped saver, for the
+same reason nothing in this section is: the process exits on `WM_DESTROY`
+rather than restarting. Both only fire under a test fixture that calls
+`stop()` then `start()` in the same process, and Task 10's new tests were
+written to route around them rather than trip them. Recorded here as the
+fifth sighting of this section's defect and left for whoever picks it up next.
+
+1. **`soundengine`** (`skyrocket.cpp:980`) is deleted in `cleanup` but never
+   set back to `NULL`. `initSaver`'s `if(dSound) soundengine = new
+   SoundEngine(...)` (`skyrocket.cpp:956`) overwrites it before the shipped
+   saver's `WM_CREATE` → `WM_DESTROY` cycle can expose the stale pointer. It
+   fires from anything that calls into `particle.cpp`'s nine `if(soundengine)`
+   checks (`particle.cpp:114, 136, 160, 371, 437, 526, 685, 817, 1037`, spread
+   across several `init*` functions and one `pop*`) directly after a
+   `cleanup()` in the same process without
+   going through `initSaver` first — exactly what `tests/test_skyrocket.cpp`'s
+   `Skyrocket` fixture does between cases. Task 10's new cases were ordered to
+   stay above `DrivesTheSoundEngineWhenAsked` for this reason, with a comment
+   on both sides of the boundary recording why.
+2. **`rocketTimeConst`** (`skyrocket.cpp:680`) is a function-local static
+   seeded once per process as `10.0f / float(dMaxrockets)`. If the first call
+   ever made in the process finds `dMaxrockets == 0`, the static becomes
+   `+Infinity` and stays that way until the periodic recompute at
+   `skyrocket.cpp:689` next runs — every 20 to 50 seconds of simulated time,
+   not on every frame. `skyrocket.cpp:747`'s `if(dMaxrockets) rocketTimer =
+   rsRandf(rocketTimeConst);` means that stale `+Infinity` is read the moment
+   `dMaxrockets` next becomes positive, if that happens before the recompute
+   fires — feeding `rsRandf` an infinite range. Task 10's new tests avoid this
+   by setting `dMaxrockets = 1` before ever calling `start()`, so the static is
+   never seeded at zero in the first place.
+
+Neither has a pinning test yet. Fixing (1) is a one-line `soundengine =
+NULL;` after the `delete`, the same pattern Tasks 18–20 used. Fixing (2)
+needs the same move Task 20 made for `helios`'s statics: promote it to a
+file-scope variable assigned at a well-defined point rather than at
+first-use, since a function-local static's initialiser runs exactly once no
+matter how many times the saver restarts around it.
 
 ## Task 21 · `hyperspace` calls `glActiveTextureARB` unguarded — OPEN
 
