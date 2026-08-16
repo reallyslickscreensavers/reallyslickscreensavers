@@ -207,7 +207,16 @@ void makeTorus(int smooth, int longitude, int latitude, float centerradius, floa
 	float ncosa, nsina;  // Longitudinal positions for shading
 	float u, v1, v2, ustep, vstep;
 	float temp;
-	float oldcosa, oldsina, oldncosa, oldnsina, oldcosn, oldcosnn, oldsinn, oldsinnn;
+	float oldcosa = 0.0f, oldsina = 0.0f, oldncosa = 0.0f, oldnsina = 0.0f,
+		oldcosn = 0.0f, oldcosnn = 0.0f, oldsinn = 0.0f, oldsinnn = 0.0f;
+
+	// A torus needs at least one segment each way. dLongitude comes straight
+	// out of the registry unclamped (Task 11), and at zero the j loop below
+	// never runs: the old* values are saved only on its j==0 pass, and the
+	// block that closes the tri-strip reads them regardless and emits a
+	// two-vertex GL_TRIANGLE_STRIP. cpp:S836, Task 10.
+	if(longitude < 1 || latitude < 1)
+		return;
 
 	// Smooth shading?
 	if(smooth)
