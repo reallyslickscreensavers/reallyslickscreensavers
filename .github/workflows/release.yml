@@ -1,0 +1,307 @@
+name: Release
+
+# v*.*.* rather than v* : the repo's only tags are v0.0.1 and v0.0.2, and this
+# glob matches those, v1.2.3, and prerelease forms like v1.2.3-rc1, while
+# rejecting non-version tags. GitHub's tag filters do not support character
+# classes, so [0-9] is not an option here; the shape is re-checked in pwsh.
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+# Never cancel a run that may be halfway through uploading release assets.
+# Serialised per ref so a re-pushed tag queues behind the run it supersedes.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  # The single knob. A literal pin, not a resolver: two runs of the same tag
+  # must use the same compiler. The URL built from it below is 7.x-specific -
+  # the asset name gained its -x64 suffix in 7.0 and 6.x has none - so
+  # downgrading this value also means editing the URL and dropping the
+  # --version check. A wrong value 404s rather than falling back.
+  INNO_VERSION: '7.1.0'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      # Creating, editing and uploading assets to a Release is the `contents`
+      # scope. `write` is a superset of the `read` actions/checkout needs, and
+      # the two cannot be granted separately. Nothing else: no `actions` (no
+      # other runs are read), no `pull-requests` (nothing is commented), no
+      # `packages` (nothing goes to GHCR), no `id-token` / `attestations` (no
+      # OIDC signing or provenance in this workflow).
+      contents: write
+    steps:
+      # submodules because `libs` and the three `3rdparty/*` submodules are
+      # empty otherwise and the failure reads as missing headers; `lfs: true`
+      # because `.gitattributes` LFS-tracks `*.ico` and each saver's `.rc`
+      # compiles `src/<saver>/icon1.ico` (`src/cyclone/cyclone.rc:169`) -
+      # `rc.exe` fails on an unsmudged pointer file. This is not about
+      # `installer/installer.ico`, which is never read at compile time;
+      # `fetch-depth: 0` because the ancestry guard needs real history -
+      # `git merge-base` on a shallow clone is meaningless.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          lfs: true
+          fetch-depth: 0
+
+      - name: Verify the tag is reachable from main
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # GitHub's pwsh shell prepends $ErrorActionPreference='stop', and on
+          # PowerShell 7.3+ that makes a non-zero native exit throw before any
+          # $LASTEXITCODE branch can run. Every step here that inspects
+          # $LASTEXITCODE turns that off first.
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not fetch origin/main (git exit $LASTEXITCODE). Cannot establish whether $env:GITHUB_REF_NAME is releasable."
+          }
+
+          git merge-base --is-ancestor HEAD origin/main
+          $rc = $LASTEXITCODE
+          if ($rc -eq 1) {
+            throw "Tag $env:GITHUB_REF_NAME points at $(git rev-parse HEAD), which is not reachable from main. Refusing to release."
+          } elseif ($rc -ne 0) {
+            throw "git merge-base --is-ancestor failed with exit $rc (not 0 or 1). Likely a missing origin/main or a shallow history - this job checks out with fetch-depth: 0 precisely to avoid that."
+          }
+          Write-Host "$env:GITHUB_REF_NAME is reachable from main."
+
+      - name: Resolve version and artifact names
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $version = $env:GITHUB_REF_NAME
+            if ($version -notmatch '^v\d+\.\d+\.\d+') {
+              throw "Tag '$version' is not a version tag (expected vMAJOR.MINOR.PATCH)."
+            }
+          } else {
+            # Manual dispatch has no tag. Build and compile the installer anyway
+            # so the plumbing stays exercisable without minting a version, but
+            # publish nothing (the publish step is gated on ref_type == 'tag').
+            $version = 'v0.0.0-dev'
+          }
+          if ([string]::IsNullOrWhiteSpace($version)) { throw "resolved an empty version" }
+
+          # git rev-parse rather than slicing GITHUB_SHA, so the value provably
+          # describes the tree that is about to be built.
+          $sha7 = (git rev-parse --short=7 HEAD).Trim()
+          $stem = "reallyslickscreensavers_$version-$sha7"
+          $dir  = Join-Path $env:GITHUB_WORKSPACE 'installer\output'
+          $exe  = Join-Path $dir "$stem.exe"
+
+          @(
+            "VERSION=$version"
+            "SHA7=$sha7"
+            "ARTIFACT_STEM=$stem"
+            "INSTALLER_DIR=$dir"
+            "INSTALLER_EXE=$exe"
+            "INSTALLER_SHA256=$exe.sha256"
+          ) | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "version=$version stem=$stem exe=$exe"
+
+      - name: Verify every saver project is packaged (pre-build)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $listed = Select-String -Path installer\installer.iss -Pattern '^\s*Source:\s*"([^"]+)\.scr"' |
+                    ForEach-Object { $_.Matches[0].Groups[1].Value } |
+                    Sort-Object
+          # A saver is anything whose project carries the .scr post-build copy.
+          # implicitDemo has none, which is how it stays out of the installer.
+          $expected = Get-ChildItem src\*\*.vcxproj |
+                      Where-Object { (Get-Content -Raw $_.FullName) -match '\$\(TargetName\)\.scr' } |
+                      ForEach-Object { $_.BaseName } |
+                      Sort-Object
+          $diff = Compare-Object -ReferenceObject @($expected) -DifferenceObject @($listed)
+          if ($diff) {
+            $missing = ($diff | Where-Object { $_.SideIndicator -eq '<=' } | ForEach-Object { $_.InputObject }) -join ', '
+            $extra   = ($diff | Where-Object { $_.SideIndicator -eq '=>' } | ForEach-Object { $_.InputObject }) -join ', '
+            throw "installer/installer.iss does not match the saver projects. In src but not in [Files]: '$missing'. In [Files] but no such project: '$extra'."
+          }
+          Write-Host "$($listed.Count) savers are packaged."
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3.0.0
+
+      # /t:Rebuild per CLAUDE.md - a plain Build hides warnings such as D9035
+      # by not recompiling. Release|x86 maps the installer project to
+      # Installer|Win32 with no Build.0 (src/rssavers.sln:190), so this step
+      # does not invoke ISCC and cannot race the CLI compile below.
+      - name: Build solution (Release/x86)
+        run: msbuild src\rssavers.sln /p:Configuration=Release /p:Platform=x86 /t:Rebuild
+
+      - name: Verify every packaged saver was built (post-build)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $built  = (Get-ChildItem bin\*.scr).BaseName | Sort-Object
+          $listed = Select-String -Path installer\installer.iss -Pattern '^\s*Source:\s*"([^"]+)\.scr"' |
+                    ForEach-Object { $_.Matches[0].Groups[1].Value } |
+                    Sort-Object
+          $diff = Compare-Object -ReferenceObject @($listed) -DifferenceObject @($built)
+          if ($diff) {
+            $notPackaged = ($diff | Where-Object { $_.SideIndicator -eq '=>' } | ForEach-Object { $_.InputObject }) -join ', '
+            $notBuilt    = ($diff | Where-Object { $_.SideIndicator -eq '<=' } | ForEach-Object { $_.InputObject }) -join ', '
+            throw "installer/installer.iss and bin\ disagree. Built but not packaged: '$notPackaged'. Packaged but not built: '$notBuilt'."
+          }
+          Write-Host "$($built.Count) savers built and packaged."
+
+      - name: Install Inno Setup ${{ env.INNO_VERSION }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $ver = $env:INNO_VERSION
+          # jrsoftware's own download page (jrsoftware.org/isdl.php) links
+          # straight to these GitHub release assets; the old
+          # files.jrsoftware.org/is/<major>/ paths all 404 now. The release tag
+          # is the version with dots replaced by underscores, and the -x64
+          # suffix on the asset name exists only from 7.0 onwards.
+          $tag = 'is-' + $ver.Replace('.', '_')
+          $url = "https://github.com/jrsoftware/issrc/releases/download/$tag/innosetup-$ver-x64.exe"
+          $dl  = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+          Write-Host "Downloading $url"
+          try {
+            Invoke-WebRequest -Uri $url -OutFile $dl -UseBasicParsing
+          } catch {
+            throw "Failed to download Inno Setup $ver from $url. Check INNO_VERSION - note the asset name carries an -x64 suffix only from 7.0 onwards, and 6.x has no suffix. $_"
+          }
+          # /DIR pins the location instead of guessing between
+          # 'C:\Program Files\Inno Setup 7' (x64 edition) and
+          # 'C:\Program Files (x86)\Inno Setup 7' (x86 edition).
+          $dir = 'C:\InnoSetup'
+          # An installer launched with & is not waited on; Start-Process -Wait is.
+          $p = Start-Process -FilePath $dl -Wait -PassThru `
+                 -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=$dir"
+          if ($p.ExitCode -ne 0) { throw "Inno Setup installer exited $($p.ExitCode)" }
+          $iscc = Join-Path $dir 'ISCC.exe'
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found at $iscc after installing Inno Setup $ver" }
+          # --version was added in 7.1.0; a mis-pinned older version fails here
+          # rather than several minutes later inside the compile.
+          & $iscc --version
+          if ($LASTEXITCODE -ne 0) { throw "ISCC --version failed (exit $LASTEXITCODE); INNO_VERSION=$ver may not be a 7.1+ release." }
+          "ISCC=$iscc" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Check the version reaches AppVersion
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          # -e (--preprocess) writes the preprocessed script to stdout and
+          # suppresses compilation, so this costs about a second and needs no
+          # bin\ contents. It is the cheap proof that /D beat the .iss's
+          # #ifndef fallback and that AppVersion is not empty - the failure
+          # that would otherwise surface minutes later, or worse, ship.
+          # -e is new in 7.1.0, which is exactly what INNO_VERSION pins.
+          $pre = & $env:ISCC "/DVERSION=$env:VERSION" -e installer\installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC preprocess failed with exit $LASTEXITCODE" }
+          $line = ($pre | Select-String -Pattern '^\s*AppVersion\s*=' | Select-Object -First 1).Line
+          if ($null -eq $line) { throw "no AppVersion line in the preprocessed script" }
+          $got = ($line -replace '^\s*AppVersion\s*=\s*', '').Trim()
+          if ($got -ne $env:VERSION) {
+            throw "VERSION did not reach AppVersion: got '$got', expected '$env:VERSION'."
+          }
+          Write-Host "AppVersion resolves to $got"
+
+      - name: Compile the installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          # Paths come from $GITHUB_ENV (set in "Resolve version and artifact
+          # names"); nothing here is inherited from another step's variables.
+          New-Item -ItemType Directory -Force -Path $env:INSTALLER_DIR | Out-Null
+          # Short /D /F /O rather than the 7.x-only --long= forms, so this same
+          # command still works if anyone compiles by hand with Inno Setup 6.
+          # /O<path> is unambiguous: O+ and O- are matched as exact flags first.
+          & $env:ISCC "/DVERSION=$env:VERSION" "/F$env:ARTIFACT_STEM" "/O$env:INSTALLER_DIR" installer\installer.iss
+          if ($LASTEXITCODE -ne 0) {
+            throw "ISCC failed with exit code $LASTEXITCODE (1 = bad parameters or fatal error, 2 = compile failed)"
+          }
+          if (-not (Test-Path $env:INSTALLER_EXE)) {
+            throw "ISCC reported success but $env:INSTALLER_EXE does not exist"
+          }
+          Write-Host "Built $env:INSTALLER_EXE"
+
+      - name: Compute SHA-256
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $hash = (Get-FileHash -Algorithm SHA256 -Path $env:INSTALLER_EXE).Hash.ToLowerInvariant()
+          # Two spaces, lowercase, ASCII, no BOM, no trailing newline: the
+          # coreutils format, so both `sha256sum -c` and certutil work for a
+          # user checking the download.
+          "$hash  $env:ARTIFACT_STEM.exe" | Out-File -FilePath $env:INSTALLER_SHA256 -Encoding ascii -NoNewline
+          Write-Host "$hash  $env:ARTIFACT_STEM.exe"
+
+      # Unconditional: it is the recovery path when publishing fails, and the
+      # only output a workflow_dispatch run produces. Workflow artifacts are
+      # not release assets, so "exactly two assets" is untouched. Needs no
+      # permission scope - upload-artifact uses the runtime token, not
+      # GITHUB_TOKEN.
+      - name: Upload build artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: installer-${{ env.VERSION }}-${{ env.SHA7 }}
+          path: installer/output/*
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          # Probe-then-create is what makes a re-run safe: `gh release create`
+          # errors on an existing tag, so it must not be reached unconditionally.
+          gh release view $env:VERSION --json id 1>$null 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "No release for $env:VERSION yet - creating it."
+            # --verify-tag refuses to invent a tag that is not on the remote.
+            # --generate-notes only applies at creation, so a re-run preserves
+            # whatever notes are already there - which is the update-in-place
+            # behaviour we want.
+            gh release create $env:VERSION --title $env:VERSION --generate-notes --verify-tag
+            if ($LASTEXITCODE -ne 0) { throw "gh release create failed (exit $LASTEXITCODE)" }
+          } else {
+            Write-Host "Release $env:VERSION already exists - reusing it."
+          }
+
+          gh release upload $env:VERSION $env:INSTALLER_EXE $env:INSTALLER_SHA256 --clobber
+          if ($LASTEXITCODE -ne 0) { throw "gh release upload failed (exit $LASTEXITCODE)" }
+
+          # Read the asset set back BEFORE publishing. A pre-existing draft from
+          # another publisher (AppVeyor's deploy block used draft: true with a
+          # /.*\.exe/ artifact filter) would contribute its own .exe, and
+          # promoting that draft would ship three assets unnoticed.
+          $actual = @((gh release view $env:VERSION --json assets | ConvertFrom-Json).assets.name) | Sort-Object
+          if ($LASTEXITCODE -ne 0) { throw "gh release view failed (exit $LASTEXITCODE)" }
+          $expected = @("$env:ARTIFACT_STEM.exe", "$env:ARTIFACT_STEM.exe.sha256") | Sort-Object
+          if (Compare-Object -ReferenceObject @($expected) -DifferenceObject @($actual)) {
+            throw "Release $env:VERSION carries [$($actual -join ', ')] but should carry exactly [$($expected -join ', ')]. A draft from another publisher may have contributed assets; delete them and re-run."
+          }
+
+          # Idempotent on an already-published release, and it heals a stale
+          # draft left by an earlier publisher. Kept even after appveyor's
+          # deploy block is removed, because old drafts may already exist.
+          gh release edit $env:VERSION --draft=false
+          if ($LASTEXITCODE -ne 0) { throw "gh release edit failed (exit $LASTEXITCODE)" }
+
+          # GitHub's pwsh wrapper appends `exit $LASTEXITCODE`; a stale non-zero
+          # from the probe would otherwise fail an entirely successful step.
+          $global:LASTEXITCODE = 0
+          Write-Host "Published $env:VERSION with 2 assets."

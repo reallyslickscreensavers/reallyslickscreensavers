@@ -38,14 +38,3 @@ test: off
 artifacts:
 - path: installer/output/*.exe
   name: installer
-deploy:
-- provider: GitHub
-  release: $(APPVEYOR_REPO_TAG_NAME)
-  auth_token:
-    secure: XLQMxoubqEHl7wgYM1IIYnh4eslkXQOtiU77c8DjHxREq1NEADw3lpxAHQAPAyd6
-  artifact: /.*\.exe/
-  draft: true
-  force_update: true
-  on:
-    APPVEYOR_REPO_TAG: true
-    CONFIGURATION: Installer
