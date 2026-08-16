@@ -82,6 +82,16 @@ struct Trace {
 Trace& trace();
 void reset();
 
+// What glGetString(GL_EXTENSIONS) reports. The default names the three ARB
+// extensions hyperspace's and microcosm's loaders ask for, because that is
+// what every GPU since about 2002 offers and so the path that ships.
+//
+// A test wanting the fallback passes "" or a subset; nullptr restores the
+// default. Deliberately not cleared by reset(), which clears the recording
+// rather than the context - so a case that changes it puts it back, as the
+// Hyperspace fixture does in TearDown.
+void setExtensionString(const char* extensions);
+
 // True when every recorded primitive has a vertex count legal for its mode:
 // GL_TRIANGLES divisible by 3, GL_QUADS by 4, GL_LINES by 2, and so on.
 // Reports the first offender in `why` when it fails.

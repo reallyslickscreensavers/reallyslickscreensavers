@@ -166,9 +166,11 @@ add_saver_test(helios SOURCES
 )
 
 # hyperspace spreads over ten translation units, including its own extension
-# loader. That loader gets nullptr from the stub's wglGetProcAddress and an
-# empty extension string from glGetString, so initExtensions reports failure
-# and the saver takes its documented no-shader path (hyperspace.cpp:517).
+# loader. By default the stub advertises the three ARB extensions that loader
+# asks for and resolves their entry points, so the saver takes its shader path
+# - the one real hardware takes too. glstub::setExtensionString lets a case
+# ask for fewer extensions, making initExtensions report failure so the saver
+# takes its documented no-shader path instead (hyperspace.cpp:532-533).
 add_saver_test(hyperspace SOURCES
     ${REPO_ROOT}/src/hyperspace/hyperspace.cpp
     ${REPO_ROOT}/src/hyperspace/causticTextures.cpp

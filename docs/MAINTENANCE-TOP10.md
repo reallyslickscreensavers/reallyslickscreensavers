@@ -24,9 +24,9 @@ against the current tree on 2026-08-16. Check items off as they land.
        17.6% → 95.3%. Task 10 itself stays **PARTIAL** in `docs/MAINTENANCE.md`:
        `cpp:S6232` ×4, `cpp:S1763` ×2 and `cpp:S836` ×2 remain, all
        lower-severity and untouched by #53.
-3. [ ] **Task 21** — `hyperspace` unguarded `glActiveTextureARB` —
-       `src/hyperspace/hyperspace.cpp:238-242`, move inside existing
-       `if(dShaders)`
+3. [x] **Task 21** — `hyperspace` unguarded `glActiveTextureARB` — moved the
+       three calls (now `src/hyperspace/hyperspace.cpp:245,247,249`) inside
+       the existing `if(dShaders)`
 4. [ ] **Task 15** — `fieldlines` nested `glBegin` loses per-segment line
        widths — `src/fieldlines/fieldlines.cpp:247-260`
 5. [ ] **Task 25** — `skyrocket` won't start without `OpenAL32.dll` —

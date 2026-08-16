@@ -235,11 +235,19 @@ void draw(){
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	glEnable(GL_BLEND);
 	glEnable(GL_TEXTURE_2D);
-	glActiveTextureARB(GL_TEXTURE2_ARB);
-	glBindTexture(GL_TEXTURE_2D, NULL);
-	glActiveTextureARB(GL_TEXTURE1_ARB);
-	glBindTexture(GL_TEXTURE_2D, NULL);
-	glActiveTextureARB(GL_TEXTURE0_ARB);
+	// Units 1 and 2 only ever have anything bound to them by the shader path -
+	// the goo's three-unit cube map below, the tunnel's second caustic frame,
+	// and starBurst.cpp:225-230 - so with dShaders off there is nothing to
+	// unbind and the entry point is null anyway: initExtensions resolves it
+	// only when the extensions are present (extensions.cpp:76-91). The bind
+	// below stays outside the guard because unit 0 is then never left.
+	if(dShaders){
+		glActiveTextureARB(GL_TEXTURE2_ARB);
+		glBindTexture(GL_TEXTURE_2D, NULL);
+		glActiveTextureARB(GL_TEXTURE1_ARB);
+		glBindTexture(GL_TEXTURE_2D, NULL);
+		glActiveTextureARB(GL_TEXTURE0_ARB);
+	}
 	glBindTexture(GL_TEXTURE_2D, flaretex[0]);
 	static float temppos[2];
 	for(int i=0; i<dStars; i++){
