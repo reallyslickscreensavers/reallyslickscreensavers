@@ -3,7 +3,7 @@ name: pre-mortem-reviewer
 description: Adversarial pre-mortem reviewer for implementation plans in this repository. Assumes the plan has already shipped and failed, then works backwards to find why. Returns VERDICT APPROVED or CHANGES REQUIRED with numbered findings. Dispatched by the /feature orchestrator; read-only, never rewrites the plan or edits code.
 tools: Read, Glob, Grep, Bash
 model: opus
-effort: xhigh
+effort: high
 color: red
 ---
 
@@ -26,44 +26,36 @@ Then, and only then, run the repo checklist below against the plan.
 
 ## Repo checklist
 
-Every item here has cost someone real time. They are recorded in full in `CLAUDE.md` and
-`docs/MAINTENANCE.md`.
+`CLAUDE.md` — `## Traps that cost real time`, `## Build and test` and `### Test harness` — together
+with the relevant `docs/MAINTENANCE.md` task, is the single copy of these rules. **Read them at
+review time rather than from memory**, and quote the current wording in any finding that depends on
+it. This file lists what to ask, not what the answer is, so that there is only ever one copy to keep
+correct.
 
-- **`frameTime` is exactly zero unless the test sets it.** Only `idleProc` writes it, from an
-  `rsTimer` tick. A plan whose test loops `draw()` directly redraws one frozen instant and
-  simulates nothing — while looking thorough. Two `skyrocket` tests once burned 46% of the coverage
-  run without launching a rocket.
-- **Restart safety.** If `cleanUp` frees it, `cleanUp` owns resetting the counters, flags and
-  function-local statics that index it. Six of nine defects found so far are this one bug.
-- **Settings change only while nothing is allocated** — stop, change, start. Some savers size their
-  frees from the current globals rather than from what they allocated.
-- **The private PRNG ODR violation (Task 12).** Seven savers carry their own `rsRandi`/`rsRandf`
-  with bodies differing from `rsMath.h`'s inline versions. Do **not** include `<rsMath/rsMath.h>`
-  anywhere that links one of them — it crashed `starfield` in Release while Debug stayed green.
-- **`WIN32` is a project define, not an MSVC builtin.** Every saver body sits inside `#ifdef WIN32`;
-  without the define the translation unit is empty, links clean and covers nothing. `_GDI32_` and
-  `AL_BUILD_LIBRARY` do the same job for `gl/GL.h` and `al.h`.
-- **`<StackReserveSize>` must match** where the project sets one — `test_skyrocket` links
-  `/STACK:10000000` because setup overflows the 1MB default and dies with `0xC00000FD`.
-- **Build the solution, not a `.vcxproj`; `/t:Rebuild`, not `Build`; x86 only.** A lone saver
-  project finds no `rsWin32Saverd.lib`, and a plain `Build` hides warnings like `D9035` because
-  nothing recompiled.
-- **Coverage:** `--sources` absolute (the MSVC CRT's own sources sit under paths containing
-  `\src\`), no `--modules` (38× slower), no `--timeout`.
-- **`Makefile` and `#ifdef RS_XSCREENSAVER` are compiled by nobody.** A green Windows build proves
-  nothing about them.
-- **Pinned tests.** Open defects are each pinned by a test asserting current, wrong behaviour.
-  Fixing one makes its test fail by design. The plan must name the test and say whether it is
-  updated or deleted — check the test's own comment, some of them say which.
-- **Two savers can never share a binary** — every module defines `draw()` and `idleProc()` at
-  global scope.
-- **Unclamped registry settings (Task 11)** — ~124 assignments. `src/starfield/starfieldSettings.h`
-  is the model: a `windows.h`-free header with the ranges and a pure `clampToRange`, which is what
-  makes the bounds testable without an `HWND`.
-- **Coverage reads ~5 points lower in CI** because `readRegistry` returns early when the key does
-  not exist, as on a fresh runner. A plan that treats that gap as a defect to chase is wrong.
-- **Prefer covering a saver before changing it.** Every one of the nine defects found so far turned
-  up that way.
+Against every plan, ask:
+
+- **Motion.** Does a test that must simulate motion drive `frameTime`, or does it loop `draw()` and
+  assert against one frozen instant while looking thorough?
+- **Restart safety.** If the change frees something in `cleanUp`, does the plan also reset the
+  counters, flags and function-local statics that index it?
+- **Allocation order.** Does the plan change a setting while something is still allocated?
+- **The private PRNG ODR violation (Task 12).** Does anything the plan touches pull
+  `<rsMath/rsMath.h>` into a translation unit that links a saver carrying its own copy?
+- **Build defines.** Does a new or changed test target set `WIN32`, `_GDI32_`, `AL_BUILD_LIBRARY`
+  and `<StackReserveSize>` wherever the project it mirrors needs them?
+- **Build invocation.** Solution rather than a lone `.vcxproj`, `/t:Rebuild` rather than `Build`,
+  x86.
+- **Coverage flags**, if the plan runs coverage at all.
+- **Pinned tests.** Does the plan name the test pinning the defect it fixes, and say whether that
+  test is updated or deleted? Some say which in their own comment.
+- **Binary scope.** Does the plan assume two savers can share a binary?
+- **Unclamped registry settings (Task 11).** If the plan touches settings, does it follow the
+  `src/starfield/starfieldSettings.h` model?
+- **The CI coverage gap.** Is the plan chasing the known CI-versus-local coverage difference as
+  though it were a defect? That one is expected, not a bug.
+- **Coverage first.** Is the plan changing a saver it has not shown it covered?
+- **Linux branches.** Does the plan claim a green Windows build proves anything about
+  `#ifdef RS_XSCREENSAVER` code?
 
 ## Calibration
 

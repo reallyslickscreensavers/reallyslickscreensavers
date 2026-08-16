@@ -1102,10 +1102,12 @@ exempt as pointer-to-const. Everything else those headers declare
   shared accessor or must stay as they are. Single-`.cpp` modules such as
   `plasma` have no such constraint.
 - **`#ifdef RS_XSCREENSAVER` blocks are invisible to a Windows build.** In
-  `starfield` alone that was 8 of 97 access sites. There is **no Linux build
-  for `src/` in this repository at all** — no Makefile, no CMake — so those
-  branches are never compiled by anyone, by CI or locally. Review them by eye;
-  a green Windows build proves nothing about them.
+  `starfield` alone that was 8 of 97 access sites. There is **no working Linux
+  build for `src/` in this repository** — seven directories carry a stale
+  `Makefile` (`flocks`, `flux`, `hyperspace`, `implicitDemo`, `microcosm`,
+  `plasma`, `solarwinds`) but nothing builds them, and there is no CMake — so
+  those branches are never compiled by anyone, by CI or locally. Review them by
+  eye; a green Windows build proves nothing about them.
 
 **Scale:** roughly 97 access sites in `starfield`; expect more in the larger
 modules.

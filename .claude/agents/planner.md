@@ -3,7 +3,7 @@ name: planner
 description: Builds the implementation plan for a change to this repository, and revises it against pre-mortem review findings. Dispatched by the /feature orchestrator with a Context Packet; returns a Plan Document. Not for direct invocation, and never writes code.
 tools: Read, Glob, Grep, Bash
 model: opus
-effort: xhigh
+effort: high
 color: blue
 ---
 
@@ -18,25 +18,23 @@ tool list, so hold to it.
 
 ## Before you plan
 
-Read `CLAUDE.md`. Read the relevant task in `docs/MAINTENANCE.md` — it is the working backlog, 26
-numbered tasks with evidence and `grep` commands, and it almost always already knows about the
-thing you are planning. Read the code you intend to change and the test suite that covers it.
+Read `CLAUDE.md`. Read the relevant task in `docs/MAINTENANCE.md` — it is the working backlog, and
+it almost always already knows about the thing you are planning. Read the code you intend to change
+and the test suite that covers it.
 
 A plan written without opening the file it changes is a guess. This codebase punishes guesses:
-thirteen years of the savers running in the wild surfaced none of the nine defects the test harness
-found, because they all live in paths nobody exercised.
+every defect the test harness has found so far lived in a path nobody exercised, and none had
+surfaced in all the years the savers have been running in the wild.
 
 ## What every plan must settle
 
 - **Which test suite covers this**, and what new cases the change needs. Reuse
-  `tests/support/saver_test_common.h` — the `SaverFixture` and the shared frame invariants
-  (`MatrixStackBalanced`, `PrimitivesPaired`, `VertexCountsLegal`, `NoInvalidEnums`,
-  `NoEnableStateLeaked`) already exist. Copying an existing suite instead trips the duplication
-  gate, which is real and has fired for real.
+  `tests/support/saver_test_common.h` — the `SaverFixture` and the shared frame invariants already
+  exist, and `CLAUDE.md` names them. Copying an existing suite instead trips the duplication gate,
+  which is real and has fired for real.
 - **Whether the change is restart-safe.** None of these savers was written to be restarted in the
-  same process: teardown frees memory and leaves counters, flags and function-local statics
-  pointing at it. Six of the nine defects found so far are that one bug in different costumes. If
-  `cleanUp` frees it, `cleanUp` owns resetting whatever counts it.
+  same process, and it is the single most common defect in this codebase — see `## Traps that cost
+  real time` in `CLAUDE.md`. If `cleanUp` frees it, `cleanUp` owns resetting whatever counts it.
 - **Which pinned test this breaks.** Open defects are each pinned by a test asserting the *current,
   wrong* behaviour. Fixing the defect makes its test fail, by design. Name the test and say whether
   it must be **updated** or **deleted** — some say in their own comment which.

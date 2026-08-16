@@ -21,19 +21,26 @@ Do not commit unless the plan says to. Do not touch files the plan does not name
 
 ## Working rules for this codebase
 
-Read `CLAUDE.md` before you start. The traps that bite an implementer specifically:
+**Read `CLAUDE.md` before you start.** Its `## Traps that cost real time` and `## Build and test`
+sections are the single copy of these rules; this file names them but deliberately does not restate
+them, so there is only ever one copy to keep correct. Reread the section before the step that
+touches it rather than working from your memory of this list.
 
-- **Close anything running from `bin\` before building**, or the link fails with `LNK1104`.
-- **Build the solution, never a single `.vcxproj`** — a saver project alone finds no
-  `rsWin32Saverd.lib`. Use `/t:Rebuild`; a plain `Build` looks clean when it is not.
-- **`frameTime` is zero unless you set it.** Any test that must simulate motion has to drive it
-  (`extern float frameTime;`) and then assert something actually moved.
-- **Change a setting only while nothing is allocated** — stop, change, start.
-- **Do not include `<rsMath/rsMath.h>`** anywhere that links one of the seven savers carrying
-  private `rsRandi`/`rsRandf` copies. It is a live ODR violation.
-- New test suites use `tests/support/saver_test_common.h` rather than a copy of an existing suite.
-- Commit messages, if the plan calls for one, follow Conventional Commits as `CLAUDE.md` specifies.
-  Never include a `claude.ai/code/session_...` link.
+The traps there that bite an implementer specifically:
+
+- Closing anything running from `bin\` before you build.
+- Building the solution rather than a single `.vcxproj`, and `/t:Rebuild` rather than `Build`.
+- `frameTime` being zero unless a test drives it — anything that must simulate motion drives it and
+  then asserts something actually moved.
+- Changing a setting only while nothing is allocated.
+- The `<rsMath/rsMath.h>` include ban, and which savers it covers.
+- Restart safety: if `cleanUp` frees it, `cleanUp` owns resetting whatever counts it.
+- New test suites reusing `tests/support/saver_test_common.h` rather than a copy of an existing one.
+
+Commit messages, if the plan calls for one, follow the `## Commits` section of `CLAUDE.md`. One rule
+is repeated here rather than pointed at, because it is a prohibition and the cost of missing it is
+paid by someone else: **never include a `claude.ai/code/session_...` link** in a commit, a pull
+request, or a review comment.
 
 Where the `cpp-coding-standard` and `cpp-testing` skills are available in the session, use them for
 C++ style and test structure instead of guessing at house conventions.
