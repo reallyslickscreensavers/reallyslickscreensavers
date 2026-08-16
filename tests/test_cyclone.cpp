@@ -166,6 +166,32 @@ TEST_F(Cyclone, ShowCurvesAddsLineStrips) {
     EXPECT_GT(with, without) << "the curve overlay draws the spline as line strips";
 }
 
+TEST_F(Cyclone, CurveOverlayDrawsAFixedNumberOfSamples) {
+    // The float loop counter this replaced accumulated 0.02f in single
+    // precision and stood at about 0.9999996 after fifty additions, so it ran
+    // a fifty-first time and drew a duplicate vertex. cpp:S2193, Task 10 in
+    // docs/MAINTENANCE.md.
+    //
+    // cyclone::update() runs once per cyclone per frame (cyclone.cpp:477-478),
+    // the particles are display lists that emit no immediate-mode vertices,
+    // and textwriter->draw is behind kStatistics (0 in the test shim), so with
+    // one cyclone these two strips are the only line strips in the frame.
+    dShowCurves = TRUE;
+    dCyclones = 1;
+    dParticles = 4;
+    start();
+    draw();
+
+    std::vector<glstub::Primitive> strips;
+    for (const auto& p : glstub::trace().primitives) {
+        if (p.mode == GL_LINE_STRIP) strips.push_back(p);
+    }
+
+    ASSERT_EQ(strips.size(), 2u);
+    EXPECT_EQ(strips[0].vertices, 50u) << "the sampled curve";
+    EXPECT_EQ(strips[1].vertices, static_cast<unsigned>(dComplexity + 3)) << "the control polygon";
+}
+
 TEST_F(Cyclone, MoreCyclonesMeansMoreDrawing) {
     dParticles = 20;
     dCyclones = 1;

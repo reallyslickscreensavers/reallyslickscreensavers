@@ -203,10 +203,14 @@ simulating anything at all before assuming its length is earning something.
 | **24** | **Three savers deviate from the entry-point contract** | **new, open** |
 | **25** | **`skyrocket` will not start without `OpenAL32.dll`** | **new, open** |
 | **26** | **`microcosm` appends 55 gizmos on every `initSaver`; the clear is commented out** | **new, open** |
+| **27** | **`skyrocket` has two more restart-unsafe statics (dangling `soundengine`, stale `rocketTimeConst`)** | **new, open** |
 
 Tasks 10–13 came out of the rslibs work and a re-read of SonarCloud. Tasks 14–16
 came out of the first two harness batches (PRs #42, #43) and Tasks 18–25 out of
-the last one. Every one is a real defect that thirteen years of running the
+the last one. Task 27 came out of implementing Task 10 itself — the same
+restart-safety pattern turning up again while writing tests that call
+`skyrocket`'s particle functions directly. Every one is a real defect that
+thirteen years of running the
 savers never surfaced, and each that is still open is pinned by a test asserting
 **current** behaviour, so the fix has a tripwire. The test says so in its own
 comment.
@@ -425,32 +429,71 @@ there or leave them with this note attached. Do not "fix" them by adding casts.
 > runner. There the clamp lines never execute and the guard only confirms that
 > `setDefaults`' value survives. Task 11 is what would make it unconditional.
 
-### Still open in `src/`
+### Four findings — RESOLVED
 
-| Where | Rule | Finding |
-|---|---|---|
-| `lattice.cpp:703` | `cpp:S2107` | Uninitialised field at the end of the constructor |
-| `skyrocket/particle.cpp:68, 844, 874, 902, 938` | `cpp:S836` | Garbage value returned to caller (×5) |
-| `lattice.cpp:275` | `cpp:S836` | Garbage value returned to caller |
-| `cyclone.cpp:348` | `cpp:S2193` | MINOR |
+| Doc said | Actually was / is now | Rule | Finding |
+|---|---|---|---|
+| `lattice.cpp:703` | `lattice.cpp:700` (Task 23 removed 6 lines above it, Task 22 added 3 back) | `cpp:S2107` | `theCamera = new camera;` — root cause is `camera(){}` in `src/lattice/camera.h:36-38` leaving `farplane` and `cullVec[4][3]` indeterminate |
+| `lattice.cpp:275` | no drift — above the Task 23 deletion at 488 | `cpp:S836` | `makeTorus`'s eight `old*` locals, written only on the `j==0` pass of a loop that never runs when `longitude <= 0`, read regardless and used to close a 2-vertex `GL_TRIANGLE_STRIP` |
+| `skyrocket/particle.cpp:68, 844, 874, 902, 938` | `:49, 848, 878, 906, 942` — the four `pop*` lines drift by a consistent +4 (one `= nullptr` inserted ahead of each of the four functions); `:68` was already stale before this change, by more than the fix accounts for | `cpp:S836` | `randomColor`'s `i, j, k`, and four `pop*` functions' `newp`, read on paths no shipped call site can reach today |
+| `cyclone.cpp:348` | no drift | `cpp:S2193` | a `float` loop counter accumulating `0.02f` ran a 51st time and drew a duplicate vertex |
 
-The `skyrocket` cluster is the biggest single group left. `skyrocket` now has a
-test binary, and `tests/test_skyrocket.cpp` drives 120 frames in two cases
-specifically to reach explosions, smoke and shockwaves — but **`particle.cpp` is
-still only 12% covered**, the worst figure in the tree and 1,154 lines of it.
+`lattice.cpp:703` (`cpp:S2107`, uninitialised field) was confirmed **not** the
+dead culling block removed under Task 23 — that was `lattice.cpp:488`, in
+`draw()` rather than a constructor — bearing out the warning already in this
+section to re-check line numbers before starting.
 
-That is not an oversight, it is the shape of the file: it is a switch over a
-dozen rocket types, each firing only under its own random conditions, and a
-handful of frames reaches very few of them. Getting real coverage there means
-driving the particle types directly rather than waiting for the simulation to
-produce them. **Do that before fixing the six `cpp:S836` findings** — otherwise
-the fixes go in unguarded, which is the situation this whole rollout existed to
-avoid.
+**`camera`'s constructor** (`src/lattice/camera.h`) now gives `farplane` and
+`cullVec` default member initialisers. `init()` still sets both before
+anything reads them; the finding was about the constructor leaving them
+indeterminate, not a live read of garbage.
 
-`lattice.cpp:703` (`cpp:S2107`, uninitialised field) is **not** the dead culling
-block removed under Task 23 — that was at `lattice.cpp:488`, in `draw()` rather
-than a constructor. Re-check the line number against a fresh analysis before
-starting: Task 23 deleted six lines above it.
+**`makeTorus`** gains a precondition guard —
+`if(longitude < 1 || latitude < 1) return;` — ahead of the division by
+`longitude` a few lines later, plus `= 0.0f` initialisers on the eight
+`old*` locals so a later edit to the guard cannot reintroduce the read.
+`dLongitude` comes from the registry unclamped (Task 11), so zero is
+reachable in practice — unlike the two `skyrocket` findings below.
+
+**`particle.cpp:49` and the four `pop*` lines are not reachable from any
+shipped call site**, and were fixed anyway:
+
+- `randomColor`'s `switch(rsRandi(6))` covers every value `rsRandi(6)` can
+  return (`[0, 6)`), so `i`, `j` and `k` were always assigned before use. The
+  `default:` arm a routine fix would add is itself unreachable code, trading
+  this finding for the open `cpp:S1763` — initialised (`= 0, = 1, = 2`)
+  instead.
+- `popSphere`, `popSplitSphere`, `popMultiColorSphere` and `popRing` left
+  `newp` unset when `numParts` is not positive, then dereferenced it one time
+  in a hundred through the post-loop long-life branch. Every shipped call
+  site passes a positive constant. Fixed with `= nullptr` and
+  `if(newp && !rsRandi(100))` — null checked first, so the generator is still
+  drawn from exactly once per call on the normal path and the RNG stream is
+  unchanged.
+
+Both were fixed with a test guarding the reachable behaviour rather than a
+crash reproduction, since neither is reachable today: the switch-totality
+guard (`Skyrocket.RandomColourAlwaysSetsExactlyOneChannelFull`) and the
+long-life-branch guard (`Skyrocket.PopFunctionsStillGrantTheOccasionalLongLife`).
+
+**`particle.cpp` coverage went from 17.6% (203/1154) to 95.3% (1104/1159)**,
+by driving the sixteen particle types and seventeen `draw()` arms directly
+through their own initialisers instead of waiting for the simulation to reach
+them — `tests/test_skyrocket.cpp`'s `EveryExplosionTypeSpawnsTheParticlesItPromises`
+and `EveryParticleTypeUpdatesAndDrawsCoherently`. `initShockwave` and
+`initBigmama` in particular are otherwise reached only through a 1-in-2500
+branch (`skyrocket.cpp:702`). This is the coverage work the previous revision
+of this section said had to come before the `cpp:S836` fixes; it has now been
+done, and the four dereferences above went in guarded by it.
+
+**`cyclone.cpp:348`** was `for(step=0.0; step<1.0; step+=0.02f)`. Accumulated
+in `float`, `step` stood at about 0.9999996 after fifty additions — still
+`< 1.0` — so the loop ran a 51st time and drew a duplicate vertex at the end
+of the "Show Curves" overlay curve. Replaced with an integer counter sampling
+exactly 50 points. The rule title for `cpp:S2193` could not be confirmed
+without network access or a checked-in Sonar report; the fix also removes the
+`0.0`/`1.0` double literals compared against a `float` loop variable, which
+covers every candidate reading of the rule.
 
 Remaining lower-severity rules: `cpp:S6232` (type punning, ×4), `cpp:S1763`
 (unreachable code, ×2), `cpp:S836` (garbage value returned, ×2).
@@ -691,8 +734,8 @@ the live globals. Pinned by
 
 # P0 (new) — Restarting a saver in the same process
 
-Tasks 18, 19, 20 and 26 are one defect wearing four hats, and Task 16 above was
-the first sighting. **Teardown releases memory but leaves the things that index it
+Tasks 18, 19, 20, 26 and 27 are one defect wearing five hats, and Task 16 above
+was the first sighting. **Teardown releases memory but leaves the things that index it
 untouched** — counters, "already built" flags, function-local statics, and in one
 case the container itself. The next `initSaver` starts from a clean allocation and
 a dirty bookkeeping state.
@@ -830,6 +873,47 @@ consequence beyond the leak.
 Splitting the line is a one-character fix. Freeing the gizmos in `cleanUp` is the
 larger half, since it frees nothing today. Pinned by
 `Microcosm.GizmoListGrowsOnEveryRestart`.
+
+## Task 27 · `skyrocket` has two more restart-unsafe statics — OPEN
+
+Found while implementing Task 10, not fixed there — out of scope for a
+SonarCloud-bug pass, and neither is reachable from the shipped saver, for the
+same reason nothing in this section is: the process exits on `WM_DESTROY`
+rather than restarting. Both only fire under a test fixture that calls
+`stop()` then `start()` in the same process, and Task 10's new tests were
+written to route around them rather than trip them. Recorded here as the
+fifth sighting of this section's defect and left for whoever picks it up next.
+
+1. **`soundengine`** (`skyrocket.cpp:980`) is deleted in `cleanup` but never
+   set back to `NULL`. `initSaver`'s `if(dSound) soundengine = new
+   SoundEngine(...)` (`skyrocket.cpp:956`) overwrites it before the shipped
+   saver's `WM_CREATE` → `WM_DESTROY` cycle can expose the stale pointer. It
+   fires from anything that calls into `particle.cpp`'s nine `if(soundengine)`
+   checks (`particle.cpp:114, 136, 160, 371, 437, 526, 685, 817, 1037`, spread
+   across several `init*` functions and one `pop*`) directly after a
+   `cleanup()` in the same process without
+   going through `initSaver` first — exactly what `tests/test_skyrocket.cpp`'s
+   `Skyrocket` fixture does between cases. Task 10's new cases were ordered to
+   stay above `DrivesTheSoundEngineWhenAsked` for this reason, with a comment
+   on both sides of the boundary recording why.
+2. **`rocketTimeConst`** (`skyrocket.cpp:680`) is a function-local static
+   seeded once per process as `10.0f / float(dMaxrockets)`. If the first call
+   ever made in the process finds `dMaxrockets == 0`, the static becomes
+   `+Infinity` and stays that way until the periodic recompute at
+   `skyrocket.cpp:689` next runs — every 20 to 50 seconds of simulated time,
+   not on every frame. `skyrocket.cpp:747`'s `if(dMaxrockets) rocketTimer =
+   rsRandf(rocketTimeConst);` means that stale `+Infinity` is read the moment
+   `dMaxrockets` next becomes positive, if that happens before the recompute
+   fires — feeding `rsRandf` an infinite range. Task 10's new tests avoid this
+   by setting `dMaxrockets = 1` before ever calling `start()`, so the static is
+   never seeded at zero in the first place.
+
+Neither has a pinning test yet. Fixing (1) is a one-line `soundengine =
+NULL;` after the `delete`, the same pattern Tasks 18–20 used. Fixing (2)
+needs the same move Task 20 made for `helios`'s statics: promote it to a
+file-scope variable assigned at a well-defined point rather than at
+first-use, since a function-local static's initialiser runs exactly once no
+matter how many times the saver restarts around it.
 
 ## Task 21 · `hyperspace` calls `glActiveTextureARB` unguarded — OPEN
 

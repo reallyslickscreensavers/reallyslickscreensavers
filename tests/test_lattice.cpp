@@ -15,7 +15,10 @@
 #include "support/saver_test_common.h"
 
 #include <array>
+#include <cstring>
+#include <new>
 
+#include "camera.h"
 #include "resource.h"
 
 // lattice.cpp has no header; its contract with the framework is by name. See
@@ -58,6 +61,19 @@ protected:
     }
 };
 
+// Triangle strips carrying exactly n vertices. Counting strips alone cannot
+// answer this: initSaver constructs rsText (lattice.cpp:806) and
+// rsText::rsText() compiles 128 four-vertex GL_TRIANGLE_STRIP glyph lists
+// (libs/rsText/rsText.cpp:44), so the trace is never empty and never free of
+// strips, whatever makeTorus does.
+int stripsWithVertices(unsigned n) {
+    int count = 0;
+    for (const auto& p : glstub::trace().primitives) {
+        if (p.mode == GL_TRIANGLE_STRIP && p.vertices == n) ++count;
+    }
+    return count;
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -84,6 +100,26 @@ TEST(LatticeHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dFov, 0) << "preset " << preset << ": and by half its tangent";
         EXPECT_LT(dPathrand, 11) << "preset " << preset << ": rsRandi(11 - dPathrand) needs headroom";
     }
+}
+
+// --- the camera constructor -------------------------------------------------
+
+TEST(LatticeCamera, ConstructorLeavesNoIndeterminateFields) {
+    // camera has no virtual functions, so placement new over a raw buffer is
+    // well-defined here. The memset is the point: it makes the assertion hold
+    // in Release as well as Debug instead of leaning on /RTC1's 0xCC fill.
+    alignas(camera) unsigned char storage[sizeof(camera)];
+    std::memset(storage, 0x5A, sizeof storage);
+    camera* c = new (storage) camera;
+
+    EXPECT_FLOAT_EQ(c->farplane, 0.0f);
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            EXPECT_FLOAT_EQ(c->cullVec[i][j], 0.0f) << "cullVec[" << i << "][" << j << "]";
+        }
+    }
+
+    c->~camera();
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -280,6 +316,34 @@ TEST_F(Lattice, BuildsTheTorusFromLongitudeAndLatitude) {
 
     EXPECT_GT(coarse, 0u);
     EXPECT_GT(fine, coarse);
+}
+
+TEST_F(Lattice, BuildsNoDegenerateTorusWhenLongitudeIsZero) {
+    // makeTorus is only ever called from makeLatticeObjects at setup
+    // (lattice.cpp:311-369), so startCapturingSetup() - which resets the
+    // trace, then runs initSaver, and draws no warm-up frame - is the only
+    // place those primitives exist.
+    //
+    // Control: a two-segment torus. 2*longitude + 2 = 6 vertices per strip,
+    // which is legal and, importantly, is not 4 - so these cannot be confused
+    // with rsText's glyph strips.
+    stop();
+    dLongitude = 2;
+    dDensity = 20;
+    startCapturingSetup();
+    const int sixes = stripsWithVertices(6);
+    const int withTorus = countPrimitives(GL_TRIANGLE_STRIP);
+    EXPECT_GT(sixes, 0) << "makeTorus did not run at all";
+
+    stop();
+    dLongitude = 0;
+    dDensity = 20;
+    startCapturingSetup();
+    EXPECT_EQ(stripsWithVertices(2), 0) << "a tri-strip closed from unwritten old* values";
+    EXPECT_LT(countPrimitives(GL_TRIANGLE_STRIP), withTorus) << "the guard did not fire";
+    EXPECT_GT(countPrimitives(GL_TRIANGLE_STRIP), 0) << "setup did not run at all";
+    EXPECT_GT(glstub::trace().countCalls("glNewList"), 0) << "the display lists were still built";
+    EXPECT_TRUE(savertest::VertexCountsLegal());
 }
 
 TEST_F(Lattice, FogIsSetUpOnlyWhenAskedFor) {

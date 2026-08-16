@@ -345,7 +345,15 @@ void cyclone::update(){
 		glDisable(GL_LIGHTING);
 		glColor3f(0.0f, 1.0f, 0.0f);
 		glBegin(GL_LINE_STRIP);
-		for(step=0.0; step<1.0; step+=0.02f){
+		// Sampled with an integer counter. The float form this replaced -
+		// for(step=0.0; step<1.0; step+=0.02f) - accumulated 0.02f in single
+		// precision and stood at about 0.9999996 after fifty additions, so it
+		// ran a fifty-first time and drew a duplicate vertex at the end of the
+		// curve. How many vertices a primitive gets is not a thing rounding
+		// should decide. cpp:S2193, Task 10 in docs/MAINTENANCE.md.
+		const int curveSamples = 50;
+		for(int sample=0; sample<curveSamples; sample++){
+			step = float(sample) / float(curveSamples);
 			point[0] = point[1] = point[2] = 0.0f;
 			for(i=0; i<(dComplexity+3); i++){
 				blend = fact[dComplexity+2] / (fact[i]

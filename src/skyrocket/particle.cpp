@@ -42,7 +42,11 @@ particle::particle(){
 }
 
 void particle::randomColor(rsVec& color){
-	int i, j, k;
+	// The switch on rsRandi(6) covers every value that function can return
+	// ([0, 6)), so this is initialisation, not a live path; a default: arm
+	// would be unreachable code and trade cpp:S836 for cpp:S1763, which is on
+	// the same open list. cpp:S836, Task 10 in docs/MAINTENANCE.md.
+	int i = 0, j = 1, k = 2;
 	//rsVec color;
 
 	switch(rsRandi(6)){
@@ -825,7 +829,7 @@ void particle::initExplosion(){
 }
 
 void particle::popSphere(int numParts, float v0, rsVec color){
-	particle* newp;
+	particle* newp = nullptr;
 
 	for(int i=0; i<numParts; ++i){
 		newp = addParticle();
@@ -840,12 +844,12 @@ void particle::popSphere(int numParts, float v0, rsVec color){
 		newp->rgb = color;
 	}
 
-	if(!rsRandi(100))
+	if(newp && !rsRandi(100))
 		newp->t = newp->tr = rsRandf(20.0f) + 5.0f;
 }
 
 void particle::popSplitSphere(int numParts, float v0, rsVec color1){
-	particle* newp;
+	particle* newp = nullptr;
 	rsVec color2;
 	rsVec planeNormal;
 
@@ -870,12 +874,12 @@ void particle::popSplitSphere(int numParts, float v0, rsVec color1){
 		newp->vel += vel;
 	}
 
-	if(!rsRandi(100))
+	if(newp && !rsRandi(100))
 		newp->t = newp->tr = rsRandf(20.0f) + 5.0f;
 }
 
 void particle::popMultiColorSphere(int numParts, float v0){
-	particle* newp;
+	particle* newp = nullptr;
 	rsVec color[3];
 
 	randomColor(color[0]);
@@ -898,12 +902,12 @@ void particle::popMultiColorSphere(int numParts, float v0){
 			j = 0;
 	}
 
-	if(!rsRandi(100))
+	if(newp && !rsRandi(100))
 		newp->t = newp->tr = rsRandf(20.0f) + 5.0f;
 }
 
 void particle::popRing(int numParts, float v0, rsVec color){
-	particle* newp;
+	particle* newp = nullptr;
 
 	float temph = rsRandf(PI);  // heading
 	float tempp = rsRandf(PI);  // pitch
@@ -934,7 +938,7 @@ void particle::popRing(int numParts, float v0, rsVec color){
 		newp->rgb = color;
 	}
 
-	if(!rsRandi(100))
+	if(newp && !rsRandi(100))
 		newp->t = newp->tr = rsRandf(20.0f) + 5.0f;
 }
 

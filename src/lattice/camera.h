@@ -32,8 +32,11 @@
 class camera{
 public:
 	//float projmat[16];
-	float farplane;
-	float cullVec[4][3];  // vectors perpendicular to viewing volume planes
+	// init() sets both before anything reads them, but leaving them
+	// indeterminate at the end of the constructor is cpp:S2107 - Task 10 in
+	// docs/MAINTENANCE.md.
+	float farplane = 0.0f;
+	float cullVec[4][3] = {};  // vectors perpendicular to viewing volume planes
 
 	camera(){};
 	~camera(){};
