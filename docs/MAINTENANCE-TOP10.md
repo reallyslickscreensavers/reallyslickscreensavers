@@ -1,7 +1,7 @@
 # Maintenance top 10 — checklist
 
 Derived from `docs/MAINTENANCE.md`'s own "Priority and order" section, verified
-against the current tree on 2026-08-15. Check items off as they land.
+against the current tree on 2026-08-16. Check items off as they land.
 
 ## Do first
 
@@ -18,11 +18,14 @@ against the current tree on 2026-08-15. Check items off as they land.
 ## Top 10, in priority order
 
 1. [x] **Task 20** — helios OOB read — `src/helios/helios.cpp:440,452`
-2. [ ] **Task 10 remainder** — `lattice.cpp:703` uninitialised field +
-       6 `skyrocket/particle.cpp` garbage-value findings — extend
-       `particle.cpp` test coverage (currently 12%) before fixing
+2. [x] **Task 10 remainder** — `lattice.cpp:700` uninitialised camera-ctor
+       field + torus-guard `cpp:S836` + 5 `skyrocket/particle.cpp`
+       garbage-value findings — fixed in #53, `particle.cpp` coverage raised
+       17.6% → 95.3%. Task 10 itself stays **PARTIAL** in `docs/MAINTENANCE.md`:
+       `cpp:S6232` ×4, `cpp:S1763` ×2 and `cpp:S836` ×2 remain, all
+       lower-severity and untouched by #53.
 3. [ ] **Task 21** — `hyperspace` unguarded `glActiveTextureARB` —
-       `src/hyperspace/hyperspace.cpp:231-235`, move inside existing
+       `src/hyperspace/hyperspace.cpp:238-242`, move inside existing
        `if(dShaders)`
 4. [ ] **Task 15** — `fieldlines` nested `glBegin` loses per-segment line
        widths — `src/fieldlines/fieldlines.cpp:247-260`

@@ -186,7 +186,7 @@ simulating anything at all before assuming its length is earning something.
 | 7 | `libs` submodule | **done** — rslibs L1–L5, L8; bumped in #40 |
 | 8 | SonarCloud duplication | **done** — 1.6% project-wide, under the 3% threshold |
 | 9 | C++20 | open, blocked on 3 |
-| 10 | Reliability bugs | **partial** — the two cyclone BLOCKERs are proven unreachable; 10 bugs remain |
+| 10 | Reliability bugs | **partial** — the two cyclone BLOCKERs are proven unreachable; 8 bugs remain (`cpp:S6232` ×4, `cpp:S1763` ×2, `cpp:S836` ×2) per Task 10's own "Four findings — RESOLVED" section — the 10-bug count elsewhere in this document is an older SonarCloud snapshot, left for a fresh analysis rather than hand-derived |
 | 11 | Registry values used unclamped | open |
 | **12** | **Seven savers carry private PRNG copies — an ODR violation that crashes Release** | open, **raised** |
 | 13 | Clear-text `http://` URLs | open |
@@ -227,11 +227,11 @@ the guide here — see the note at the end of this section.
 ## First — correctness
 
 1. **Task 10, what remains.** The two `cyclone` BLOCKERs are **resolved** — see
-   below — so what is left is `lattice.cpp:703` (uninitialised field) and the
-   six `cpp:S836` findings in `skyrocket/particle.cpp`, all "garbage value
-   returned to caller". `skyrocket` now has a test binary, but `particle.cpp`
-   itself is only 12% covered, so **extend that suite before touching these** —
-   see the note under Task 10.
+   below. #53 fixed the `lattice` constructor field, the `makeTorus` guard and
+   five of the `particle.cpp` garbage-value findings, and raised
+   `particle.cpp` coverage from 17.6% to 95.3%. Task 10 stays **PARTIAL**:
+   `cpp:S6232` ×4, `cpp:S1763` ×2 and `cpp:S836` ×2 remain — see the note
+   under Task 10.
 2. **Task 21.** `hyperspace` calls through a null function pointer on its first
    frame if the ARB extensions are absent. Unreachable on any GPU made this
    century, so it ranks below the reads above — but it is a crash, the fix is to
