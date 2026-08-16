@@ -2,7 +2,7 @@
 ;
 ; Script for building an installer for Really Slick Screensavers
 ;
-; -----------------------------------------------------------------------------
+; -----------------------------------------------------------------------------
 [ISPP]
 #define AppName "Really Slick Screensavers"
 #define AppShortName "ReallySlickScreensavers"
@@ -11,11 +11,15 @@
 #define AppUrl "http://www.reallyslick.com"
 
 #ifndef VERSION
-#define VERSION GetEnv('APPVEYOR_BUILD_VERSION')
-#if VERSION == "."
-  #define VERSION = "v0.0.0"
-#endif
-#pragma message "Detected Version: " + VERSION
+  ; Fallback only. The release workflow always passes /DVERSION=<tag>, which
+  ; defines VERSION before this file is read, so this block is skipped there.
+  ; Kept deliberately plain: AppVeyor still compiles this script with Inno
+  ; Setup 5, so no 6.x/7.x-only ISPP function may appear in here.
+  #define VERSION GetEnv('APPVEYOR_BUILD_VERSION')
+  #if VERSION == ""
+    #define VERSION "v0.0.0-dev"
+  #endif
+  #pragma message "Detected Version: " + VERSION
 #endif
 
 [Setup]
@@ -62,3 +66,4 @@ Source: "microcosm.scr"; DestDir: "{app}"; Flags: ignoreversion
 Source: "plasma.scr"; DestDir: "{app}"; Flags: ignoreversion
 Source: "skyrocket.scr"; DestDir: "{app}"; Flags: ignoreversion
 Source: "solarwinds.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "starfield.scr"; DestDir: "{app}"; Flags: ignoreversion

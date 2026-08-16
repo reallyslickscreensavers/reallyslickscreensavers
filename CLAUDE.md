@@ -36,8 +36,10 @@ ctest --test-dir tests/build -C Debug --output-on-failure
   add `--modules` (38× slower) or `--timeout`. Full command in `docs/MAINTENANCE.md` under
   "Building and verifying".
 
-`installer/installer.iss` needs Inno Setup; `appveyor.yml` builds it under the `Installer`
-configuration on tags. `.github/workflows/ci.yml` builds Debug and Release and runs the tests.
+`installer/installer.iss` needs Inno Setup; `.github/workflows/release.yml` compiles it with a
+pinned `ISCC.exe` and publishes the GitHub Release on a `v*.*.*` tag. `appveyor.yml` still builds
+the `Installer` configuration but no longer deploys. `.github/workflows/ci.yml` builds Debug and
+Release and runs the tests.
 
 Seven `src/` dirs carry a stale `Makefile` for an `RS_XSCREENSAVER` Linux build with no working
 configuration here. Nothing compiles those `#ifdef` blocks, so a green Windows build says nothing.
