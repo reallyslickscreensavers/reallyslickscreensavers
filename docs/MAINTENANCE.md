@@ -6,6 +6,13 @@ and deliberately scoped out of that PR to keep it focused.
 **`starfield` is the reference implementation for every task below — copy it.**
 Relevant commits: `3a83df7`, `ff4d076`, `ca982e8`, `03b14a9`, `01a144c`.
 
+`ribbons`, added since, is the second: a fourteenth saver that starts out where
+these tasks are trying to get the other thirteen. It has a settings header
+(Task 11), no private PRNG copy (Task 12), `stdcpp17` declared (Task 3), no
+`https`-less URL (Task 13), and a `cleanUp` that resets what it frees, so it is
+the one saver the restart theme below does not apply to. It is not counted in
+any figure on this page.
+
 The `libs` submodule work in [MAINTENANCE-rslibs.md](MAINTENANCE-rslibs.md) is
 **done** — L1 through L5 and the `rsWin32Saver` half of L8 are merged, and the
 pointer is at `42d251b` (PR #40). Only L6 and L7 remain there, both breaking API

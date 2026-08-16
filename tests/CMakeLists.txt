@@ -23,10 +23,12 @@ set(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
 # Test executable for header-only settings logic that needs no saver body
 add_executable(rssavers_tests
     test_starfieldSettings.cpp
+    test_ribbonsSettings.cpp
 )
 
 target_include_directories(rssavers_tests PRIVATE
     ${REPO_ROOT}/src/starfield    # for "starfieldSettings.h"
+    ${REPO_ROOT}/src/ribbons      # for "ribbonsSettings.h"
 )
 
 target_link_libraries(rssavers_tests PRIVATE GTest::gtest_main)
@@ -121,6 +123,12 @@ add_saver_test(solarwinds SOURCES
 add_saver_test(starfield SOURCES
     ${REPO_ROOT}/src/starfield/starfield.cpp
     ${REPO_ROOT}/libs/rsText/rsText.cpp
+)
+
+add_saver_test(ribbons SOURCES
+    ${REPO_ROOT}/src/ribbons/ribbons.cpp
+    ${REPO_ROOT}/libs/rsText/rsText.cpp
+    ${REPO_ROOT}/libs/Rgbhsl/Rgbhsl.cpp   # Ribbon::draw colours through hsl2rgb
 )
 
 add_saver_test(flux SOURCES

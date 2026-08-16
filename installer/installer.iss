@@ -62,3 +62,5 @@ Source: "microcosm.scr"; DestDir: "{app}"; Flags: ignoreversion
 Source: "plasma.scr"; DestDir: "{app}"; Flags: ignoreversion
 Source: "skyrocket.scr"; DestDir: "{app}"; Flags: ignoreversion
 Source: "solarwinds.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "ribbons.scr"; DestDir: "{app}"; Flags: ignoreversion
+Source: "starfield.scr"; DestDir: "{app}"; Flags: ignoreversion
