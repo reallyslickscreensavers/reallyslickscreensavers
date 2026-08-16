@@ -278,8 +278,9 @@ TEST(GlStubExtensions, AdvertisesTheExtensionsTheSaversAskFor) {
 
 TEST(GlStubExtensions, ResolvesTheAdvertisedEntryPointsAndNothingElse) {
     // Advertising an extension without resolving its entry points would leave
-    // the savers holding null pointers they do not check - which is precisely
-    // how hyperspace crashes when the extensions really are absent.
+    // the savers holding null pointers they do not check - which is how
+    // hyperspace used to crash when the extensions were absent, before
+    // Task 21 gated its star block behind if(dShaders).
     EXPECT_NE(wglGetProcAddress("glActiveTextureARB"), nullptr);
     EXPECT_NE(wglGetProcAddress("glCreateShaderObjectARB"), nullptr);
     EXPECT_NE(wglGetProcAddress("glUniform3fARB"), nullptr);

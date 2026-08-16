@@ -328,6 +328,25 @@ void resetMatrices()
 	state().mode = 0;
 }
 
+// The three ARB extensions hyperspace's and microcosm's loaders ask for.
+// Every GPU since about 2002 offers all three, which is why this is the
+// default rather than an empty string.
+const char kDefaultExtensions[] = "GL_ARB_multitexture GL_ARB_texture_cube_map GL_ARB_shader_objects";
+
+// Function-local rather than a namespace-scope global, for the same reason
+// trace() is: one mutable object is unavoidable, but it need not be visible
+// outside this file.
+std::string& extensionStorage()
+{
+	static std::string extensions = kDefaultExtensions;
+	return extensions;
+}
+
+void setExtensionString(const char* extensions)
+{
+	extensionStorage() = extensions ? extensions : kDefaultExtensions;
+}
+
 }  // namespace glstub
 
 // ---------------------------------------------------------------------------
@@ -638,23 +657,27 @@ const GLubyte* APIENTRY glGetString(GLenum name)
 {
 	REC(glGetString);
 	// The extension string decides which path hyperspace and microcosm take,
-	// and the three below are the ones their initExtensions asks for
-	// (hyperspace/extensions.cpp:76, microcosm/extensions.cpp:76).
+	// and the three glstub::kDefaultExtensions names are the ones their
+	// initExtensions asks for (hyperspace/extensions.cpp:76,
+	// microcosm/extensions.cpp:76).
 	//
-	// Advertising them rather than reporting none is deliberate. Every GPU
-	// since about 2002 has all three, so the shader path is the one that
-	// actually ships - and the fallback is not merely less covered but broken:
-	// hyperspace's draw() calls glActiveTextureARB unconditionally at
-	// hyperspace.cpp:231-235, outside the if(dShaders) guard around every other
-	// use, so with the pointers left null it crashes on its first frame. See
-	// docs/MAINTENANCE.md.
+	// Advertising them by default rather than reporting none is deliberate:
+	// every GPU since about 2002 has all three, so the shader path is the one
+	// that actually ships. hyperspace's star block used to call
+	// glActiveTextureARB unconditionally, outside the if(dShaders) guard
+	// around every other use in the file, so with the pointers left null the
+	// fallback crashed on its first frame - fixed by gating hyperspace.cpp's
+	// star block (now hyperspace.cpp:245, 247, 249) behind if(dShaders), per
+	// Task 21 in docs/MAINTENANCE.md.
+	//
+	// A test that wants the fallback path calls glstub::setExtensionString to
+	// report fewer extensions than the default.
 	switch (name) {
 		case GL_VENDOR:   return reinterpret_cast<const GLubyte*>("Really Slick Screensavers tests");
 		case GL_RENDERER: return reinterpret_cast<const GLubyte*>("gl_stub");
 		case GL_VERSION:  return reinterpret_cast<const GLubyte*>("1.3.0");
 		case GL_EXTENSIONS:
-			return reinterpret_cast<const GLubyte*>(
-			    "GL_ARB_multitexture GL_ARB_texture_cube_map GL_ARB_shader_objects");
+			return reinterpret_cast<const GLubyte*>(glstub::extensionStorage().c_str());
 		default: return reinterpret_cast<const GLubyte*>("");
 	}
 }
@@ -823,10 +846,12 @@ PROC WINAPI wglGetProcAddress(LPCSTR name)
 	// reinterpret_cast is the only cast in C++ that does that. static_cast and
 	// friends do not apply. Left as findings rather than silenced.
 	//
-	// The alternative - answering nullptr for everything - is not the safe
-	// default it looks like: hyperspace calls glActiveTextureARB outside its
-	// own dShaders guard and would call through a null pointer on the first
-	// frame. See the note on glGetString above.
+	// The alternative - answering nullptr for everything - was not the safe
+	// default it looks like: hyperspace's star block used to call
+	// glActiveTextureARB outside its own dShaders guard and would call
+	// through a null pointer on the first frame. Fixed by gating that block
+	// (hyperspace.cpp:245, 247, 249) behind if(dShaders), per Task 21 in
+	// docs/MAINTENANCE.md. See the note on glGetString above.
 	struct Entry {
 		const char* name;
 		PROC address;

@@ -40,6 +40,14 @@ extern int numAnimTexFrames;
 // Owned by tests/support/saver_shim.cpp, not by the saver.
 extern int doingPreview;
 
+// Set only by idleProc from an rsTimer tick, so a direct draw() call redraws a
+// frozen instant unless a test drives this itself.
+extern float frameTime;
+
+// One frame at 60Hz. Assigned to frameTime before a draw() that needs
+// something to actually have moved.
+constexpr float kFrameSeconds = 1.0f / 60.0f;
+
 void setDefaults();
 void readRegistry();
 void initControls(HWND hdlg);
@@ -90,6 +98,8 @@ protected:
         savertest::SaverFixture::TearDown();
         doingPreview = 0;
         numAnimTexFrames = 20;
+        frameTime = 0.0f;
+        glstub::setExtensionString(nullptr);
     }
 };
 
@@ -111,16 +121,14 @@ TEST(HyperspaceHarness, SaverBodyWasActuallyCompiled) {
 
 TEST(HyperspaceHarness, KeepsShadersWhenTheExtensionsAreThere) {
     // initSaver turns dShaders off if initExtensions reports failure
-    // (hyperspace.cpp:517-518). The stub advertises the three ARB extensions
+    // (hyperspace.cpp:532-533). The stub advertises the three ARB extensions
     // its loader asks for and resolves their entry points, so the shader path
     // is the one under test - which is also the one that runs on any GPU made
     // since about 2002.
     //
-    // The fallback is deliberately not exercised, because it does not work:
-    // draw() calls glActiveTextureARB unconditionally at hyperspace.cpp:231-235
-    // while every other use is inside if(dShaders), so with the pointers left
-    // null it calls through address zero on the first frame. Recorded in
-    // docs/MAINTENANCE.md.
+    // The fallback path is covered separately, by
+    // Hyperspace.DropsShadersWhenTheArbExtensionsAreMissing, which uses
+    // glstub::setExtensionString to make initExtensions fail.
     setDefaults();
     dStars = 100;
     ASSERT_EQ(dShaders, 1) << "setDefaults asks for shaders";
@@ -168,7 +176,7 @@ TEST_F(Hyperspace, PrimitiveVertexCountsAreLegal) {
 
 TEST_F(Hyperspace, EnableStateIsTheSameEveryFrame) {
     // Like flux, hyperspace sets the state it wants at the top of a frame and
-    // leaves it: blending goes on at hyperspace.cpp:229 and is never switched
+    // leaves it: blending goes on at hyperspace.cpp:236 and is never switched
     // off. glEnable is idempotent, so the invariant that matters is that the
     // set does not grow - a frame enabling something the previous one did not
     // is the bug this catches.
@@ -288,6 +296,52 @@ TEST_F(Hyperspace, TunnelsAndGooCanBeTurnedOff) {
     EXPECT_GT(without, 0) << "the stars are drawn either way";
     EXPECT_NE(with, without);
     EXPECT_TRUE(savertest::PrimitivesPaired());
+}
+
+// --- the no-shader fallback --------------------------------------------------
+
+TEST_F(Hyperspace, DropsShadersWhenTheArbExtensionsAreMissing) {
+    // Task 21: the star block used to call glActiveTextureARB unconditionally,
+    // so with the ARB extensions absent and the pointers left null this used
+    // to crash inside start()'s warm-up frame. Now it draws its stars with no
+    // ARB entry point called at all.
+    stop();                                    // nothing is allocated; settings change here only
+    glstub::setExtensionString("");            // a driver with none of the three
+    start();                                   // initSaver -> initExtensions fails -> dShaders = 0
+    EXPECT_EQ(dShaders, 0);
+
+    frameTime = kFrameSeconds;
+    draw();
+
+    EXPECT_GT(countPrimitives(GL_TRIANGLE_STRIP), 0);               // the star block did run
+    EXPECT_EQ(glstub::trace().countCalls("glActiveTextureARB"), 0); // and asked for no texture unit
+    EXPECT_EQ(glstub::trace().countCalls("glUseProgramObjectARB"), 0);
+    EXPECT_TRUE(savertest::MatrixStackBalanced());
+    EXPECT_TRUE(savertest::PrimitivesPaired());
+    EXPECT_TRUE(savertest::VertexCountsLegal());
+    EXPECT_TRUE(savertest::NoInvalidEnums());
+    // NoEnableStateLeaked is deliberately not checked here - hyperspace leaks
+    // enable state by design, and Hyperspace.EnableStateIsTheSameEveryFrame is
+    // this suite's accurate statement of that fact.
+}
+
+TEST_F(Hyperspace, ResetsTheOtherTextureUnitsWhenShadersAreOn) {
+    // Pin against over-gating: with shaders on, the star block is the only
+    // remaining glActiveTextureARB caller once goo and tunnels are off -
+    // starBurst::draw(float) always takes its early return before reaching its
+    // own three calls, because size only grows once past its constructor's
+    // initial 4.0f and restart() (the only thing that shrinks it) fires just
+    // once every 60-300 simulated seconds. So the count of 3 here is
+    // structural, not a timing coincidence.
+    stop();
+    dUseGoo = 0;
+    dUseTunnels = 0;
+    start();
+
+    frameTime = kFrameSeconds;
+    draw();
+
+    EXPECT_EQ(glstub::trace().countCalls("glActiveTextureARB"), 3);
 }
 
 TEST_F(Hyperspace, RestartingRebuildsTheGeneratedTextures) {

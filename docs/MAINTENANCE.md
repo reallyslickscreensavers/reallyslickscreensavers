@@ -17,7 +17,7 @@ starting; `grep` commands are given with each task.
 
 **Task 17 is finished: all thirteen savers now have tests.** That rollout found
 **nine** real defects in total — Tasks 14 to 16 from the first two batches, and
-Tasks 18 to 23 from the last one. Seven are fixed. Prefer covering a saver before
+Tasks 18 to 23 from the last one. Eight are fixed. Prefer covering a saver before
 changing it; every one of the nine turned up that way, and none of them had
 surfaced in thirteen years of the savers running.
 
@@ -186,7 +186,7 @@ simulating anything at all before assuming its length is earning something.
 | 7 | `libs` submodule | **done** — rslibs L1–L5, L8; bumped in #40 |
 | 8 | SonarCloud duplication | **done** — 1.6% project-wide, under the 3% threshold |
 | 9 | C++20 | open, blocked on 3 |
-| 10 | Reliability bugs | **partial** — the two cyclone BLOCKERs are proven unreachable; 10 bugs remain |
+| 10 | Reliability bugs | **partial** — the two cyclone BLOCKERs are proven unreachable; 8 bugs remain (`cpp:S6232` ×4, `cpp:S1763` ×2, `cpp:S836` ×2) per Task 10's own "Four findings — RESOLVED" section — the 10-bug count elsewhere in this document is an older SonarCloud snapshot, left for a fresh analysis rather than hand-derived |
 | 11 | Registry values used unclamped | open |
 | **12** | **Seven savers carry private PRNG copies — an ODR violation that crashes Release** | open, **raised** |
 | 13 | Clear-text `http://` URLs | open |
@@ -197,7 +197,7 @@ simulating anything at all before assuming its length is earning something.
 | **18** | **`hyperspace` drew through freed texture objects after teardown** | **new, done** |
 | **19** | **`skyrocket` indexed an emptied particle vector after teardown** | **new, done** |
 | **20** | **`helios` keeps two restart-unsafe statics, one an out-of-bounds read** | **new, done** |
-| **21** | **`hyperspace` calls `glActiveTextureARB` with no extension check** | **new, open** |
+| **21** | **`hyperspace` calls `glActiveTextureARB` with no extension check** | **new, done** |
 | **22** | **`lattice` disabled texture generation it never enabled** | **new, done** |
 | **23** | **`lattice` carried a dead frustum-culling block with two invalid GL calls** | **new, done** |
 | **24** | **Three savers deviate from the entry-point contract** | **new, open** |
@@ -227,20 +227,15 @@ the guide here — see the note at the end of this section.
 ## First — correctness
 
 1. **Task 10, what remains.** The two `cyclone` BLOCKERs are **resolved** — see
-   below — so what is left is `lattice.cpp:703` (uninitialised field) and the
-   six `cpp:S836` findings in `skyrocket/particle.cpp`, all "garbage value
-   returned to caller". `skyrocket` now has a test binary, but `particle.cpp`
-   itself is only 12% covered, so **extend that suite before touching these** —
-   see the note under Task 10.
-2. **Task 21.** `hyperspace` calls through a null function pointer on its first
-   frame if the ARB extensions are absent. Unreachable on any GPU made this
-   century, so it ranks below the reads above — but it is a crash, the fix is to
-   move three lines inside an `if` that already exists, and until it is done the
-   no-extension path cannot be tested at all.
-3. **Task 15.** `fieldlines` loses its per-segment line widths to nested
+   below. #53 fixed the `lattice` constructor field, the `makeTorus` guard and
+   five of the `particle.cpp` garbage-value findings, and raised
+   `particle.cpp` coverage from 17.6% to 95.3%. Task 10 stays **PARTIAL**:
+   `cpp:S6232` ×4, `cpp:S1763` ×2 and `cpp:S836` ×2 remain — see the note
+   under Task 10.
+2. **Task 15.** `fieldlines` loses its per-segment line widths to nested
    `glBegin` calls. Visible only as a subtly wrong render, so lower than the
    memory bugs, but it is a genuine rendering defect rather than a lint.
-4. **Task 25.** `skyrocket` will not start on a machine without OpenAL
+3. **Task 25.** `skyrocket` will not start on a machine without OpenAL
    installed. Not a memory bug, but it is the only item on this list that makes a
    saver completely unusable for a real user, and shipping the redistributable is
    a packaging change rather than a code one.
@@ -915,38 +910,60 @@ file-scope variable assigned at a well-defined point rather than at
 first-use, since a function-local static's initialiser runs exactly once no
 matter how many times the saver restarts around it.
 
-## Task 21 · `hyperspace` calls `glActiveTextureARB` unguarded — OPEN
+## Task 21 · `hyperspace` calls `glActiveTextureARB` unguarded — DONE
 
 `initSaver` degrades properly when the extensions are missing:
 
 ```cpp
 if(!initExtensions())
-    dShaders = 0;          // hyperspace.cpp:517
+    dShaders = 0;          // hyperspace.cpp:532-533
 ```
 
-and every use of the ARB entry points sits inside `if(dShaders)` — except three:
+and every use of the ARB entry points sat inside `if(dShaders)` — except three:
 
 ```cpp
-glActiveTextureARB(GL_TEXTURE2_ARB);   // hyperspace.cpp:231
-glActiveTextureARB(GL_TEXTURE1_ARB);   // 233
-glActiveTextureARB(GL_TEXTURE0_ARB);   // 235
+glActiveTextureARB(GL_TEXTURE2_ARB);   // were hyperspace.cpp:238
+glActiveTextureARB(GL_TEXTURE1_ARB);   // 240
+glActiveTextureARB(GL_TEXTURE0_ARB);   // 242
 ```
 
 Those are function pointers that `initExtensions` only fills in on success, so
-without `GL_ARB_multitexture` the first frame calls through address zero. The
-"graceful fallback" is a crash.
+without `GL_ARB_multitexture` the first frame called through address zero. The
+"graceful fallback" was a crash.
 
 Unreachable in practice — no GPU since roughly 2002 lacks the three extensions
-the loader asks for — which is why it has never been reported. The fix is to move
-the three calls inside the existing `if(dShaders)`, or guard on the pointer.
+the loader asks for — which is why it had never been reported.
 
-**Consequence for the harness:** the GL stub therefore *advertises*
+**Fixed:** the three calls now sit inside the same `if(dShaders)` the rest of
+the star block already uses (`hyperspace.cpp:245, 247, 249`). The trailing
+`glBindTexture(GL_TEXTURE_2D, flaretex[0])` stays outside the guard: with it
+in place, no `glActiveTextureARB` call anywhere in the binary runs when
+`dShaders` is 0 — the only other call sites are the goo's three-unit cube map
+and the tunnel's second caustic frame (both already inside `if(dShaders)`,
+`hyperspace.cpp:310, 312, 314` and `365, 367`) and `starBurst.cpp:225, 227,
+229`, reached only from `starBurst::draw(float)`, which `hyperspace.cpp`
+calls only under `if(dShaders)` — so GL's default texture unit 0 is never
+left, and the unconditional bind lands where it should. The `dShaders == 1`
+call sequence is unchanged; `Hyperspace.ResetsTheOtherTextureUnitsWhenShadersAreOn`
+pins it at exactly three calls per frame.
+
+**Consequence for the harness:** the GL stub still *advertises*
 `GL_ARB_multitexture`, `GL_ARB_texture_cube_map` and `GL_ARB_shader_objects` and
-resolves their entry points, rather than reporting none. That is the path real
-hardware takes anyway, but it means the no-extension path is **untested** in both
-`hyperspace` and `microcosm`. `microcosm` has a genuine non-shader fallback
-(`microcosm.cpp:634`) and is covered for it by
-`Microcosm.RendersWithoutShadersToo`; `hyperspace` cannot be until this is fixed.
+resolves their entry points by default — that is the path real hardware takes
+— but `glstub::setExtensionString` now lets a case report fewer, which is how
+`Hyperspace.DropsShadersWhenTheArbExtensionsAreMissing` drives hyperspace's
+loader-failure path end to end. `microcosm` keeps its existing coverage of the
+non-shader *draw* path through `Microcosm.RendersWithoutShadersToo`, which sets
+`dShaders` directly; its `initExtensions`-failure path is now reachable through
+the same toggle but remains uncovered, left for whoever wants it, since
+microcosm has a working fallback and no null call to make.
+
+What the newly reachable path exposed: `initSaver`'s non-shader branch
+(`hyperspace.cpp:617-643`) rewrites the global `nebulamap` array in place, so a
+second no-shader `initSaver` in the same process squares the darkening — a
+sixth sighting of the restart-safety theme running through this document.
+Cosmetic, unreachable outside a test fixture on a pre-2002 GPU, so recorded
+here rather than opened as its own task.
 
 ## Task 22 · `lattice` disables texture generation it never enabled — DONE
 
