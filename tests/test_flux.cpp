@@ -40,7 +40,10 @@ namespace {
 // (flux.cpp:617) and the closest thing flux has to a plain default.
 class Flux : public savertest::SaverFixture {
 protected:
-    void SetUp() override { setDefaults(DEFAULTS1); }
+    void SetUp() override {
+        rsRandGen().seed(savertest::kTestSeed);
+        setDefaults(DEFAULTS1);
+    }
 };
 
 }  // namespace

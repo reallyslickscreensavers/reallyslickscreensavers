@@ -36,7 +36,10 @@ namespace {
 
 class Flocks : public savertest::SaverFixture {
 protected:
-    void SetUp() override { setDefaults(); }
+    void SetUp() override {
+        rsRandGen().seed(savertest::kTestSeed);
+        setDefaults();
+    }
 };
 
 }  // namespace

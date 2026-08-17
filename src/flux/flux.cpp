@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <rsText/rsText.h>
+#include <rsMath/rsMath.h>
 #include <math.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -90,16 +91,6 @@ int dBlur;
 #define DEFAULTS5 5
 #define DEFAULTS6 6
 #endif
-
-
-// Useful random number macros
-// Don't forget to initialize with srand()
-inline int rsRandi(int x){
-	return rand() % x;
-}
-inline float rsRandf(float x){
-	return x * (float(rand()) / float(RAND_MAX));
-}
 
 
 // This class is poorly named.  It's actually a whole trail of particles.
@@ -664,8 +655,6 @@ void initSaver(){
 #endif
 	int i, j;
 	float x, y, temp;
-
-	srand((unsigned)time(NULL));
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();

@@ -199,7 +199,8 @@ heavily, so keep the names and signatures identical and change only the bodies.
 > reached the seven that do include the header — `euphoria`, `helios`,
 > `hyperspace`, `lattice`, `microcosm`, `skyrocket`, `implicitDemo` — and
 > `starfield` was already converted. The remaining six are **Task 12** in the
-> parent's backlog and still carry their `cpp:S2245` findings.
+> parent's backlog and still carry their `cpp:S2245` findings — done in the
+> parent; see Task 12 in docs/MAINTENANCE.md.
 >
 > Two things the implementation had to do differently from the plan:
 >

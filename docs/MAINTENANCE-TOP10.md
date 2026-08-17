@@ -1,7 +1,7 @@
 # Maintenance top 10 — checklist
 
 Derived from `docs/MAINTENANCE.md`'s own "Priority and order" section, verified
-against the current tree on 2026-08-16. Check items off as they land.
+against the current tree on 2026-08-17. Check items off as they land.
 
 ## Do first
 
@@ -42,9 +42,13 @@ against the current tree on 2026-08-16. Check items off as they land.
        check `https://` works before switching
 9. [ ] **Task 11** — ~124 unclamped registry values across 13 savers —
        model is `src/starfield/starfieldSettings.h`
-10. [ ] **Task 12** — delete 7 private PRNG copies (ODR violation, confirmed
-        Debug/Release divergence) —
-        `grep -rln "inline int rsRandi\|inline float rsRandf\|inline std::mt19937& rsRandGen" src --include=*.cpp`
+10. [x] **Task 12** — deleted the 7 private PRNG copies (`cyclone`,
+        `fieldlines`, `flocks`, `flux`, `plasma`, `solarwinds` on `rand()`, and
+        `starfield`'s own `rsRandGen`) and unified all thirteen savers on
+        `rsMath.h`'s generator; removed the six `srand((unsigned)time(NULL))`
+        calls the switch made dead; added a NaN guard around `starfield`'s
+        size-bucket index; and let `tests/support/saver_test_common.h` include
+        `<rsMath/rsMath.h>` so every suite seeds `kTestSeed`
 
 ## Just outside the top 10
 

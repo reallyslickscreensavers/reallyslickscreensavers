@@ -38,6 +38,7 @@ namespace {
 class Fieldlines : public savertest::SaverFixture {
 protected:
     void SetUp() override {
+        rsRandGen().seed(savertest::kTestSeed);
         setDefaults();
 
         // Each field line walks up to dMaxSteps segments (fieldlines.cpp:183),

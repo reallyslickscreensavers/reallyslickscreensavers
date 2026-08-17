@@ -107,13 +107,14 @@ Suites now seed it to `kTestSeed` themselves. Change that value only
 deliberately — the point is that a timing or coverage change means the code
 changed rather than the dice.
 
-**Only six savers can be seeded this way**, and the seeding cannot live in the
-shared fixture. Seven others carry private copies of `rsRandi`/`rsRandf` — and
-`starfield` its own `rsRandGen` — so including `<rsMath/rsMath.h>` in the common
-header put two definitions of the same inline function in one binary and crashed
-`starfield` in Release while Debug stayed green. That is Task 12, and this is
-what raised it from tidiness to undefined behaviour. Six of the seven are on
-plain `rand()`, so they are not seedable at all until it is fixed.
+**Every suite can be seeded now.** Seven savers used to carry private copies of
+`rsRandi`/`rsRandf` — and `starfield` its own `rsRandGen` — so including
+`<rsMath/rsMath.h>` in the common header put two definitions of the same inline
+function in one binary and crashed `starfield` in Release while Debug stayed
+green. That is what raised Task 12 from tidiness to undefined behaviour. The
+private copies are gone, `saver_test_common.h` includes `<rsMath/rsMath.h>`,
+and every suite seeds `rsRandGen()` to `kTestSeed` in its own fixture's
+`SetUp`.
 
 ### What else worked: stop doing pointless work
 
@@ -188,7 +189,7 @@ simulating anything at all before assuming its length is earning something.
 | 9 | C++20 | open, blocked on 3 |
 | 10 | Reliability bugs | **partial** — the two cyclone BLOCKERs are proven unreachable; 8 bugs remain (`cpp:S6232` ×4, `cpp:S1763` ×2, `cpp:S836` ×2) per Task 10's own "Four findings — RESOLVED" section — the 10-bug count elsewhere in this document is an older SonarCloud snapshot, left for a fresh analysis rather than hand-derived |
 | 11 | Registry values used unclamped | open |
-| **12** | **Seven savers carry private PRNG copies — an ODR violation that crashes Release** | open, **raised** |
+| **12** | **Seven savers carry private PRNG copies — an ODR violation that crashes Release** | **done** |
 | 13 | Clear-text `http://` URLs | open |
 | 14 | `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY` | **done** — PR #44 |
 | 15 | `fieldlines` nests `glBegin`, silently losing its line widths | open |
@@ -260,8 +261,8 @@ the guide here — see the note at the end of this section.
    is clamped today. This is the `src/` counterpart of the rslibs L5 work, and
    likely the root cause behind some of Task 10's findings, which is why it
    follows rather than leads them.
-8. **Task 12.** Delete the six private `rand()` copies. Small, and it doubles as
-   the first slice of Task 8.
+8. **Task 12 — DONE.** The seven private rand()/rsRandGen copies are gone; all
+   thirteen savers share rsMath.h's generator.
 
 ## Alongside — keep the net growing
 
@@ -559,7 +560,7 @@ the `cyclone` BLOCKER guard (Task 10) only bites where a key exists. Giving each
 saver a settings header with a pure clamp function makes both problems go away,
 because the clamp becomes testable without a registry at all.
 
-## Task 12 · Seven savers carry private PRNG copies — and it is an ODR violation
+## Task 12 · Seven savers carry private PRNG copies — and it is an ODR violation — DONE
 
 **Raised from tidiness. This is undefined behaviour that already changes
 behaviour between Debug and Release**, demonstrated below, and it is seven
@@ -573,7 +574,7 @@ grep -rln "inline int rsRandi\|inline float rsRandf\|inline std::mt19937& rsRand
 |---|---|
 | `cyclone`, `fieldlines`, `flocks`, `flux`, `plasma` | both `rsRandi` and `rsRandf`, on plain `rand()` |
 | `solarwinds` | `rsRandf` only |
-| **`starfield`** | **`rsRandf` and its own `rsRandGen`** (`starfield.cpp:79`) |
+| **`starfield`** | **`rsRandf` and its own `rsRandGen`** (`starfield.cpp:80`) |
 
 Each defines a function at global scope with the same name and signature as an
 `inline` one in `rsMath.h`, but a **different body**. Put both in a program and
@@ -600,24 +601,30 @@ if(bucket > maxStarSize) ...        // false, so no clamp either
 sizeBuckets[bucket].push_back(i);   // indexes far out of bounds
 ```
 
-Both guards are comparisons that a NaN slips through. Worth a second look even
-after the PRNG is unified.
+Both guards were comparisons that a NaN slipped through. The bucket index is
+now bracketed into `[1, maxStarSize]` by an is-in-range test, so a bad value
+cannot reach `sizeBuckets[]` — pinned by
+`Starfield.NanFrameTimeKeepsStarsInsideTheSizeBuckets`. Unification narrowed
+how a NaN can arrive at all (`rsMath.h`'s `rsRandf` scales a canonical `[0, 1)`
+value rather than calling `uniform_real_distribution` with a possibly-negative
+`x`), but it does not make NaN-versus-comparison a solved problem everywhere
+else in this saver or the others.
 
-Until it is fixed, **do not include `<rsMath/rsMath.h>` anywhere that links a
-saver carrying a private copy** — `tests/support/saver_test_common.h` cannot,
-which is why only the six clean savers can have a seeded generator.
+The private copies are gone: `tests/support/saver_test_common.h` includes
+`<rsMath/rsMath.h>`, and all thirteen suites seed `kTestSeed`.
 
 Each is a verbatim duplicate of what `rsMath.h` used to contain, carrying the
 same *"Don't forget to initialize with srand()"* comment. **rslibs L4 did not
 reach them**, because they never include `rsMath.h` — contrary to what the
 rslibs brief predicted.
 
-Delete the copies and include `<rsMath/rsMath.h>` instead. That inherits the
-thread-local Mersenne Twister, removes the modulo bias, and deletes six blocks of
-duplicated code — a down payment on Task 8.
+The copies were deleted and each saver now includes `<rsMath/rsMath.h>`
+instead. That inherits the thread-local Mersenne Twister, removes the modulo
+bias, and deleted six blocks of duplicated code — a down payment on Task 8.
 
-Note the `srand((unsigned)time(NULL))` calls in 13 savers become dead once this
-lands; they are already dead for the seven modules that use the library version.
+The `srand((unsigned)time(NULL))` calls this made dead in six savers were
+removed along with the copies; they were already dead for the seven modules
+that used the library version.
 
 ## Task 13 · Clear-text `http://` URLs
 
@@ -1189,8 +1196,9 @@ The saver boilerplate it describes — the FPS counter block, `readRegistry` /
 `writeRegistry`, the dialog procedure — is still duplicated across the 13
 modules. What changed is the denominator, not the numerator: `ncloc` fell when
 the analysis stopped scanning `libs`. So **extracting a shared saver skeleton
-remains worth doing** on its own merits (it would largely resolve Task 6 and
-absorb Task 12), it just no longer has a failing gate behind it.
+remains worth doing** on its own merits (it would largely resolve Task 6; Task
+12, which it would also have absorbed, is closed on its own), it just no
+longer has a failing gate behind it.
 
 One live lesson from PR #43: the *test* suites hit this gate for real at 6.9%,
 because six suites repeated the same fixture and the same frame invariants. The

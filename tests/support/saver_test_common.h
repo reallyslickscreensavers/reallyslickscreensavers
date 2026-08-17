@@ -24,6 +24,8 @@
 // SDK's gl/GL.h. One finding is better than six.
 #include <gl/GL.h>
 
+#include <rsMath/rsMath.h>
+
 #include "gl_stub.h"
 #include "test_window.h"
 
@@ -56,17 +58,13 @@ namespace savertest {
 // `if(!rsRandi(2500))` (skyrocket.cpp:702), and one instrumented coverage run
 // that hit it took **358 minutes** against a normal 40.
 //
-// Deliberately NOT applied from this header, and this header deliberately does
-// not include <rsMath/rsMath.h>. Seven savers carry their own global
-// `rsRandi`/`rsRandf` - and starfield its own `rsRandGen` - with bodies that
-// differ from rsMath's (starfield.cpp:79, cyclone.cpp:72, and see Task 12).
-// Pulling rsMath's definitions into a test binary alongside those is a
-// straight ODR violation: the linker keeps one arbitrarily, Debug and Release
-// choose differently, and starfield crashed in Release only.
-//
-// So each suite whose saver actually uses rsMath seeds it itself. The seven
-// with private copies cannot be seeded this way at all - six of them are on
-// plain rand() - which is one more reason Task 12 is worth doing.
+// This header includes <rsMath/rsMath.h>, so every suite has rsRandGen
+// available. Each suite seeds it itself, at the top of its own fixture's
+// SetUp, because SetUp overrides do not chain to a base one - this header
+// cannot seed it on every suite's behalf. The seven private rsRandi/rsRandf/
+// rsRandGen copies that used to make this include an ODR violation were
+// deleted in Task 12; if one ever comes back, Starfield.StarLayoutRepeatsForTheSameSeed
+// is the test that fails.
 constexpr unsigned kTestSeed = 20260812u;
 
 class SaverFixture : public ::testing::Test {

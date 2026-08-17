@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <rsWin32Saver/rsWin32Saver.h>
 #include <rsText/rsText.h>
+#include <rsMath/rsMath.h>
 #include <math.h>
 #include <time.h>
 #include <gl/gl.h>
@@ -66,15 +67,6 @@ float fact[13];
 float frameTime = 0.0f;
 // text output
 rsText* textwriter;
-
-
-// useful random functions
-inline int rsRandi(int x){
-	return rand() % x;
-}
-inline float rsRandf(float x){
-	return x * (float(rand()) / float(RAND_MAX));
-}
 
 
 // useful vector functions
@@ -535,8 +527,6 @@ void idleProc(){
 void initSaver(HWND hwnd){
 	int i, j;
 	RECT rect;
-
-	srand((unsigned)time(NULL));
 
 	// Window initialization
 	hdc = GetDC(hwnd);

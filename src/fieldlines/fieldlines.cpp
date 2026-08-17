@@ -36,6 +36,7 @@
 
 #include <rsWin32Saver/rsWin32Saver.h>
 #include <rsText/rsText.h>
+#include <rsMath/rsMath.h>
 
 #define PIx2 6.28318530718f
 float wide;
@@ -63,16 +64,6 @@ int dWidth;
 int dSpeed;
 BOOL dConstwidth;
 BOOL dElectric;
-
-
-// Useful random number macros
-// Don't forget to initialize with srand()
-inline int rsRandi(int x){
-	return rand() % x;
-}
-inline float rsRandf(float x){
-	return x * (float(rand()) / float(RAND_MAX));
-}
 
 
 class ion{
@@ -334,8 +325,6 @@ void idleProc(){
 
 void initSaver(HWND hwnd){
 	RECT rect;
-
-	srand((unsigned)time(NULL));
 
 	// Window initialization
 	hdc = GetDC(hwnd);

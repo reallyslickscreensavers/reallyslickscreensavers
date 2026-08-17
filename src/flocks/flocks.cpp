@@ -38,6 +38,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <rsText/rsText.h>
+#include <rsMath/rsMath.h>
 #include <Rgbhsl/Rgbhsl.h>
 
 #define R2D 57.2957795131f
@@ -74,16 +75,6 @@ int dStretch;
 int dColorfadespeed;
 int dChromatek;
 int dConnections;
-
-
-// Useful random number macros
-// Don't forget to initialize with srand()
-inline int rsRandi(int x){
-	return rand() % x;
-}
-inline float rsRandf(float x){
-	return x * (float(rand()) / float(RAND_MAX));
-}
 
 
 class bug{
@@ -477,8 +468,6 @@ void initSaver(HWND hwnd){
 void initSaver(){
 #endif
 	int i;
-
-	srand((unsigned)time(NULL));
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();

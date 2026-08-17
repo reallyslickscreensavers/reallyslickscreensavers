@@ -10,6 +10,8 @@
 
 #include "support/saver_test_common.h"
 
+#include <limits>
+#include <vector>
 
 #include "resource.h"
 #include "starfieldSettings.h"
@@ -21,6 +23,9 @@ extern int dNumStars;
 extern int dSpeed;
 extern int dStarSize;
 extern int readyToDraw;
+extern float frameTime;
+extern std::vector<float> starZ;
+extern std::vector<float> starV;
 
 void setDefaults();
 void readRegistry();
@@ -33,7 +38,10 @@ namespace {
 
 class Starfield : public savertest::SaverFixture {
 protected:
-    void SetUp() override { setDefaults(); }
+    void SetUp() override {
+        rsRandGen().seed(savertest::kTestSeed);
+        setDefaults();
+    }
 };
 
 }  // namespace
@@ -114,6 +122,104 @@ TEST_F(Starfield, MoreStarsMeansMoreVertices) {
     start();
     draw();
     EXPECT_EQ(glstub::trace().totalVertices(), 1500u);
+}
+
+// Added in step 3, before the NaN-guard rewrite (Task 12 in
+// docs/MAINTENANCE.md), and expected to pass both before and after it: this is
+// not new defect coverage, starfield.cpp already clamps bucket > maxStarSize.
+// It exists so the rewrite cannot silently drop that clamp unnoticed.
+// readRegistry clamps dStarSize, so this is a backstop on a raw array index
+// rather than the primary bound.
+TEST_F(Starfield, AnOversizedStarSizeStaysInsideTheSizeBuckets) {
+    dStarSize = 10000;      // stop-change-start: set before start()
+    start();
+    draw();
+
+    EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(dNumStars));
+    EXPECT_LE(countPrimitives(GL_POINTS), starfield::kStarSize.hi);
+}
+
+// The step-4 guard (Task 12 in docs/MAINTENANCE.md). A NaN frameTime makes
+// starZ, and therefore brightness and size, NaN for every star. Both the old
+// `size < 1.0f` and `bucket > maxStarSize` tests are comparisons a NaN passes
+// through, which is how a NaN size used to reach sizeBuckets[] as a raw,
+// out-of-bounds index; the rewritten guard is an is-in-range test, so a NaN
+// falls to bucket 1 like everything else that is not in range. Under the
+// guard every star lands in that one bucket, so exactly one GL_POINTS batch
+// is emitted.
+TEST_F(Starfield, NanFrameTimeKeepsStarsInsideTheSizeBuckets) {
+    start();
+    frameTime = std::numeric_limits<float>::quiet_NaN();
+
+    draw();
+
+    EXPECT_EQ(countPrimitives(GL_POINTS), 1);
+    EXPECT_EQ(glstub::trace().countCalls("glPointSize"), 1);
+    EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(dNumStars));
+
+    frameTime = 0.0f;
+}
+
+// The Task 12 tripwire (docs/MAINTENANCE.md): the only test that would notice
+// a private rsRandi/rsRandf/rsRandGen copy returning to starfield.cpp. If the
+// two runs below disagree, the fix is to equalise them - look for an
+// asymmetry in frame count, in frameTime at either warm-up, or in generator
+// state between the seed and the first start() - never to weaken the
+// EXPECT_EQ below. Weakening it would silently discard the only regression
+// tripwire the ODR fix has.
+TEST_F(Starfield, StarLayoutRepeatsForTheSameSeed) {
+    dNumStars = 50;
+    dSpeed = starfield::kSpeed.hi;  // both set before any start(), stop-change-start
+
+    rsRandGen().seed(savertest::kTestSeed);
+    // Immediately before start(): start() draws a warm-up frame it then
+    // discards, and draw() is the only consumer of frameTime while idleProc is
+    // the only writer, so at zero that frame moves nothing - no star can fail
+    // the respawn test at starfield.cpp:124-126, and no rsRandf is drawn. That
+    // is what makes both runs below enter their 40-frame loops with identical
+    // generator state.
+    frameTime = 0.0f;
+    start();
+    const std::vector<float> initialZ = starZ;
+
+    for (int f = 0; f < 40; ++f) {
+        // frameTime must be set inside the loop, before each draw() - it is a
+        // global that only idleProc otherwise writes, and at zero the frame
+        // simulates nothing (see tests/test_skyrocket.cpp).
+        frameTime = 1.0f;
+        draw();
+    }
+
+    const std::vector<float> expectedZ = starZ;
+    const std::vector<float> expectedV = starV;
+    stop();
+
+    rsRandGen().seed(savertest::kTestSeed);
+    frameTime = 0.0f;
+    start();
+
+    for (int f = 0; f < 40; ++f) {
+        frameTime = 1.0f;
+        draw();
+    }
+
+    EXPECT_EQ(starZ, expectedZ);
+    EXPECT_EQ(starV, expectedV);
+
+    // Only the respawn block (starfield.cpp:124-131) raises starZ, via
+    // farZ - rsRandf(10.0f), so counting stars whose final starZ exceeds their
+    // initial entry proves that block ran, rather than assuming it. At
+    // dSpeed == kSpeed.hi, baseSpeed == 50 and starV >= 0.15, so every star
+    // loses at least 7.5 units of starZ per frame; 40 frames drives every one
+    // of them through the respawn block at least once, by arithmetic rather
+    // than luck.
+    int respawned = 0;
+    for (size_t i = 0; i < starZ.size(); ++i) {
+        if (starZ[i] > initialZ[i]) ++respawned;
+    }
+    EXPECT_GT(respawned, 0);
+
+    frameTime = 0.0f;
 }
 
 // --- framework entry points ------------------------------------------------
