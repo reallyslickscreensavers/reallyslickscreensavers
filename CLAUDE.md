@@ -135,11 +135,12 @@ existing history; the session URL means nothing to anyone reading the log later.
   leaves the counters, flags and function-local statics that index it exactly where they were. Six of
   the nine defects found are this one bug wearing different hats. If `cleanUp` frees it, `cleanUp`
   owns resetting whatever counts it.
-- **Seven savers carry private `rsRandi`/`rsRandf` copies** with bodies differing from `rsMath.h`'s
-  inline versions (Task 12) — a live ODR violation that crashed `starfield` in Release while Debug
-  stayed green. **Do not include `<rsMath/rsMath.h>` anywhere that links one of them**, which is why
-  `saver_test_common.h` does not, and why only six suites can seed the generator to `kTestSeed`. That
-  seed is fixed so a timing or coverage change means the code changed rather than the dice.
+- **All thirteen savers share `rsMath.h`'s PRNG** (Task 12, done). `saver_test_common.h` includes
+  `<rsMath/rsMath.h>`, and each suite seeds `rsRandGen()` to `kTestSeed` in its fixture's `SetUp`.
+  That seed is fixed so a timing or coverage change means the code changed rather than the dice.
+  Seven savers used to carry private `rsRandi`/`rsRandf` copies with different bodies — a live ODR
+  violation that crashed `starfield` in Release while Debug stayed green. If a private copy ever
+  returns, `Starfield.StarLayoutRepeatsForTheSameSeed` is the tripwire.
 - **Prefer covering a saver before changing it.** Every one of the nine defects found so far turned
   up that way, and none had surfaced in thirteen years of the savers running.
 - Open defects not yet fixed are each **pinned by a test asserting current behaviour**, so fixing one

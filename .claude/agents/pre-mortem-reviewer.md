@@ -39,8 +39,10 @@ Against every plan, ask:
 - **Restart safety.** If the change frees something in `cleanUp`, does the plan also reset the
   counters, flags and function-local statics that index it?
 - **Allocation order.** Does the plan change a setting while something is still allocated?
-- **The private PRNG ODR violation (Task 12).** Does anything the plan touches pull
-  `<rsMath/rsMath.h>` into a translation unit that links a saver carrying its own copy?
+- **The PRNG stays unified (Task 12, fixed).** Does the plan reintroduce a private
+  `rsRandi`/`rsRandf`/`rsRandGen` in any saver, or work around `rsMath.h` rather than including
+  it? Every saver draws from the one thread-local generator; a second definition is an ODR
+  violation that crashed `starfield` in Release while Debug stayed green.
 - **Build defines.** Does a new or changed test target set `WIN32`, `_GDI32_`, `AL_BUILD_LIBRARY`
   and `<StackReserveSize>` wherever the project it mirrors needs them?
 - **Build invocation.** Solution rather than a lone `.vcxproj`, `/t:Rebuild` rather than `Build`,

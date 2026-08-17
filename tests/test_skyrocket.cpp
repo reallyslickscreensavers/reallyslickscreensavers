@@ -13,11 +13,6 @@
 
 #include "support/saver_test_common.h"
 
-// Safe to include here: skyrocket uses rsMath's generator and carries no private
-// copy of it. Seven savers do carry one, which is why the shared header cannot
-// include this - see the note on kTestSeed there, and Task 12.
-#include <rsMath/rsMath.h>
-
 #include <array>
 #include <vector>
 

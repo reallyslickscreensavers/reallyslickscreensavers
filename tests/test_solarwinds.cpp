@@ -38,7 +38,10 @@ namespace {
 // settings only change through the dialog, which writes the registry.
 class SolarWinds : public savertest::SaverFixture {
 protected:
-    void SetUp() override { setDefaults(DEFAULTS1); }
+    void SetUp() override {
+        rsRandGen().seed(savertest::kTestSeed);
+        setDefaults(DEFAULTS1);
+    }
 };
 
 }  // namespace

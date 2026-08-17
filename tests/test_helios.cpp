@@ -9,12 +9,8 @@
 
 #include "support/saver_test_common.h"
 
-// Safe to include here: helios uses rsMath's generator and carries no private
-// copy of it (checked with grep -n "rsRandi\|rsRandf" src/helios/helios.cpp,
-// which shows call sites only - see Task 12 and the note on kTestSeed in
-// saver_test_common.h). Seeding is what makes the isosurface assertions below
-// a fixed outcome rather than a probable one.
-#include <rsMath/rsMath.h>
+// Seeding is what makes the isosurface assertions below a fixed outcome
+// rather than a probable one.
 
 #include "resource.h"
 

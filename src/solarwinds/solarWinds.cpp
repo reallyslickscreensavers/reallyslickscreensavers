@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <rsText/rsText.h>
+#include <rsMath/rsMath.h>
 #include <math.h>
 #include <time.h>
 #include <GL/gl.h>
@@ -82,13 +83,6 @@ enum{
 	DEFAULTS6
 };
 #endif
-
-
-// Useful random number function
-// Don't forget to initialize with srand()
-inline float rsRandf(float x){
-	return x * (float(rand()) / float(RAND_MAX));
-}
 
 
 class wind{
@@ -508,9 +502,6 @@ void initSaver(){
 #endif
 	int i, j;
 	float x, y, temp;
-
-	// Seed random number generator
-	srand((unsigned)time(NULL));
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);

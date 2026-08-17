@@ -39,8 +39,8 @@
 #include <vector>
 #include <array>
 #include <memory>
-#include <random>
 #include <rsText/rsText.h>
+#include <rsMath/rsMath.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "starfieldSettings.h"
@@ -75,15 +75,6 @@ const float farZ = 200.0f;
 const float nearZ = 0.1f;
 const float fovHalfTan = 0.41421356f;  // tan(22.5 degrees) for 45 degree vertical FOV
 const int maxStarSize = 10;  // matches STARSIZE slider and -starsize CLI range
-
-
-inline std::mt19937& rsRandGen(){
-	static std::mt19937 gen(std::random_device{}());
-	return gen;
-}
-inline float rsRandf(float x){
-	return std::uniform_real_distribution<float>(0.0f, x)(rsRandGen());
-}
 
 
 void initStar(int i){
@@ -137,12 +128,15 @@ void draw(){
 		if(brightness > 1.0f) brightness = 1.0f;
 		starBrightness[i] = brightness;
 
-		float size = float(dStarSize) * brightness;
-		if(size < 1.0f) size = 1.0f;
-		auto bucket = int(size + 0.5f);
-		// readRegistry clamps dStarSize, so this is a backstop on a raw
-		// array index rather than the primary bound
-		if(bucket > maxStarSize) bucket = maxStarSize;
+		// Bucket by rounded size. NaN fails every comparison, so the range
+		// test is written as "is in range" rather than "is out of range":
+		// anything that is not - NaN included - falls to the minimum instead
+		// of slipping past two ifs and indexing sizeBuckets far out of
+		// bounds. Task 12 in docs/MAINTENANCE.md has how that was reachable.
+		const float size = float(dStarSize) * brightness;
+		int bucket = 1;
+		if(size >= 1.0f)
+			bucket = (size <= float(maxStarSize)) ? int(size + 0.5f) : maxStarSize;
 		sizeBuckets[bucket].push_back(i);
 	}
 
