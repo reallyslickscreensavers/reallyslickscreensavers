@@ -27,8 +27,10 @@ against the current tree on 2026-08-19. Check items off as they land.
 3. [x] **Task 21** — `hyperspace` unguarded `glActiveTextureARB` — moved the
        three calls (now `src/hyperspace/hyperspace.cpp:245,247,249`) inside
        the existing `if(dShaders)`
-4. [ ] **Task 15** — `fieldlines` nested `glBegin` loses per-segment line
-       widths — `src/fieldlines/fieldlines.cpp:247-260`
+4. [x] **Task 15** — `fieldlines` nested `glBegin` loses per-segment line
+       widths — `src/fieldlines/fieldlines.cpp:237-250` — closed each
+       per-segment strip before opening the next; field lines now visibly
+       thin as they recede instead of drawing at one uniform width
 5. [ ] **Task 25** — `skyrocket` won't start without `OpenAL32.dll` —
        `src/skyrocket/skyrocket.vcxproj`; needs `LoadLibrary`-based lazy load
        or a shipped redistributable

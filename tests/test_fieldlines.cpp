@@ -41,12 +41,12 @@ protected:
         rsRandGen().seed(savertest::kTestSeed);
         setDefaults();
 
-        // Each field line walks up to dMaxSteps segments (fieldlines.cpp:183),
-        // and in the default mode reopens a primitive on every one of them - so
+        // Each field line walks up to dMaxSteps segments (fieldlines.cpp:174),
+        // and in the default mode opens a primitive on every one of them - so
         // the shipped 300, across eight lines per ion, is tens of thousands of
         // recorded primitives a frame. A hundred still walks lines, terminates
-        // some early on hitting an ion, and nests glBegin the same way. The
-        // default is asserted in the harness test.
+        // some early on hitting an ion, and opens a strip per step the same way.
+        // The default is asserted in the harness test.
         dMaxSteps = 100;
     }
 };
@@ -95,41 +95,45 @@ TEST_F(Fieldlines, DrawsFieldLinesAsStrips) {
     EXPECT_GT(glstub::trace().totalVertices(), 0u);
 }
 
-TEST_F(Fieldlines, ConstantWidthModePairsBeginAndEnd) {
-    // dConstwidth draws each field line as one long strip, which is the mode
-    // where the begin/end structure is correct.
+TEST_F(Fieldlines, PairsBeginAndEndInBothWidthModes) {
+    // Task 15. With dConstwidth false - the default the fixture's setDefaults
+    // restores - drawfieldline opens a GL_LINE_STRIP per step so it can vary
+    // glLineWidth, and now closes each one before opening the next. It used to
+    // close only on the final step, so every intermediate glBegin landed inside
+    // an open block and a driver discarded it, and the glLineWidth calls with it.
+    //
+    // Constant-width mode draws each line as one long strip and was always
+    // correct; it is asserted here to show the fix left it alone.
+    start();
+    draw();
+    EXPECT_TRUE(savertest::PrimitivesPaired()) << "default mode, a strip per segment";
+
+    stop();
     dConstwidth = TRUE;
     start();
     draw();
-    EXPECT_TRUE(savertest::PrimitivesPaired());
+    EXPECT_TRUE(savertest::PrimitivesPaired()) << "constant-width mode, one strip per line";
 }
 
-TEST_F(Fieldlines, DefaultModeLeavesGlBeginBlocksUnclosed) {
-    // DEFECT, pinned rather than fixed - this test documents current behaviour.
-    //
-    // With dConstwidth false, which is the default, drawfieldline reopens a
-    // GL_LINE_STRIP on every step so it can vary glLineWidth per segment
-    // (fieldlines.cpp:247-249). But the matching glEnd only runs on the final
-    // step (fieldlines.cpp:258-260), so every intermediate glBegin lands inside
-    // an already-open block.
-    //
-    // In a real driver each of those is GL_INVALID_OPERATION and is ignored,
-    // along with the glLineWidth calls between them, so the per-segment width
-    // the code is reaching for never actually applies and the line renders as
-    // one uniform strip. It looks fine, which is why it has survived.
-    //
-    // Fixing it means closing each strip before reopening; that is a rendering
-    // change and belongs with the reliability work in docs/MAINTENANCE.md.
-    dConstwidth = FALSE;
+TEST_F(Fieldlines, DefaultModeSetsLineWidthOncePerStrip) {
+    // The point of the default mode: each segment's own width applies, which
+    // needs the previous strip closed first. The stub records the call and not
+    // the value, so "applies" here is one glLineWidth per glBegin with nothing
+    // nested - the pre-loop segment and every step both set a width before
+    // opening their strip, and nothing else in the frame touches line width.
     start();
     draw();
 
     const glstub::Trace& t = glstub::trace();
-    EXPECT_TRUE(t.nestedBeginSeen)
-        << "if this now fails the defect is fixed - delete this test and drop the "
-           "dConstwidth line from ConstantWidthModePairsBeginAndEnd";
-    EXPECT_GT(t.begins, t.ends) << "more glBegin than glEnd is the signature of it";
-    EXPECT_FALSE(t.vertexOutsideBegin) << "vertices at least stay inside a block";
+    EXPECT_FALSE(t.nestedBeginSeen);
+    EXPECT_GT(t.begins, 1) << "the default mode should open many strips, not one";
+    EXPECT_EQ(t.countCalls("glLineWidth"), t.begins);
+
+    // A line that reaches an ion stops early, so a frame can only ever open
+    // fewer strips than the one-before-the-loop-plus-one-per-step maximum.
+    // Hitting the maximum exactly means no line terminated early this frame,
+    // which is seed-dependent and not asserted either way.
+    EXPECT_LE(t.begins, 8 * dIons * (int(dMaxSteps) + 1));
 }
 
 // --- settings change what is drawn -----------------------------------------

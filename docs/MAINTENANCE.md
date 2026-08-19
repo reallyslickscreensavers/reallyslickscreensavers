@@ -192,7 +192,7 @@ simulating anything at all before assuming its length is earning something.
 | **12** | **Seven savers carry private PRNG copies — an ODR violation that crashes Release** | **done** |
 | 13 | Clear-text `http://` URLs | open |
 | 14 | `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY` | **done** — PR #44 |
-| 15 | `fieldlines` nests `glBegin`, silently losing its line widths | open |
+| 15 | `fieldlines` nests `glBegin`, silently losing its line widths | **done** |
 | 16 | Destructors sized from live globals | **done** |
 | 17 | Test coverage rollout — all 13 savers | **done** |
 | **18** | **`hyperspace` drew through freed texture objects after teardown** | **new, done** |
@@ -233,9 +233,11 @@ the guide here — see the note at the end of this section.
    `particle.cpp` coverage from 17.6% to 95.3%. Task 10 stays **PARTIAL**:
    `cpp:S6232` ×4, `cpp:S1763` ×2 and `cpp:S836` ×2 remain — see the note
    under Task 10.
-2. **Task 15.** `fieldlines` loses its per-segment line widths to nested
-   `glBegin` calls. Visible only as a subtly wrong render, so lower than the
-   memory bugs, but it is a genuine rendering defect rather than a lint.
+2. **Task 15 — DONE.** `fieldlines` no longer loses its per-segment line widths
+   to nested `glBegin` calls; the `glEnd` guard now closes each per-segment
+   strip before the next one opens. This changes rendered output — field lines
+   now thin as they recede instead of drawing at one uniform width — while
+   constant-width mode is unchanged.
 3. **Task 25.** `skyrocket` will not start on a machine without OpenAL
    installed. Not a memory bug, but it is the only item on this list that makes a
    saver completely unusable for a real user, and shipping the redistributable is
@@ -648,10 +650,10 @@ change with the `.cpp` call so they do not disagree.
 
 # P0 (new) — Found by the test harness
 
-Three defects that thirteen years of running these savers never surfaced. Task
-14 is fixed; the two that remain are each pinned by a test asserting the
-**current** behaviour, so fixing one will make its test fail — which is the
-point. The test says so in its own comment.
+Three defects that thirteen years of running these savers never surfaced. All
+three — Task 14, Task 15 and Task 16 — are now fixed. Each was pinned by a test
+asserting the **prior** behaviour, so fixing it made its own test fail — that
+was the point. The test said so in its own comment.
 
 ## Task 14 · `solarWinds` sets `readyToDraw = 1` on `WM_DESTROY` — DONE (#44)
 
@@ -684,23 +686,34 @@ Note this did **not** clear Task 16, which lives in the same file:
 `wind::~wind` sized its frees from the live globals — fixed separately, see
 below.
 
-## Task 15 · `fieldlines` nests `glBegin` and loses its line widths
+## Task 15 · `fieldlines` nests `glBegin` and loses its line widths — DONE
 
-With `dConstwidth` false — the **default** — `drawfieldline` reopens a
+With `dConstwidth` false — the **default** — `drawfieldline` reopened a
 `GL_LINE_STRIP` on every step so it can vary `glLineWidth` per segment
-(`fieldlines.cpp:247-249`), but the matching `glEnd` only runs on the final step
-(`fieldlines.cpp:258-260`). Every intermediate `glBegin` therefore lands inside
+(`fieldlines.cpp:237-240`), but the matching `glEnd` only ran on the final step
+(`fieldlines.cpp:249-250`). Every intermediate `glBegin` therefore landed inside
 an already-open block.
 
 A driver treats each as `GL_INVALID_OPERATION` and ignores it — along with the
 `glLineWidth` calls between them. So **the per-segment width the code is
-reaching for never applies**, and the line renders as one uniform strip. It
-looks plausible, which is why it has survived; it is also spamming GL errors
+reaching for never applied**, and the line rendered as one uniform strip. It
+looked plausible, which is why it survived; it was also spamming GL errors
 every frame.
 
-The fix is to close each strip before reopening it. Note that doing so changes
-what the saver looks like, so it wants an eye on the result rather than just a
-green build. Pinned by `Fieldlines.DefaultModeLeavesGlBeginBlocksUnclosed`.
+**Fixed:** the `glEnd` guard is now `if(!dConstwidth || i == (int(dMaxSteps) -
+1))`, so each per-segment strip closes before the next one opens. The
+identically-worded guard one line above (`fieldlines.cpp:244`, the black
+end-cap `glColor3f(0.0f, 0.0f, 0.0f)`) is deliberately left unchanged.
+Constant-width mode is byte-for-byte unchanged — the new disjunct is always
+false there — and the early-termination path into an ion still works the same
+way in both modes: the collision iteration skips the new `glEnd` along with the
+rest of its guarded block, so its strip stays open for the post-loop code to
+finish into the ion and close. The pinned test
+`Fieldlines.DefaultModeLeavesGlBeginBlocksUnclosed` was deleted and replaced by
+`Fieldlines.PairsBeginAndEndInBothWidthModes` and
+`Fieldlines.DefaultModeSetsLineWidthOncePerStrip`. This changes what the saver
+looks like: field lines now thin as they recede instead of drawing at one
+uniform width.
 
 ## Task 16 · Destructors sized from live globals — DONE
 

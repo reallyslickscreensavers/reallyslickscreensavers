@@ -246,7 +246,7 @@ void drawfieldline(int source, float x, float y, float z){
 				else
 					glColor3f(r, g, b);
 				glVertex3fv(xyz);
-				if(i == (int(dMaxSteps) - 1))
+				if(!dConstwidth || i == (int(dMaxSteps) - 1))
 					glEnd();
 			}
 	}
