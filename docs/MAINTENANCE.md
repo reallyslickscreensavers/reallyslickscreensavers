@@ -179,7 +179,7 @@ simulating anything at all before assuming its length is earning something.
 | # | Task | State |
 |---|---|---|
 | 1 | Post-build copy with spaced paths | **done** — PR #38 |
-| 2 | Debug build warnings | **partial** — `EditAndContinue` done in #39; `MinimalRebuild` and Debug LTCG remain |
+| 2 | Debug build warnings | **done** |
 | 3 | Declare C++17 explicitly | open — 13 of 14 projects |
 | 4 | `resource.h` include style | **done** — PR #37 |
 | 5 | `aboutProc` truncates an `HBRUSH` | **done** — PR #39 |
@@ -243,10 +243,11 @@ the guide here — see the note at the end of this section.
 
 ## Second — cheap, mechanical, high value per minute
 
-4. **Task 2 remainder.** Delete `MinimalRebuild` from 13 projects and the Debug
-   `LinkTimeCodeGeneration` from 9. This is a one-line-per-file substitution that
-   removes **all 44 remaining Debug warnings** (26 `D9035`, 18 `LNK4075`). Doing
-   it early means every later task's build output is readable.
+4. **Task 2 remainder — DONE.** Deleted `MinimalRebuild` from 13 projects and the
+   Debug `LinkTimeCodeGeneration` from 9. This was a one-line-per-file
+   substitution that removed **all 44 remaining Debug warnings** (26 `D9035`,
+   18 `LNK4075`). Doing it early means every later task's build output is
+   readable.
 5. **Task 3.** Add `<LanguageStandard>stdcpp17</LanguageStandard>` to both
    configurations of 13 projects. Trivial, and the submodule is already there, so
    this ends the split where the libs compile as C++17 inside this very solution
@@ -319,13 +320,13 @@ apostrophe.
 
 # P1 — Cheap, mechanical, low risk
 
-## Task 2 · Debug build warnings — PARTIAL
+## Task 2 · Debug build warnings — DONE
 
-`EditAndContinue` → `ProgramDatabase` landed in #39, which cleared every
-`LNK4075 '/EDITANDCONTINUE'`. **Two of the three changes remain**, both Debug
-configuration only — never touch Release:
+`EditAndContinue` → `ProgramDatabase` landed in #39, clearing every
+`LNK4075 '/EDITANDCONTINUE'`. The other two changes, both Debug configuration
+only, landed here — Release was not touched:
 
-| Change | Files | Clears |
+| Change | Files | Cleared |
 |---|---|---|
 | Delete `<MinimalRebuild>true</MinimalRebuild>` | 13 | 26 × `D9035` |
 | Delete `<LinkTimeCodeGeneration>` from the **Debug** `<Link>` group | 9 | 18 × `LNK4075 '/INCREMENTAL'` |
@@ -333,8 +334,9 @@ configuration only — never touch Release:
 ```bash
 grep -rl "MinimalRebuild" src --include=*.vcxproj
 ```
+Returns empty since Task 2 landed.
 
-The 9 with Debug LTCG: `cyclone flocks helios hyperspace lattice microcosm
+The 9 with Debug LTCG were: `cyclone flocks helios hyperspace lattice microcosm
 plasma skyrocket solarwinds`.
 
 **Why:**
@@ -348,7 +350,7 @@ plasma skyrocket solarwinds`.
   `<LinkTimeCodeGeneration>`, where it is correctly paired with
   `WholeProgramOptimization`.
 
-Together these take a Debug rebuild from 44 warnings to **0**.
+Together these took a Debug rebuild from 44 warnings to **0**.
 
 ## Task 3 · Declare C++17 explicitly
 

@@ -32,9 +32,8 @@ against the current tree on 2026-08-17. Check items off as they land.
 5. [ ] **Task 25** — `skyrocket` won't start without `OpenAL32.dll` —
        `src/skyrocket/skyrocket.vcxproj`; needs `LoadLibrary`-based lazy load
        or a shipped redistributable
-6. [ ] **Task 2 remainder** — delete `MinimalRebuild` (13 files) and Debug
-       `LinkTimeCodeGeneration` (9 files) —
-       `grep -rl "MinimalRebuild" src --include=*.vcxproj`
+6. [x] **Task 2 remainder** — deleted `MinimalRebuild` (13 files) and Debug
+       `LinkTimeCodeGeneration` (9 files)
 7. [ ] **Task 3** — declare C++17 explicitly in 13 `.vcxproj` —
        `grep -rL "LanguageStandard" src/*/*.vcxproj`
 8. [ ] **Task 13** — 26 clear-text `http://` URLs —
