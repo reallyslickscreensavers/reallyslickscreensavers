@@ -1,7 +1,7 @@
 # Maintenance top 10 — checklist
 
 Derived from `docs/MAINTENANCE.md`'s own "Priority and order" section, verified
-against the current tree on 2026-08-17. Check items off as they land.
+against the current tree on 2026-08-19. Check items off as they land.
 
 ## Do first
 
@@ -34,8 +34,7 @@ against the current tree on 2026-08-17. Check items off as they land.
        or a shipped redistributable
 6. [x] **Task 2 remainder** — deleted `MinimalRebuild` (13 files) and Debug
        `LinkTimeCodeGeneration` (9 files)
-7. [ ] **Task 3** — declare C++17 explicitly in 13 `.vcxproj` —
-       `grep -rL "LanguageStandard" src/*/*.vcxproj`
+7. [x] **Task 3** — declared C++17 explicitly in 13 `.vcxproj`
 8. [ ] **Task 13** — 26 clear-text `http://` URLs —
        `grep -rn "http://" src --include=*.cpp --include=*.h --include=*.rc`;
        check `https://` works before switching

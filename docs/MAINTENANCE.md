@@ -180,7 +180,7 @@ simulating anything at all before assuming its length is earning something.
 |---|---|---|
 | 1 | Post-build copy with spaced paths | **done** — PR #38 |
 | 2 | Debug build warnings | **done** |
-| 3 | Declare C++17 explicitly | open — 13 of 14 projects |
+| 3 | Declare C++17 explicitly | **done** |
 | 4 | `resource.h` include style | **done** — PR #37 |
 | 5 | `aboutProc` truncates an `HBRUSH` | **done** — PR #39 |
 | 6 | Encapsulate mutable module globals | open |
@@ -248,10 +248,10 @@ the guide here — see the note at the end of this section.
    substitution that removed **all 44 remaining Debug warnings** (26 `D9035`,
    18 `LNK4075`). Doing it early means every later task's build output is
    readable.
-5. **Task 3.** Add `<LanguageStandard>stdcpp17</LanguageStandard>` to both
-   configurations of 13 projects. Trivial, and the submodule is already there, so
-   this ends the split where the libs compile as C++17 inside this very solution
-   and the savers do not.
+5. **Task 3 — DONE.** Added `<LanguageStandard>stdcpp17</LanguageStandard>` to
+   both configurations of 13 projects. Trivial, and the submodule was already
+   there, so this ended the split where the libs compiled as C++17 inside this
+   very solution and the savers did not.
 6. **Task 13.** 26 `http://` URLs across `.cpp` and `.rc`. A one-line change that
    clears 6 `cpp:S5332` findings, and these are live `ShellExecute` calls that
    open a browser, so it is a real if small user-facing fix.
@@ -352,10 +352,10 @@ plasma skyrocket solarwinds`.
 
 Together these took a Debug rebuild from 44 warnings to **0**.
 
-## Task 3 · Declare C++17 explicitly
+## Task 3 · Declare C++17 explicitly — DONE
 
-**13 `.vcxproj`** — every one except `starfield`. Add to the `<ClCompile>` group
-of **both** configurations:
+**13 `.vcxproj`** — every one except `starfield`. Added to the `<ClCompile>`
+group of **both** configurations:
 
 ```xml
 <LanguageStandard>stdcpp17</LanguageStandard>
@@ -364,16 +364,18 @@ of **both** configurations:
 ```bash
 grep -rL "LanguageStandard" src/*/*.vcxproj
 ```
+Returns empty since Task 3 landed.
 
-**Why:** no saver project declares a standard, so they land on the MSVC default
-(C++14), while `tests/` compiles as C++17 because GoogleTest forces it. The
-submodule now declares C++17 explicitly in all three of its build systems
-(rslibs L3), and its projects are built *by this solution* — so today one
-solution compiles its libraries as C++17 and its executables as C++14.
+**Why:** twelve savers plus `implicitDemo` declared no standard, so they landed
+on the MSVC default (C++14) — `starfield` was the one saver that already
+declared one — while `tests/` compiled as C++17 because GoogleTest forces it.
+The submodule declares C++17 explicitly in all three of its build systems
+(rslibs L3), and its projects are built *by this solution* — so one solution
+used to compile its libraries as C++17 and its executables as C++14.
 
 Set both configurations together. Debug and Release compiling different language
-versions is a worse failure mode than the consistent implicit default they have
-now.
+versions is a worse failure mode than the consistent implicit default they
+had.
 
 **Risk is low.** A scan for every construct C++17 *removed* found zero hits
 across `src/` and `libs/`: `register`, `auto_ptr`, `random_shuffle`, `bind1st`,
