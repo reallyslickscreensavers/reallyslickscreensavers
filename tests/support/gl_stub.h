@@ -63,6 +63,10 @@ struct Trace {
 	int texturesGenerated = 0;
 	int listsGenerated = 0;
 
+	// Values requested through WGL_EXT_swap_control. Kept as arguments rather
+	// than only call counts so a test can distinguish VSync off (0) from on (1).
+	std::vector<int> swapIntervals;
+
 	// Readback calls handed an enum this stub does not answer, as
 	// {function name, enum}. Real GL raises GL_INVALID_ENUM and leaves the
 	// caller's buffer untouched, so whatever the caller does next is reading
@@ -91,6 +95,10 @@ void reset();
 // rather than the context - so a case that changes it puts it back, as the
 // Hyperspace fixture does in TearDown.
 void setExtensionString(const char* extensions);
+
+// Makes wglGetProcAddress report WGL_EXT_swap_control as unavailable. Like the
+// extension string, this models context capability and is not reset by reset().
+void setSwapControlAvailable(bool available);
 
 // True when every recorded primitive has a vertex count legal for its mode:
 // GL_TRIANGLES divisible by 3, GL_QUADS by 4, GL_LINES by 2, and so on.
