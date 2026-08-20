@@ -41,6 +41,11 @@ protected:
         rsRandGen().seed(savertest::kTestSeed);
         setDefaults();
     }
+
+    void TearDown() override {
+        glstub::setSwapControlAvailable(true);
+        savertest::SaverFixture::TearDown();
+    }
 };
 
 }  // namespace
@@ -57,6 +62,22 @@ TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dStretch, TRUE);
     EXPECT_EQ(dShowCurves, FALSE);
     EXPECT_EQ(dFrameRateLimit, 0u);
+}
+
+TEST_F(Cyclone, DisablesVSyncForSoftwareFramePacing) {
+    startCapturingSetup();
+
+    ASSERT_EQ(glstub::trace().swapIntervals.size(), 1u);
+    EXPECT_EQ(glstub::trace().swapIntervals.front(), 0);
+}
+
+TEST_F(Cyclone, StartsWithoutSwapControlSupport) {
+    glstub::setSwapControlAvailable(false);
+
+    startCapturingSetup();
+
+    EXPECT_EQ(glstub::trace().countCalls("wglCreateContext"), 1);
+    EXPECT_EQ(glstub::trace().countCalls("wglSwapIntervalEXT"), 0);
 }
 
 // --- settings contract -----------------------------------------------------

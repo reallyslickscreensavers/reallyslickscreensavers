@@ -525,6 +525,15 @@ void idleProc(){
 }
 
 
+static void disableVerticalSync(){
+	typedef BOOL (APIENTRY *PFNWGLSWAPINTERVALEXTPROC)(int);
+	PFNWGLSWAPINTERVALEXTPROC swapInterval =
+		(PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	if(swapInterval)
+		swapInterval(0);
+}
+
+
 void initSaver(HWND hwnd){
 	int i, j;
 	RECT rect;
@@ -535,6 +544,10 @@ void initSaver(HWND hwnd){
 	hglrc = wglCreateContext(hdc);
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
+	// The WGL default is interval 1, which silently caps drawing at the display
+	// refresh rate. Cyclone's own limiter needs unsynchronised swaps so values
+	// above that refresh rate, and the explicit unlimited mode, remain meaningful.
+	disableVerticalSync();
 	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
 
 	glEnable(GL_DEPTH_TEST);

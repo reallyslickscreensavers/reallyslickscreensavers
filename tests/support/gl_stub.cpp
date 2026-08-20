@@ -347,6 +347,17 @@ void setExtensionString(const char* extensions)
 	extensionStorage() = extensions ? extensions : kDefaultExtensions;
 }
 
+bool& swapControlAvailableStorage()
+{
+	static bool available = true;
+	return available;
+}
+
+void setSwapControlAvailable(bool available)
+{
+	swapControlAvailableStorage() = available;
+}
+
 }  // namespace glstub
 
 // ---------------------------------------------------------------------------
@@ -719,9 +730,10 @@ GLint APIENTRY glGetUniformLocationARB(GLuint, const char*)
 	return 0;
 }
 
-BOOL WINAPI wglSwapIntervalEXT(int)
+BOOL WINAPI wglSwapIntervalEXT(int interval)
 {
 	REC(wglSwapIntervalEXT);
+	glstub::trace().swapIntervals.push_back(interval);
 	return TRUE;
 }
 
@@ -835,6 +847,9 @@ BOOL WINAPI wglSwapLayerBuffers(HDC, UINT) { REC(wglSwapLayerBuffers); return TR
 PROC WINAPI wglGetProcAddress(LPCSTR name)
 {
 	REC(wglGetProcAddress);
+	if (name != nullptr && std::strcmp(name, "wglSwapIntervalEXT") == 0
+			&& !glstub::swapControlAvailableStorage())
+		return nullptr;
 
 	// Resolves the entry points for the extensions glGetString advertises, and
 	// nothing else. An unknown name still gets nullptr, which is what a driver
