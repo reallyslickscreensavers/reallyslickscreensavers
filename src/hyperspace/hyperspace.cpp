@@ -27,10 +27,12 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include "resource.h"
 #include "extensions.h"
+#include "hyperspaceSettings.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -712,34 +714,34 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = val;
+		dSpeed = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kSpeed);
 	result = RegQueryValueEx(skey, "Stars", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dStars = val;
+		dStars = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kStars);
 	result = RegQueryValueEx(skey, "StarSize", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dStarSize = val;
+		dStarSize = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kStarSize);
 	result = RegQueryValueEx(skey, "Resolution", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dResolution = val;
+		dResolution = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kResolution);
 	result = RegQueryValueEx(skey, "Depth", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dDepth = val;
+		dDepth = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kDepth);
 	result = RegQueryValueEx(skey, "Fov", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFov = val;
+		dFov = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kFov);
 	result = RegQueryValueEx(skey, "UseTunnels", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dUseTunnels = val;
+		dUseTunnels = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kUseTunnels);
 	result = RegQueryValueEx(skey, "UseGoo", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dUseGoo = val;
+		dUseGoo = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kUseGoo);
 	result = RegQueryValueEx(skey, "Shaders", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dShaders = val;
+		dShaders = hyperspaceSettings::clampToRange(val, hyperspaceSettings::kShaders);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

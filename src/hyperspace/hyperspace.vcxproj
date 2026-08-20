@@ -143,6 +143,7 @@
     <ClInclude Include="tunnel.h" />
     <ClInclude Include="wavyNormalCubeMaps.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="hyperspaceSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />

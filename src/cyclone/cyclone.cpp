@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <rsText/rsText.h>
 #include <rsMath/rsMath.h>
 #include <math.h>
@@ -35,6 +36,7 @@
 #include <commctrl.h>
 #include <Rgbhsl/Rgbhsl.h>
 #include "resource.h"
+#include "cycloneSettings.h"
 
 
 class cyclone;
@@ -631,30 +633,29 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "Cyclones", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dCyclones = val;
+		dCyclones = cycloneSettings::clampToRange(val, cycloneSettings::kCyclones);
 	result = RegQueryValueEx(skey, "Particles", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dParticles = val;
+		dParticles = cycloneSettings::clampToRange(val, cycloneSettings::kParticles);
 	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSize = val;
+		dSize = cycloneSettings::clampToRange(val, cycloneSettings::kSize);
 	result = RegQueryValueEx(skey, "Complexity", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dComplexity = val;
-	if(dComplexity < 1) dComplexity = 1;
-	if(dComplexity > 10) dComplexity = 10;
+		dComplexity = cycloneSettings::clampToRange(val, cycloneSettings::kComplexity);
+	dComplexity = cycloneSettings::clampIntToRange(dComplexity, cycloneSettings::kComplexity);
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = val;
+		dSpeed = cycloneSettings::clampToRange(val, cycloneSettings::kSpeed);
 	result = RegQueryValueEx(skey, "Stretch", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dStretch = val;
+		dStretch = cycloneSettings::clampToRange(val, cycloneSettings::kStretch);
 	result = RegQueryValueEx(skey, "ShowCurves", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dShowCurves = val;
+		dShowCurves = cycloneSettings::clampToRange(val, cycloneSettings::kShowCurves);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

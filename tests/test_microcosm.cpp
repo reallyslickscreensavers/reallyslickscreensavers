@@ -24,6 +24,7 @@
 // For the gizmo list below. It is the saver's own header, reached through the
 // module include directory the same way resource.h is.
 #include "gizmo.h"
+#include "microcosmSettings.h"
 
 // microcosm.cpp has no header; its contract with the framework is by name. See
 // the note on cpp:S5421 in test_fieldlines.cpp - these are declarations, not
@@ -34,6 +35,9 @@ extern int dBackground;
 extern int dResolution;
 extern int dDepth;
 extern int dFov;
+extern int dGizmoSpeed;
+extern int dColorSpeed;
+extern int dCameraSpeed;
 extern int dShaders;
 extern int dFog;
 extern int gMode;
@@ -125,6 +129,19 @@ TEST(MicrocosmHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dFov, 0) << "preset " << preset << ": the projection divides by half its tangent";
         EXPECT_GT(dSingleTime + dKaleidoscopeTime, 0)
             << "preset " << preset << ": one of the two modes has to last a while";
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+            savertest::Ranged("dKaleidoscopeTime", dKaleidoscopeTime, microcosmSettings::kKaleidoscopeTime),
+            savertest::Ranged("dSingleTime", dSingleTime, microcosmSettings::kSingleTime),
+            savertest::Ranged("dBackground", dBackground, microcosmSettings::kBackground),
+            savertest::Ranged("dResolution", dResolution, microcosmSettings::kResolution),
+            savertest::Ranged("dDepth", dDepth, microcosmSettings::kDepth),
+            savertest::Ranged("dFov", dFov, microcosmSettings::kFov),
+            savertest::Ranged("dGizmoSpeed", dGizmoSpeed, microcosmSettings::kGizmoSpeed),
+            savertest::Ranged("dColorSpeed", dColorSpeed, microcosmSettings::kColorSpeed),
+            savertest::Ranged("dCameraSpeed", dCameraSpeed, microcosmSettings::kCameraSpeed),
+            savertest::Ranged("dShaders", dShaders, microcosmSettings::kShaders),
+            savertest::Ranged("dFog", dFog, microcosmSettings::kFog),
+        })) << "preset " << preset;
     }
 }
 
@@ -338,17 +355,29 @@ TEST(MicrocosmFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy
     gUseThreads = true;
 }
 
-TEST(MicrocosmFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(MicrocosmFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: it calls setDefaults(0) first and returns early if the key is
     // absent, so this cannot disturb the machine. That early return also means
-    // it covers little where the saver has never stored settings, CI included -
-    // see the note in test_cyclone.cpp.
+    // the clamp itself covers little where the saver has never stored settings,
+    // CI included - see the note in test_cyclone.cpp.
     readRegistry();
 
     EXPECT_GT(dResolution, 0) << "the implicit volume is sized from this";
     EXPECT_GT(dDepth, 0);
     EXPECT_GT(dFov, 0);
-    EXPECT_GE(dBackground, 0);
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dKaleidoscopeTime", dKaleidoscopeTime, microcosmSettings::kKaleidoscopeTime),
+        savertest::Ranged("dSingleTime", dSingleTime, microcosmSettings::kSingleTime),
+        savertest::Ranged("dBackground", dBackground, microcosmSettings::kBackground),
+        savertest::Ranged("dResolution", dResolution, microcosmSettings::kResolution),
+        savertest::Ranged("dDepth", dDepth, microcosmSettings::kDepth),
+        savertest::Ranged("dFov", dFov, microcosmSettings::kFov),
+        savertest::Ranged("dGizmoSpeed", dGizmoSpeed, microcosmSettings::kGizmoSpeed),
+        savertest::Ranged("dColorSpeed", dColorSpeed, microcosmSettings::kColorSpeed),
+        savertest::Ranged("dCameraSpeed", dCameraSpeed, microcosmSettings::kCameraSpeed),
+        savertest::Ranged("dShaders", dShaders, microcosmSettings::kShaders),
+        savertest::Ranged("dFog", dFog, microcosmSettings::kFog),
+    }));
 }
 
 // --- dialog procedures -----------------------------------------------------

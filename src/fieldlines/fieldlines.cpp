@@ -33,8 +33,10 @@
 #include <regstr.h>
 #include <commctrl.h>
 #include "resource.h"
+#include "fieldlinesSettings.h"
 
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <rsText/rsText.h>
 #include <rsMath/rsMath.h>
 
@@ -408,28 +410,28 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "Ions", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dIons = val;
+		dIons = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kIons);
 	result = RegQueryValueEx(skey, "StepSize", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dStepSize = val;
+		dStepSize = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kStepSize);
 	result = RegQueryValueEx(skey, "MaxSteps", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dMaxSteps = val;
+		dMaxSteps = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kMaxSteps);
 	result = RegQueryValueEx(skey, "Width", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dWidth = val;
+		dWidth = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kWidth);
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = val;
+		dSpeed = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kSpeed);
 	result = RegQueryValueEx(skey, "Constwidth", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dConstwidth = val;
+		dConstwidth = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kConstwidth);
 	result = RegQueryValueEx(skey, "Electric", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dElectric = val;
+		dElectric = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kElectric);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

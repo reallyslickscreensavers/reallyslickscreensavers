@@ -22,11 +22,13 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <time.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include <process.h>
 #include "resource.h"
+#include "microcosmSettings.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -1174,40 +1176,40 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "KaleidoscopeTime", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dKaleidoscopeTime = val;
+		dKaleidoscopeTime = microcosmSettings::clampToRange(val, microcosmSettings::kKaleidoscopeTime);
 	result = RegQueryValueEx(skey, "SingleTime", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSingleTime = val;
+		dSingleTime = microcosmSettings::clampToRange(val, microcosmSettings::kSingleTime);
 	result = RegQueryValueEx(skey, "SingleBackground", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dBackground = val;
+		dBackground = microcosmSettings::clampToRange(val, microcosmSettings::kBackground);
 	result = RegQueryValueEx(skey, "Resolution", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dResolution = val;
+		dResolution = microcosmSettings::clampToRange(val, microcosmSettings::kResolution);
 	result = RegQueryValueEx(skey, "Depth", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dDepth = val;
+		dDepth = microcosmSettings::clampToRange(val, microcosmSettings::kDepth);
 	result = RegQueryValueEx(skey, "Fov", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFov = val;
+		dFov = microcosmSettings::clampToRange(val, microcosmSettings::kFov);
 	result = RegQueryValueEx(skey, "CameraSpeed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dCameraSpeed = val;
+		dCameraSpeed = microcosmSettings::clampToRange(val, microcosmSettings::kCameraSpeed);
 	result = RegQueryValueEx(skey, "GizmoSpeed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dGizmoSpeed = val;
+		dGizmoSpeed = microcosmSettings::clampToRange(val, microcosmSettings::kGizmoSpeed);
 	result = RegQueryValueEx(skey, "ColorSpeed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dColorSpeed = val;
+		dColorSpeed = microcosmSettings::clampToRange(val, microcosmSettings::kColorSpeed);
 	result = RegQueryValueEx(skey, "Shaders", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dShaders = val;
+		dShaders = microcosmSettings::clampToRange(val, microcosmSettings::kShaders);
 	result = RegQueryValueEx(skey, "Fog", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFog = val;
+		dFog = microcosmSettings::clampToRange(val, microcosmSettings::kFog);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

@@ -34,12 +34,14 @@
 #include <commctrl.h>
 
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <rsText/rsText.h>
 #include <rsMath/rsMath.h>
 
 #include "texture.h"
 #include "camera.h"
 #include "resource.h"
+#include "latticeSettings.h"
 
 
 // Where in the registry to store user defined variables
@@ -49,6 +51,9 @@
 #define R2D 57.2957795131f
 #define NUMOBJECTS 20
 #define LATSIZE 12
+
+static_assert(latticeSettings::kDepth.hi == LATSIZE - 2,
+              "lattice depth range must track LATSIZE");
 
 
 // Globals
@@ -923,40 +928,40 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "Longitude", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dLongitude = val;
+		dLongitude = latticeSettings::clampToRange(val, latticeSettings::kLongitude);
 	result = RegQueryValueEx(skey, "Latitude", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dLatitude = val;
+		dLatitude = latticeSettings::clampToRange(val, latticeSettings::kLatitude);
 	result = RegQueryValueEx(skey, "Thick", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dThick = val;
+		dThick = latticeSettings::clampToRange(val, latticeSettings::kThick);
 	result = RegQueryValueEx(skey, "Density", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dDensity = val;
+		dDensity = latticeSettings::clampToRange(val, latticeSettings::kDensity);
 	result = RegQueryValueEx(skey, "Depth", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dDepth = val;
+		dDepth = latticeSettings::clampToRange(val, latticeSettings::kDepth);
 	result = RegQueryValueEx(skey, "Fov", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFov = val;
+		dFov = latticeSettings::clampToRange(val, latticeSettings::kFov);
 	result = RegQueryValueEx(skey, "Pathrand", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dPathrand = val;
+		dPathrand = latticeSettings::clampToRange(val, latticeSettings::kPathrand);
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = val;
+		dSpeed = latticeSettings::clampToRange(val, latticeSettings::kSpeed);
 	result = RegQueryValueEx(skey, "Texture", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dTexture = val;
+		dTexture = latticeSettings::clampToRange(val, latticeSettings::kTexture);
 	result = RegQueryValueEx(skey, "Smooth", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSmooth = val;
+		dSmooth = latticeSettings::clampToRange(val, latticeSettings::kSmooth);
 	result = RegQueryValueEx(skey, "Fog", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFog = val;
+		dFog = latticeSettings::clampToRange(val, latticeSettings::kFog);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

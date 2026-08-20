@@ -66,9 +66,15 @@ examined) in `rsWin32SaverSettings.h` and dispatches through a `SaverOps` table.
   spells teardown `cleanup` (lowercase u); `flux` returns `LRESULT`. Each is a link error, worked
   around by a one-line shim in the test file rather than by touching saver source.
 - Settings are module globals named `d*` (`dSpeed`, `dParticles`, …), read from `HKEY_CURRENT_USER`
-  in `readRegistry()` and written by the config dialog's `IDOK`. **~124 are unclamped** (Task 11);
-  `src/starfield/starfieldSettings.h` is the model — a `windows.h`-free header with the ranges and a
-  pure `clampToRange`, which is what makes the bounds testable without an `HWND`.
+  in `readRegistry()` and written by the config dialog's `IDOK`. **All 114 saver-specific settings,
+  plus `dFrameRateLimit` in all 13 savers, are now clamped on read** (Task 11, done). Each saver has
+  a `windows.h`-free `<name>Settings.h` — `src/starfield/starfieldSettings.h` is still the worked
+  example — declaring a `Range` per setting and re-exporting the pure clamps
+  (`rssaver::clampToRange`/`clampIntToRange`) from the shared `src/common/saverSettings.h`, which is
+  what makes the bounds testable without an `HWND`. `tests/tools/check-settings-wiring.cmake`, run as
+  the `SettingsClampWiring` ctest case, is the gate that catches a setting clamped against the wrong
+  range constant — a mistake that otherwise compiles clean and, because `readRegistry` returns early
+  when no key exists, may never execute on CI.
 - `readRegistry` returns early when the key does not exist, which is the case on a fresh CI runner,
   so coverage reads about five points lower in CI than on a machine that has run the savers.
 

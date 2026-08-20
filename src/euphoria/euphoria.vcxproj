@@ -120,6 +120,7 @@
   <ItemGroup>
     <ClInclude Include="texture.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="euphoriaSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />

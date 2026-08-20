@@ -36,16 +36,22 @@
 #include <rsMath/rsMath.h>
 #include <Rgbhsl/Rgbhsl.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <rsText/rsText.h>
 
 #include "resource.h"
 
 #include "texture.h"
+#include "euphoriaSettings.h"
 
 #define NUMCONSTS 9
 #define PIx2 6.28318530718f
 #define FEEDBACKSIZE_MIN 1
 #define FEEDBACKSIZE_MAX 10
+
+static_assert(euphoriaSettings::kFeedbacksize.lo == FEEDBACKSIZE_MIN &&
+              euphoriaSettings::kFeedbacksize.hi == FEEDBACKSIZE_MAX,
+              "feedback size range must track the FEEDBACKSIZE_* macros");
 
 
 class wisp;
@@ -709,37 +715,37 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "Wisps", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dWisps = val;
+		dWisps = euphoriaSettings::clampToRange(val, euphoriaSettings::kWisps);
 	result = RegQueryValueEx(skey, "Background", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dBackground = val;
+		dBackground = euphoriaSettings::clampToRange(val, euphoriaSettings::kBackground);
 	result = RegQueryValueEx(skey, "Density", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dDensity = val;
+		dDensity = euphoriaSettings::clampToRange(val, euphoriaSettings::kDensity);
 	result = RegQueryValueEx(skey, "Visibility", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dVisibility = val;
+		dVisibility = euphoriaSettings::clampToRange(val, euphoriaSettings::kVisibility);
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = val;
+		dSpeed = euphoriaSettings::clampToRange(val, euphoriaSettings::kSpeed);
 	result = RegQueryValueEx(skey, "Feedback", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFeedback = val;
+		dFeedback = euphoriaSettings::clampToRange(val, euphoriaSettings::kFeedback);
 	result = RegQueryValueEx(skey, "Feedbackspeed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFeedbackspeed = val;
+		dFeedbackspeed = euphoriaSettings::clampToRange(val, euphoriaSettings::kFeedbackspeed);
 	result = RegQueryValueEx(skey, "Feedbacksize", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFeedbacksize = val;
+		dFeedbacksize = euphoriaSettings::clampToRange(val, euphoriaSettings::kFeedbacksize);
 	result = RegQueryValueEx(skey, "Texture", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dTexture = val;
+		dTexture = euphoriaSettings::clampToRange(val, euphoriaSettings::kTexture);
 	result = RegQueryValueEx(skey, "Wireframe", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dWireframe = val;
+		dWireframe = euphoriaSettings::clampToRange(val, euphoriaSettings::kWireframe);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }
