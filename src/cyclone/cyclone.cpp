@@ -626,7 +626,7 @@ void setDefaults(){
 	dSpeed = cycloneSettings::kDefaultSpeed;
 	dStretch = TRUE;
 	dShowCurves = FALSE;
-	dFrameRateLimit = 0;
+	dFrameRateLimit = cycloneSettings::kDefaultFrameRate;
 }
 
 

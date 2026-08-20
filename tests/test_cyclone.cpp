@@ -61,7 +61,7 @@ TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dSpeed, cycloneSettings::kDefaultSpeed);
     EXPECT_EQ(dStretch, TRUE);
     EXPECT_EQ(dShowCurves, FALSE);
-    EXPECT_EQ(dFrameRateLimit, 0u);
+    EXPECT_EQ(dFrameRateLimit, (unsigned int)cycloneSettings::kDefaultFrameRate);
 }
 
 TEST_F(Cyclone, DisablesVSyncForSoftwareFramePacing) {
@@ -93,6 +93,8 @@ TEST(CycloneSettings, DefaultsLieWithinTheirRanges) {
     EXPECT_LE(cycloneSettings::kDefaultComplexity, cycloneSettings::kComplexity.hi);
     EXPECT_GE(cycloneSettings::kDefaultSpeed, cycloneSettings::kSpeed.lo);
     EXPECT_LE(cycloneSettings::kDefaultSpeed, cycloneSettings::kSpeed.hi);
+    EXPECT_GE(cycloneSettings::kDefaultFrameRate, cycloneSettings::kFrameRate.lo);
+    EXPECT_LE(cycloneSettings::kDefaultFrameRate, cycloneSettings::kFrameRate.hi);
 }
 
 TEST(CycloneSettings, RegistryValuesClampWithoutSignedNarrowing) {
@@ -321,5 +323,5 @@ TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
     EXPECT_EQ(dParticles, defaultParticles);
-    EXPECT_EQ(dFrameRateLimit, 0u);
+    EXPECT_EQ(dFrameRateLimit, (unsigned int)cycloneSettings::kDefaultFrameRate);
 }

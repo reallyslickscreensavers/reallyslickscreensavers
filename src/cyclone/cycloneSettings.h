@@ -35,7 +35,7 @@ const int kDefaultParticles  = 400;
 const int kDefaultSize       = 7;
 const int kDefaultComplexity = 3;
 const int kDefaultSpeed      = 10;
-const int kDefaultFrameRate  = 60;  // Offered while limiting is switched off.
+const int kDefaultFrameRate  = 60;
 
 
 // Registry values arrive as DWORD. Keeping this unsigned until after the upper
