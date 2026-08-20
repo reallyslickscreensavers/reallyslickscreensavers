@@ -21,6 +21,7 @@
 #include "particle.h"
 
 #include "resource.h"
+#include "skyrocketSettings.h"
 
 // skyrocket.cpp has no header; its contract with the framework is by name. See
 // the note on cpp:S5421 in test_fieldlines.cpp - these are declarations, not
@@ -176,6 +177,27 @@ TEST(SkyrocketHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dWind, 20);
     EXPECT_EQ(dStardensity, 20);
     EXPECT_EQ(dSound, 100);
+}
+
+TEST(SkyrocketHarness, DefaultsSitInsideTheDeclaredRanges) {
+    // The header declares the ranges and the saver picks the defaults; nothing
+    // else checks that the two agree.
+    setDefaults();
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dMaxrockets", dMaxrockets, skyrocketSettings::kMaxrockets),
+        savertest::Ranged("dSmoke", dSmoke, skyrocketSettings::kSmoke),
+        savertest::Ranged("dExplosionsmoke", dExplosionsmoke, skyrocketSettings::kExplosionsmoke),
+        savertest::Ranged("dWind", dWind, skyrocketSettings::kWind),
+        savertest::Ranged("dAmbient", dAmbient, skyrocketSettings::kAmbient),
+        savertest::Ranged("dStardensity", dStardensity, skyrocketSettings::kStardensity),
+        savertest::Ranged("dFlare", dFlare, skyrocketSettings::kFlare),
+        savertest::Ranged("dMoonglow", dMoonglow, skyrocketSettings::kMoonglow),
+        savertest::Ranged("dSound", dSound, skyrocketSettings::kSound),
+        savertest::Ranged("dMoon", dMoon, skyrocketSettings::kMoon),
+        savertest::Ranged("dClouds", dClouds, skyrocketSettings::kClouds),
+        savertest::Ranged("dEarth", dEarth, skyrocketSettings::kEarth),
+        savertest::Ranged("dIllumination", dIllumination, skyrocketSettings::kIllumination),
+    }));
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -724,18 +746,30 @@ TEST(SkyrocketFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(SkyrocketFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(SkyrocketFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine. That early return also
-    // means it covers little where the saver has never stored settings, CI
-    // included - see the note in test_cyclone.cpp.
+    // means the clamp itself covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
     setDefaults();
     readRegistry();
 
     EXPECT_GT(dMaxrockets, 0) << "the rocket array is allocated with this count";
-    EXPECT_GE(dSmoke, 0);
-    EXPECT_GE(dStardensity, 0);
-    EXPECT_GE(dSound, 0) << "and it scales the gain, so it must not go negative";
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dMaxrockets", dMaxrockets, skyrocketSettings::kMaxrockets),
+        savertest::Ranged("dSmoke", dSmoke, skyrocketSettings::kSmoke),
+        savertest::Ranged("dExplosionsmoke", dExplosionsmoke, skyrocketSettings::kExplosionsmoke),
+        savertest::Ranged("dWind", dWind, skyrocketSettings::kWind),
+        savertest::Ranged("dAmbient", dAmbient, skyrocketSettings::kAmbient),
+        savertest::Ranged("dStardensity", dStardensity, skyrocketSettings::kStardensity),
+        savertest::Ranged("dFlare", dFlare, skyrocketSettings::kFlare),
+        savertest::Ranged("dMoonglow", dMoonglow, skyrocketSettings::kMoonglow),
+        savertest::Ranged("dSound", dSound, skyrocketSettings::kSound),
+        savertest::Ranged("dMoon", dMoon, skyrocketSettings::kMoon),
+        savertest::Ranged("dClouds", dClouds, skyrocketSettings::kClouds),
+        savertest::Ranged("dEarth", dEarth, skyrocketSettings::kEarth),
+        savertest::Ranged("dIllumination", dIllumination, skyrocketSettings::kIllumination),
+    }));
 }
 
 // --- dialog procedures -----------------------------------------------------

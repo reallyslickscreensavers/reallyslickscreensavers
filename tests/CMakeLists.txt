@@ -23,10 +23,12 @@ set(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
 # Test executable for header-only settings logic that needs no saver body
 add_executable(rssavers_tests
     test_starfieldSettings.cpp
+    test_saverSettings.cpp
 )
 
 target_include_directories(rssavers_tests PRIVATE
     ${REPO_ROOT}/src/starfield    # for "starfieldSettings.h"
+    ${REPO_ROOT}/src              # for "<name>/<name>Settings.h"
 )
 
 target_link_libraries(rssavers_tests PRIVATE GTest::gtest_main)
@@ -34,6 +36,18 @@ target_link_libraries(rssavers_tests PRIVATE GTest::gtest_main)
 enable_testing()
 include(GoogleTest)
 gtest_discover_tests(rssavers_tests DISCOVERY_MODE PRE_TEST)
+
+# Source-text gate on the settings clamps (Task 11 in docs/MAINTENANCE.md).
+# This is the only check that catches a mis-paired range constant: dSize =
+# flocksSettings::clampToRange(val, flocksSettings::kSpeed) compiles clean,
+# and every clamp site sits below readRegistry's early return, so on a
+# machine with no stored settings - CI included - none of those lines ever
+# executes. Runs as a ctest case so it fails the same pipeline steps the unit
+# tests do.
+add_test(NAME SettingsClampWiring
+         COMMAND ${CMAKE_COMMAND}
+                 -DREPO_ROOT=${REPO_ROOT}
+                 -P ${CMAKE_CURRENT_SOURCE_DIR}/tools/check-settings-wiring.cmake)
 
 # ---------------------------------------------------------------------------
 # Saver test harness

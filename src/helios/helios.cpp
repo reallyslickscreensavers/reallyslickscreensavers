@@ -35,6 +35,7 @@
 #include <commctrl.h>
 
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <rsText/rsText.h>
 #include <rsMath/rsMath.h>
 #include <rgbhsl/rgbhsl.h>
@@ -45,6 +46,7 @@
 #include "resource.h"
 
 #include "spheremap.h"
+#include "heliosSettings.h"
 
 
 #define LIGHTSIZE 64
@@ -919,31 +921,31 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "Ions", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dIons = val;
+		dIons = heliosSettings::clampToRange(val, heliosSettings::kIons);
 	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSize = val;
+		dSize = heliosSettings::clampToRange(val, heliosSettings::kSize);
 	result = RegQueryValueEx(skey, "Emitters", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dEmitters = val;
+		dEmitters = heliosSettings::clampToRange(val, heliosSettings::kEmitters);
 	result = RegQueryValueEx(skey, "Attracters", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dAttracters = val;
+		dAttracters = heliosSettings::clampToRange(val, heliosSettings::kAttracters);
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = val;
+		dSpeed = heliosSettings::clampToRange(val, heliosSettings::kSpeed);
 	result = RegQueryValueEx(skey, "Cameraspeed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dCameraspeed = val;
+		dCameraspeed = heliosSettings::clampToRange(val, heliosSettings::kCameraspeed);
 	result = RegQueryValueEx(skey, "Surface", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSurface = val;
+		dSurface = heliosSettings::clampToRange(val, heliosSettings::kSurface);
 	result = RegQueryValueEx(skey, "Blur", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dBlur = val;
+		dBlur = heliosSettings::clampToRange(val, heliosSettings::kBlur);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

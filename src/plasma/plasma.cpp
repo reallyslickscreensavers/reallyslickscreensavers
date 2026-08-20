@@ -24,11 +24,13 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <process.h>
 #include <time.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include "resource.h"
+#include "plasmaSettings.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -365,19 +367,19 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "Zoom", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dZoom = val;
+		dZoom = plasmaSettings::clampToRange(val, plasmaSettings::kZoom);
 	result = RegQueryValueEx(skey, "Focus", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFocus = val;
+		dFocus = plasmaSettings::clampToRange(val, plasmaSettings::kFocus);
 	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSpeed = val;
+		dSpeed = plasmaSettings::clampToRange(val, plasmaSettings::kSpeed);
 	result = RegQueryValueEx(skey, "Resolution", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dResolution = val;
+		dResolution = plasmaSettings::clampToRange(val, plasmaSettings::kResolution);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

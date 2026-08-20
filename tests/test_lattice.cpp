@@ -20,6 +20,7 @@
 
 #include "camera.h"
 #include "resource.h"
+#include "latticeSettings.h"
 
 // lattice.cpp has no header; its contract with the framework is by name. See
 // the note on cpp:S5421 in test_fieldlines.cpp - these are declarations, not
@@ -31,6 +32,7 @@ extern int dDensity;
 extern int dDepth;
 extern int dFov;
 extern int dPathrand;
+extern int dSpeed;
 extern int dTexture;
 extern BOOL dSmooth;
 extern BOOL dFog;
@@ -99,6 +101,19 @@ TEST(LatticeHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dDepth, 0) << "preset " << preset << ": the projection divides by it";
         EXPECT_GT(dFov, 0) << "preset " << preset << ": and by half its tangent";
         EXPECT_LT(dPathrand, 11) << "preset " << preset << ": rsRandi(11 - dPathrand) needs headroom";
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+            savertest::Ranged("dLongitude", dLongitude, latticeSettings::kLongitude),
+            savertest::Ranged("dLatitude", dLatitude, latticeSettings::kLatitude),
+            savertest::Ranged("dThick", dThick, latticeSettings::kThick),
+            savertest::Ranged("dDensity", dDensity, latticeSettings::kDensity),
+            savertest::Ranged("dDepth", dDepth, latticeSettings::kDepth),
+            savertest::Ranged("dFov", dFov, latticeSettings::kFov),
+            savertest::Ranged("dPathrand", dPathrand, latticeSettings::kPathrand),
+            savertest::Ranged("dSpeed", dSpeed, latticeSettings::kSpeed),
+            savertest::Ranged("dTexture", dTexture, latticeSettings::kTexture),
+            savertest::Ranged("dSmooth", dSmooth, latticeSettings::kSmooth),
+            savertest::Ranged("dFog", dFog, latticeSettings::kFog),
+        })) << "preset " << preset;
     }
 }
 
@@ -387,21 +402,30 @@ TEST(LatticeFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) 
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(LatticeFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(LatticeFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine. That early return also
-    // means it covers little where the saver has never stored settings, CI
-    // included - see the note in test_cyclone.cpp.
+    // means the clamp itself covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
     setDefaults(DEFAULTS1);
     readRegistry();
 
-    EXPECT_GT(dLongitude, 0);
-    EXPECT_GT(dLatitude, 0);
-    EXPECT_GT(dDepth, 0);
-    EXPECT_GT(dFov, 0);
     EXPECT_LT(dPathrand, 11)
         << "draw() calls rsRandi(11 - dPathrand); rslibs L4 made that safe, but "
            "the setting still has to stay in range";
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dLongitude", dLongitude, latticeSettings::kLongitude),
+        savertest::Ranged("dLatitude", dLatitude, latticeSettings::kLatitude),
+        savertest::Ranged("dThick", dThick, latticeSettings::kThick),
+        savertest::Ranged("dDensity", dDensity, latticeSettings::kDensity),
+        savertest::Ranged("dDepth", dDepth, latticeSettings::kDepth),
+        savertest::Ranged("dFov", dFov, latticeSettings::kFov),
+        savertest::Ranged("dPathrand", dPathrand, latticeSettings::kPathrand),
+        savertest::Ranged("dSpeed", dSpeed, latticeSettings::kSpeed),
+        savertest::Ranged("dTexture", dTexture, latticeSettings::kTexture),
+        savertest::Ranged("dSmooth", dSmooth, latticeSettings::kSmooth),
+        savertest::Ranged("dFog", dFog, latticeSettings::kFog),
+    }));
 }
 
 // --- dialog procedures -----------------------------------------------------

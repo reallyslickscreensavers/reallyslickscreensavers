@@ -12,6 +12,7 @@
 #include <array>
 
 #include "resource.h"
+#include "euphoriaSettings.h"
 
 // euphoria.cpp has no header; its contract with the framework is by name. See
 // the note on cpp:S5421 in test_fieldlines.cpp - these are declarations, not
@@ -20,7 +21,10 @@ extern int dWisps;
 extern int dBackground;
 extern int dDensity;
 extern int dVisibility;
+extern int dSpeed;
 extern int dFeedback;
+extern int dFeedbackspeed;
+extern int dFeedbacksize;
 extern int dWireframe;
 extern int dTexture;
 extern int readyToDraw;
@@ -73,6 +77,18 @@ TEST(EuphoriaHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dWisps + dBackground, 0) << "preset " << preset << ": nothing would draw";
         EXPECT_GT(dDensity, 0) << "preset " << preset << ": the mesh is sized from this";
         EXPECT_GE(dFeedback, 0) << "preset " << preset;
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+            savertest::Ranged("dWisps", dWisps, euphoriaSettings::kWisps),
+            savertest::Ranged("dBackground", dBackground, euphoriaSettings::kBackground),
+            savertest::Ranged("dDensity", dDensity, euphoriaSettings::kDensity),
+            savertest::Ranged("dVisibility", dVisibility, euphoriaSettings::kVisibility),
+            savertest::Ranged("dSpeed", dSpeed, euphoriaSettings::kSpeed),
+            savertest::Ranged("dFeedback", dFeedback, euphoriaSettings::kFeedback),
+            savertest::Ranged("dFeedbackspeed", dFeedbackspeed, euphoriaSettings::kFeedbackspeed),
+            savertest::Ranged("dFeedbacksize", dFeedbacksize, euphoriaSettings::kFeedbacksize),
+            savertest::Ranged("dTexture", dTexture, euphoriaSettings::kTexture),
+            savertest::Ranged("dWireframe", dWireframe, euphoriaSettings::kWireframe),
+        })) << "preset " << preset;
     }
 }
 
@@ -222,17 +238,26 @@ TEST(EuphoriaFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy)
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(EuphoriaFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(EuphoriaFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine. That early return also
-    // means it covers little where the saver has never stored settings, CI
-    // included - see the note in test_cyclone.cpp.
+    // means the clamp itself covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
     setDefaults(DEFAULTS1);
     readRegistry();
 
-    EXPECT_GT(dWisps + dBackground, 0);
-    EXPECT_GT(dDensity, 0);
-    EXPECT_GT(dVisibility, 0);
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dWisps", dWisps, euphoriaSettings::kWisps),
+        savertest::Ranged("dBackground", dBackground, euphoriaSettings::kBackground),
+        savertest::Ranged("dDensity", dDensity, euphoriaSettings::kDensity),
+        savertest::Ranged("dVisibility", dVisibility, euphoriaSettings::kVisibility),
+        savertest::Ranged("dSpeed", dSpeed, euphoriaSettings::kSpeed),
+        savertest::Ranged("dFeedback", dFeedback, euphoriaSettings::kFeedback),
+        savertest::Ranged("dFeedbackspeed", dFeedbackspeed, euphoriaSettings::kFeedbackspeed),
+        savertest::Ranged("dFeedbacksize", dFeedbacksize, euphoriaSettings::kFeedbacksize),
+        savertest::Ranged("dTexture", dTexture, euphoriaSettings::kTexture),
+        savertest::Ranged("dWireframe", dWireframe, euphoriaSettings::kWireframe),
+    }));
 }
 
 // --- dialog procedures -----------------------------------------------------

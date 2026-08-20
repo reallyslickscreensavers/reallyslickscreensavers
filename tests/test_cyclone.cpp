@@ -11,6 +11,7 @@
 
 
 #include "resource.h"
+#include "cycloneSettings.h"
 
 // cyclone.cpp has no header; its contract with the framework is by name.
 // SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
@@ -19,6 +20,8 @@ extern int dCyclones;
 extern int dParticles;
 extern int dSize;
 extern int dComplexity;
+extern int dSpeed;
+extern BOOL dStretch;
 extern BOOL dShowCurves;
 extern int readyToDraw;
 
@@ -51,6 +54,21 @@ TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dSize, 7);
 }
 
+TEST(CycloneHarness, DefaultsSitInsideTheDeclaredRanges) {
+    // The header declares the ranges and the saver picks the defaults; nothing
+    // else checks that the two agree.
+    setDefaults();
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dCyclones", dCyclones, cycloneSettings::kCyclones),
+        savertest::Ranged("dParticles", dParticles, cycloneSettings::kParticles),
+        savertest::Ranged("dSize", dSize, cycloneSettings::kSize),
+        savertest::Ranged("dComplexity", dComplexity, cycloneSettings::kComplexity),
+        savertest::Ranged("dSpeed", dSpeed, cycloneSettings::kSpeed),
+        savertest::Ranged("dStretch", dStretch, cycloneSettings::kStretch),
+        savertest::Ranged("dShowCurves", dShowCurves, cycloneSettings::kShowCurves),
+    }));
+}
+
 // --- the BLOCKER guard -----------------------------------------------------
 //
 // SonarCloud reports cpp:S3519 at cyclone.cpp:155 and :163: a heap access at a
@@ -61,25 +79,36 @@ TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
 // That cannot happen: screenSaverProc calls readRegistry() before initSaver(),
 // and readRegistry clamps dComplexity to 1..10 unconditionally - the clamp sits
 // outside the RegQueryValueEx success check, so it applies to the default value
-// too (cyclone.cpp:646, added by PR #35).
+// too (cyclone.cpp:646).
 //
-// KNOWN LIMITATION - read this before trusting the guard.
+// Task 11 in docs/MAINTENANCE.md is done, and it did NOT make this guard
+// unconditional - read this before trusting it that way.
 //
-// readRegistry returns early when HKCU\Software\Really Slick\Cyclone does not
-// exist, which is the case on a fresh CI runner and on any machine where the
-// saver has never stored settings. There the clamp lines never execute and
-// these tests only confirm that setDefaults' value survives. They bite fully
-// only where a key exists.
+// The clamp is now a pure function, cycloneSettings::clampIntToRange, tested
+// without a registry in rssavers_tests (tests/test_saverSettings.cpp). But the
+// registry read that feeds dComplexity at cyclone.cpp:643 still executes only
+// where a key exists; readRegistry returns early when
+// HKCU\Software\Really Slick\Cyclone does not exist, which is the case on a
+// fresh CI runner and on any machine where the saver has never stored
+// settings. There the read at :643 never runs and these tests only confirm
+// that setDefaults' value survives it. The unconditional guard at :646 is what
+// makes the BLOCKER finding safe regardless: it runs on every path below the
+// early return, which is what the three cases below pin.
 //
-// Exercising the populated path means writing to that real key, which would
-// modify the developer's own saver settings, so it is deliberately not done.
-// The way to make this guard unconditional is to give cyclone a settings header
-// with a pure clamp function - the starfieldSettings.h / rsWin32SaverSettings.h
-// pattern - and test that directly. That is Task 11's refactor.
+// Exercising the registry-populated path would mean writing to that real key,
+// which would modify the developer's own saver settings, so it is
+// deliberately not done.
 //
-// The same caveat applies to the ReadRegistry tests in the other suites, and it
-// is why coverage on CI sits about five points below a developer machine that
-// has run the savers.
+// Setting-to-constant pairing (dComplexity clamped against kComplexity, not
+// some other saver's range of the same shape) is enforced separately by the
+// SettingsClampWiring ctest case (tests/tools/check-settings-wiring.cmake),
+// which is the only check that would catch a mis-paired constant - a runtime
+// assertion here cannot, because a wrong-but-similarly-shaped range can still
+// pass a range check.
+//
+// The same caveat about the no-key path applies to the ReadRegistry tests in
+// the other suites, and it is why coverage on CI sits about five points below
+// a developer machine that has run the savers.
 
 TEST(CycloneBlockerGuard, ReadRegistryAlwaysLeavesComplexityInRange) {
     dComplexity = -5;
@@ -111,6 +140,33 @@ TEST(CycloneBlockerGuard, CreateClampsBeforeAllocating) {
     EXPECT_EQ(readyToDraw, 1);
 
     screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
+}
+
+// No existing framework-level readRegistry test to rename: cyclone's
+// readRegistry coverage is the CycloneBlockerGuard suite above, which is left
+// byte-for-byte untouched as a regression check on the clampIntToRange
+// substitution. This is new, covering the other six settings the guard above
+// does not.
+TEST(CycloneFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
+    dCyclones = -1;
+    dParticles = 100000;
+    dSize = -1;
+    dComplexity = -1;
+    dSpeed = 100000;
+    dStretch = -1;
+    dShowCurves = 100000;
+
+    readRegistry();
+
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dCyclones", dCyclones, cycloneSettings::kCyclones),
+        savertest::Ranged("dParticles", dParticles, cycloneSettings::kParticles),
+        savertest::Ranged("dSize", dSize, cycloneSettings::kSize),
+        savertest::Ranged("dComplexity", dComplexity, cycloneSettings::kComplexity),
+        savertest::Ranged("dSpeed", dSpeed, cycloneSettings::kSpeed),
+        savertest::Ranged("dStretch", dStretch, cycloneSettings::kStretch),
+        savertest::Ranged("dShowCurves", dShowCurves, cycloneSettings::kShowCurves),
+    }));
 }
 
 // --- a frame ---------------------------------------------------------------

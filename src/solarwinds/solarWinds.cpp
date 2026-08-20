@@ -23,9 +23,11 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include "resource.h"
+#include "solarWindsSettings.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -603,34 +605,34 @@ void readRegistry(){
 
 	result = RegQueryValueEx(skey, "Winds", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dWinds = val;
+		dWinds = solarWindsSettings::clampToRange(val, solarWindsSettings::kWinds);
 	result = RegQueryValueEx(skey, "Emitters", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dEmitters = val;
+		dEmitters = solarWindsSettings::clampToRange(val, solarWindsSettings::kEmitters);
 	result = RegQueryValueEx(skey, "Particles", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dParticles = val;
+		dParticles = solarWindsSettings::clampToRange(val, solarWindsSettings::kParticles);
 	result = RegQueryValueEx(skey, "Geometry", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dGeometry = val;
+		dGeometry = solarWindsSettings::clampToRange(val, solarWindsSettings::kGeometry);
 	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dSize = val;
+		dSize = solarWindsSettings::clampToRange(val, solarWindsSettings::kSize);
 	result = RegQueryValueEx(skey, "Windspeed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dWindspeed = val;
+		dWindspeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kWindspeed);
 	result = RegQueryValueEx(skey, "Emitterspeed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dEmitterspeed = val;
+		dEmitterspeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kEmitterspeed);
 	result = RegQueryValueEx(skey, "Particlespeed", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dParticlespeed = val;
+		dParticlespeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kParticlespeed);
 	result = RegQueryValueEx(skey, "Blur", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dBlur = val;
+		dBlur = solarWindsSettings::clampToRange(val, solarWindsSettings::kBlur);
 	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
 	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

@@ -73,6 +73,9 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="skyrocketSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="shockwave.h">
       <Filter>Header Files</Filter>
     </ClInclude>

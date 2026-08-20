@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+#include <initializer_list>
+
 #include <Windows.h>
 
 // Included once here rather than in each suite: every one needs the GL_* enums
@@ -220,6 +222,35 @@ template <typename Proc>
         return ::testing::AssertionFailure() << "WM_HSCROLL should report TRUE";
     }
     return ::testing::AssertionSuccess();
+}
+
+// --- registry-sourced setting ranges ---------------------------------------
+//
+// One registry-backed setting and the bounds its own settings header
+// declares, carried as plain ints. This header deliberately does not include
+// src/common/saverSettings.h: "../common/..." does not resolve from
+// tests/support/, and add_saver_test gives the 13 saver targets no path into
+// src/common. Ranged() is a template, so RangeT is deduced in the suite's own
+// translation unit, which does include the saver's settings header.
+struct RangedSetting { const char* name; int value; int lo; int hi; };
+
+template <typename RangeT>
+RangedSetting Ranged(const char* name, int value, RangeT range) {
+    return RangedSetting{name, value, range.lo, range.hi};
+}
+
+inline ::testing::AssertionResult SettingsWithinDeclaredRanges(
+        std::initializer_list<RangedSetting> settings) {
+    ::testing::AssertionResult failure = ::testing::AssertionFailure();
+    bool bad = false;
+    for (const RangedSetting& s : settings) {
+        if (s.value < s.lo || s.value > s.hi) {
+            bad = true;
+            failure << s.name << " = " << s.value
+                    << " is outside [" << s.lo << ", " << s.hi << "]; ";
+        }
+    }
+    return bad ? failure : ::testing::AssertionSuccess();
 }
 
 }  // namespace savertest

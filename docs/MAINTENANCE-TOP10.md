@@ -40,8 +40,16 @@ against the current tree on 2026-08-19. Check items off as they land.
 8. [ ] **Task 13** — 26 clear-text `http://` URLs —
        `grep -rn "http://" src --include=*.cpp --include=*.h --include=*.rc`;
        check `https://` works before switching
-9. [ ] **Task 11** — ~124 unclamped registry values across 13 savers —
-       model is `src/starfield/starfieldSettings.h`
+9. [x] **Task 11** — 114 saver-specific settings plus 13 `dFrameRateLimit`
+       reads across 13 savers now clamped — `src/common/saverSettings.h` plus
+       a per-saver `<name>Settings.h` for each of the twelve that lacked one
+       (`src/starfield/starfieldSettings.h` was already the model);
+       `tests/tools/check-settings-wiring.cmake` (`SettingsClampWiring` ctest
+       case) enforces the setting-to-range pairing statically. Clamps run
+       where a registry key exists; `readRegistry`'s early return on the
+       no-key path is unchanged, so the CI coverage gap this task predicted
+       stays open — see the "What this does not do" note in
+       `docs/MAINTENANCE.md`
 10. [x] **Task 12** — deleted the 7 private PRNG copies (`cyclone`,
         `fieldlines`, `flocks`, `flux`, `plasma`, `solarwinds` on `rand()`, and
         `starfield`'s own `rsRandGen`) and unified all thirteen savers on

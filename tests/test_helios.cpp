@@ -13,6 +13,7 @@
 // rather than a probable one.
 
 #include "resource.h"
+#include "heliosSettings.h"
 
 // helios.cpp has no header; its contract with the framework is by name. See the
 // note on cpp:S5421 in test_fieldlines.cpp - these are declarations, not
@@ -22,6 +23,7 @@ extern int dSize;
 extern int dEmitters;
 extern int dAttracters;
 extern int dSpeed;
+extern int dCameraspeed;
 extern int dSurface;
 extern int dBlur;
 extern int readyToDraw;
@@ -103,6 +105,22 @@ TEST(HeliosHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dEmitters, 3);
     EXPECT_EQ(dAttracters, 3);
     EXPECT_EQ(dSurface, 1);
+}
+
+TEST(HeliosHarness, DefaultsSitInsideTheDeclaredRanges) {
+    // The header declares the ranges and the saver picks the defaults; nothing
+    // else checks that the two agree.
+    setDefaults();
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dIons", dIons, heliosSettings::kIons),
+        savertest::Ranged("dSize", dSize, heliosSettings::kSize),
+        savertest::Ranged("dEmitters", dEmitters, heliosSettings::kEmitters),
+        savertest::Ranged("dAttracters", dAttracters, heliosSettings::kAttracters),
+        savertest::Ranged("dSpeed", dSpeed, heliosSettings::kSpeed),
+        savertest::Ranged("dCameraspeed", dCameraspeed, heliosSettings::kCameraspeed),
+        savertest::Ranged("dSurface", dSurface, heliosSettings::kSurface),
+        savertest::Ranged("dBlur", dBlur, heliosSettings::kBlur),
+    }));
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -357,18 +375,27 @@ TEST(HeliosFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(HeliosFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(HeliosFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine. That early return also
-    // means it covers little where the saver has never stored settings, CI
-    // included - see the note in test_cyclone.cpp.
+    // means the clamp itself covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
     setDefaults();
     readRegistry();
 
-    EXPECT_GT(dIons, 0) << "the ion array is allocated with this count";
     EXPECT_GT(dEmitters, 0) << "so is the emitter array";
     EXPECT_GT(dAttracters, 0);
     EXPECT_GT(dSpeed, 0);
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dIons", dIons, heliosSettings::kIons),
+        savertest::Ranged("dSize", dSize, heliosSettings::kSize),
+        savertest::Ranged("dEmitters", dEmitters, heliosSettings::kEmitters),
+        savertest::Ranged("dAttracters", dAttracters, heliosSettings::kAttracters),
+        savertest::Ranged("dSpeed", dSpeed, heliosSettings::kSpeed),
+        savertest::Ranged("dCameraspeed", dCameraspeed, heliosSettings::kCameraspeed),
+        savertest::Ranged("dSurface", dSurface, heliosSettings::kSurface),
+        savertest::Ranged("dBlur", dBlur, heliosSettings::kBlur),
+    }));
 }
 
 // --- dialog procedures -----------------------------------------------------
