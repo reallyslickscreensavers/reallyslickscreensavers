@@ -26,68 +26,80 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-DLG_SCRNSAVECONFIGURE DIALOGEX 0, 0, 186, 230
+DLG_SCRNSAVECONFIGURE DIALOGEX 0, 0, 312, 325
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Cyclone   by Terry Welsh"
-FONT 8, "MS Sans Serif", 0, 0, 0x0
+CAPTION "Cyclone Settings"
+FONT 9, "Segoe UI", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,7,209,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,68,209,50,14
-    PUSHBUTTON      "About",ABOUT,129,209,50,14
-    LTEXT           "Cyclones",IDC_STATIC,52,9,30,8
-    LTEXT           "Particles per cyclone",IDC_STATIC,16,35,66,8
-    LTEXT           "Particle size",SIZE,7,72,45,8
-    LTEXT           "Cyclone complexity",IDC_STATIC,7,102,62,8
-    LTEXT           "Speed",IDC_STATIC,7,132,29,8
-    EDITTEXT        IDC_EDIT3,102,7,40,14,ES_RIGHT | ES_AUTOHSCROLL | 
-                    ES_NUMBER | WS_GROUP
-    CONTROL         "Spin3",CYCLONES,"msctls_updown32",UDS_WRAP | 
-                    UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS | 
-                    UDS_NOTHOUSANDS,151,7,11,14
-    EDITTEXT        IDC_EDIT4,102,33,40,14,ES_RIGHT | ES_AUTOHSCROLL | 
-                    ES_NUMBER
-    CONTROL         "Spin4",PARTICLES,"msctls_updown32",UDS_WRAP | 
-                    UDS_SETBUDDYINT | UDS_AUTOBUDDY | UDS_ARROWKEYS | 
-                    UDS_NOTHOUSANDS,151,33,11,14
-    CONTROL         "Slider2",PARTICLESIZE,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,7,57,172,15
-    CONTROL         "Slider3",COMPLEXITY,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,7,87,172,15
-    CONTROL         "Slider1",SPEED,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,7,117,172,15
-    PUSHBUTTON      "Defaults",DEFAULTS,32,181,50,14
-    CONTROL         "Stretch",STRETCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    102,192,39,10
-    CONTROL         "Show Curves",SHOWCURVES,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,102,178,58,10
-    RTEXT           "#",SIZETEXT,67,72,15,8
-    RTEXT           "#",COMPLEXITYTEXT,67,102,15,8
-    RTEXT           "#",SPEEDTEXT,67,132,15,8
-    LTEXT           "Frame rate limit",IDC_STATIC,7,162,48,8
-    CONTROL         "",FRAMERATELIMIT,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,7,148,172,15
-    RTEXT           "#",FRAMERATELIMITTEXT,57,162,25,8
-    LTEXT           "0 = no limit",IDC_STATIC,100,162,34,8
+    ICON            ID_APP,IDC_STATIC,14,12,21,21
+    LTEXT           "Cyclone",IDC_STATIC,46,11,190,11
+    LTEXT           "Shape the scene, motion, and rendering performance.",
+                    IDC_STATIC,46,27,250,10
+    GROUPBOX        "Scene",IDC_STATIC,12,48,288,58
+    LTEXT           "&Cyclones",IDC_STATIC,24,68,170,9
+    EDITTEXT        IDC_CYCLONES_EDIT,236,64,38,15,ES_RIGHT |
+                    ES_AUTOHSCROLL | ES_NUMBER | WS_GROUP
+    CONTROL         "",IDC_CYCLONES_SPIN,"msctls_updown32",UDS_SETBUDDYINT |
+                    UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS,274,64,
+                    11,15
+    LTEXT           "&Particles per cyclone",IDC_STATIC,24,89,170,9
+    EDITTEXT        IDC_PARTICLES_EDIT,236,85,38,15,ES_RIGHT |
+                    ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "",IDC_PARTICLES_SPIN,"msctls_updown32",UDS_SETBUDDYINT |
+                    UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS,274,85,
+                    11,15
+    GROUPBOX        "Appearance and motion",IDC_STATIC,12,113,288,118
+    LTEXT           "Particle si&ze",IDC_STATIC,24,132,80,9
+    CONTROL         "",IDC_PARTICLE_SIZE_SLIDER,"msctls_trackbar32",TBS_BOTH |
+                    TBS_NOTICKS | WS_TABSTOP,108,127,145,18
+    RTEXT           "#",IDC_PARTICLE_SIZE_VALUE,260,132,28,9
+    LTEXT           "Co&mplexity",IDC_STATIC,24,158,80,9
+    CONTROL         "",IDC_COMPLEXITY_SLIDER,"msctls_trackbar32",TBS_BOTH |
+                    TBS_NOTICKS | WS_TABSTOP,108,153,145,18
+    RTEXT           "#",IDC_COMPLEXITY_VALUE,260,158,28,9
+    LTEXT           "Animation &speed",IDC_STATIC,24,184,80,9
+    CONTROL         "",IDC_SPEED_SLIDER,"msctls_trackbar32",TBS_BOTH |
+                    TBS_NOTICKS | WS_TABSTOP,108,179,145,18
+    RTEXT           "#",IDC_SPEED_VALUE,260,184,28,9
+    CONTROL         "S&tretch particles along motion",IDC_STRETCH_CHECK,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,24,207,128,12
+    CONTROL         "Show path c&urves",IDC_SHOW_CURVES_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,166,207,112,12
+    GROUPBOX        "Performance",IDC_STATIC,12,238,288,45
+    CONTROL         "&Limit frame rate",IDC_FRAME_RATE_LIMIT_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,24,256,115,12
+    EDITTEXT        IDC_FRAME_RATE_EDIT,188,252,38,15,ES_RIGHT |
+                    ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "",IDC_FRAME_RATE_SPIN,"msctls_updown32",UDS_SETBUDDYINT |
+                    UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS,226,252,
+                    11,15
+    LTEXT           "FPS",IDC_STATIC,243,256,28,9
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,12,291,288,1
+    PUSHBUTTON      "&About",ABOUT,12,299,50,16
+    PUSHBUTTON      "&Restore defaults",DEFAULTS,68,299,82,16
+    DEFPUSHBUTTON   "OK",IDOK,196,299,50,16
+    PUSHBUTTON      "Cancel",IDCANCEL,250,299,50,16
 END
 
-DLG_ABOUT DIALOGEX 0, 0, 186, 183
+DLG_ABOUT DIALOGEX 0, 0, 312, 232
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Cyclone"
-FONT 8, "MS Sans Serif", 0, 0, 0x0
+FONT 9, "Segoe UI", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,129,162,50,14,WS_GROUP
-    CTEXT           "Cyclone",IDC_STATIC,7,6,172,9
-    CTEXT           "version 4.0   June 23, 2010",IDC_STATIC,7,17,172,8
-    CTEXT           "Copyright (C) 1999-2010 Terence M. Welsh",IDC_STATIC,7,
-                    27,172,8
-    LTEXT           "   Cyclone uses simple Bezier curves to control the path of each twister.  You can view the curves by flipping the ""Show Curves"" switch.",
-                    IDC_STATIC,7,88,172,26
-    LTEXT           "   This screen saver is dedicated to my storm chasing partner Andy.  We like to go out on the road and get pummeled by mother nature.  This saver brings a little of her action to your screen.",
-                    IDC_STATIC,7,55,172,32
-    CTEXT           "http://www.reallyslick.com",WEBPAGE,7,37,172,8,
-                    SS_NOTIFY | NOT WS_GROUP
-    LTEXT           "   This screensaver is free software licensed under the terms of the Gnu General Public License version 2.  It uses OpenGL for graphics, and it will perform poorly without OpenGL hardware acceleration.",
-                    IDC_STATIC,7,120,172,35
+    ICON            ID_APP,IDC_STATIC,15,14,32,32
+    LTEXT           "Cyclone 4.0",IDC_STATIC,57,14,238,11
+    LTEXT           "Originally released June 23, 2010",IDC_STATIC,57,29,238,9
+    LTEXT           "Copyright (C) 1999-2010 Terence M. Welsh",IDC_STATIC,57,
+                    42,238,9
+    LTEXT           "Cyclone uses simple Bezier curves to control the path of each twister. Enable Show path curves in Settings to see the curves that guide the animation.",
+                    IDC_STATIC,15,65,282,32
+    LTEXT           "This screen saver is dedicated to my storm chasing partner Andy. We like to go out on the road and get pummeled by mother nature. This saver brings a little of her action to your screen.",
+                    IDC_STATIC,15,103,282,36
+    LTEXT           "Cyclone is free software licensed under the GNU General Public License version 2. It uses OpenGL and performs best with hardware acceleration.",
+                    IDC_STATIC,15,148,282,30
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,15,194,282,1
+    PUSHBUTTON      "Project &website",WEBPAGE,15,204,82,16
+    DEFPUSHBUTTON   "OK",IDOK,247,204,50,16,WS_GROUP
 END
 
 
@@ -101,33 +113,25 @@ GUIDELINES DESIGNINFO
 BEGIN
     DLG_SCRNSAVECONFIGURE, DIALOG
     BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 179
-        VERTGUIDE, 82
-        VERTGUIDE, 102
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 223
-        HORZGUIDE, 21
-        HORZGUIDE, 47
-        HORZGUIDE, 72
-        HORZGUIDE, 102
-        HORZGUIDE, 132
-        HORZGUIDE, 162
+        LEFTMARGIN, 12
+        RIGHTMARGIN, 300
+        TOPMARGIN, 11
+        BOTTOMMARGIN, 315
+        HORZGUIDE, 48
+        HORZGUIDE, 113
+        HORZGUIDE, 238
+        HORZGUIDE, 291
+        HORZGUIDE, 299
     END
 
     DLG_ABOUT, DIALOG
     BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 179
-        TOPMARGIN, 6
-        BOTTOMMARGIN, 176
-        HORZGUIDE, 15
-        HORZGUIDE, 25
-        HORZGUIDE, 35
-        HORZGUIDE, 45
-        HORZGUIDE, 55
-        HORZGUIDE, 88
-        HORZGUIDE, 120
+        LEFTMARGIN, 15
+        RIGHTMARGIN, 297
+        TOPMARGIN, 14
+        BOTTOMMARGIN, 220
+        HORZGUIDE, 194
+        HORZGUIDE, 204
     END
 END
 #endif    // APSTUDIO_INVOKED

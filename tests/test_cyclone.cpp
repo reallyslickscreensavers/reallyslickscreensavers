@@ -11,6 +11,7 @@
 
 
 #include "resource.h"
+#include "cycloneSettings.h"
 
 // cyclone.cpp has no header; its contract with the framework is by name.
 // SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
@@ -19,7 +20,10 @@ extern int dCyclones;
 extern int dParticles;
 extern int dSize;
 extern int dComplexity;
+extern int dSpeed;
+extern BOOL dStretch;
 extern BOOL dShowCurves;
+extern unsigned int dFrameRateLimit;
 extern int readyToDraw;
 
 void setDefaults();
@@ -45,10 +49,70 @@ protected:
 
 TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
     setDefaults();
-    EXPECT_EQ(dCyclones, 1);
-    EXPECT_EQ(dParticles, 400);
-    EXPECT_EQ(dComplexity, 3);
-    EXPECT_EQ(dSize, 7);
+    EXPECT_EQ(dCyclones, cycloneSettings::kDefaultCyclones);
+    EXPECT_EQ(dParticles, cycloneSettings::kDefaultParticles);
+    EXPECT_EQ(dComplexity, cycloneSettings::kDefaultComplexity);
+    EXPECT_EQ(dSize, cycloneSettings::kDefaultSize);
+    EXPECT_EQ(dSpeed, cycloneSettings::kDefaultSpeed);
+    EXPECT_EQ(dStretch, TRUE);
+    EXPECT_EQ(dShowCurves, FALSE);
+    EXPECT_EQ(dFrameRateLimit, 0u);
+}
+
+// --- settings contract -----------------------------------------------------
+
+TEST(CycloneSettings, DefaultsLieWithinTheirRanges) {
+    EXPECT_GE(cycloneSettings::kDefaultCyclones, cycloneSettings::kCyclones.lo);
+    EXPECT_LE(cycloneSettings::kDefaultCyclones, cycloneSettings::kCyclones.hi);
+    EXPECT_GE(cycloneSettings::kDefaultParticles, cycloneSettings::kParticles.lo);
+    EXPECT_LE(cycloneSettings::kDefaultParticles, cycloneSettings::kParticles.hi);
+    EXPECT_GE(cycloneSettings::kDefaultSize, cycloneSettings::kSize.lo);
+    EXPECT_LE(cycloneSettings::kDefaultSize, cycloneSettings::kSize.hi);
+    EXPECT_GE(cycloneSettings::kDefaultComplexity, cycloneSettings::kComplexity.lo);
+    EXPECT_LE(cycloneSettings::kDefaultComplexity, cycloneSettings::kComplexity.hi);
+    EXPECT_GE(cycloneSettings::kDefaultSpeed, cycloneSettings::kSpeed.lo);
+    EXPECT_LE(cycloneSettings::kDefaultSpeed, cycloneSettings::kSpeed.hi);
+}
+
+TEST(CycloneSettings, RegistryValuesClampWithoutSignedNarrowing) {
+    EXPECT_EQ(cycloneSettings::clampToRange(0, cycloneSettings::kCyclones), 1);
+    EXPECT_EQ(cycloneSettings::clampToRange(5, cycloneSettings::kCyclones), 5);
+    EXPECT_EQ(cycloneSettings::clampToRange(100, cycloneSettings::kCyclones), 10);
+    EXPECT_EQ(cycloneSettings::clampToRange(0xFFFFFFFFUL, cycloneSettings::kParticles),
+        cycloneSettings::kParticles.hi);
+}
+
+TEST(CycloneSettings, RegistryFlagsAreNormalized) {
+    EXPECT_EQ(cycloneSettings::normalizeFlag(0), 0);
+    EXPECT_EQ(cycloneSettings::normalizeFlag(1), 1);
+    EXPECT_EQ(cycloneSettings::normalizeFlag(0xFFFFFFFFUL), 1);
+}
+
+TEST(CycloneSettings, UnlimitedFrameRateHasASensibleDisabledValue) {
+    const cycloneSettings::FrameRateUi ui = cycloneSettings::frameRateToUi(0);
+    EXPECT_FALSE(ui.limited);
+    EXPECT_EQ(ui.fps, cycloneSettings::kDefaultFrameRate);
+}
+
+TEST(CycloneSettings, FrameRateRoundTripsThroughTheDialog) {
+    const unsigned int values[] = { 0, 1, 30, 60, 144, 1000 };
+    for(unsigned int value : values){
+        const cycloneSettings::FrameRateUi ui = cycloneSettings::frameRateToUi(value);
+        EXPECT_EQ(cycloneSettings::frameRateFromUi(ui.limited, ui.fps), value);
+    }
+}
+
+TEST(CycloneSettings, CheckedFrameRateCannotSilentlyBecomeUnlimited) {
+    EXPECT_EQ(cycloneSettings::frameRateFromUi(true, 0), 1u);
+    EXPECT_EQ(cycloneSettings::frameRateFromUi(true, -1), 1u);
+    EXPECT_EQ(cycloneSettings::frameRateFromUi(true, 5000), 1000u);
+}
+
+TEST(CycloneSettings, CorruptStoredFrameRateIsClamped) {
+    const cycloneSettings::FrameRateUi ui =
+        cycloneSettings::frameRateToUi(0xFFFFFFFFu);
+    EXPECT_TRUE(ui.limited);
+    EXPECT_EQ(ui.fps, cycloneSettings::kFrameRate.hi);
 }
 
 // --- the BLOCKER guard -----------------------------------------------------
@@ -59,27 +123,11 @@ TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
 // dComplexity+2. Reaching them needs a negative dComplexity.
 //
 // That cannot happen: screenSaverProc calls readRegistry() before initSaver(),
-// and readRegistry clamps dComplexity to 1..10 unconditionally - the clamp sits
-// outside the RegQueryValueEx success check, so it applies to the default value
-// too (cyclone.cpp:646, added by PR #35).
+// and both the default and every successful registry read take their bounds
+// from cycloneSettings.h before initSaver can allocate from dComplexity.
 //
-// KNOWN LIMITATION - read this before trusting the guard.
-//
-// readRegistry returns early when HKCU\Software\Really Slick\Cyclone does not
-// exist, which is the case on a fresh CI runner and on any machine where the
-// saver has never stored settings. There the clamp lines never execute and
-// these tests only confirm that setDefaults' value survives. They bite fully
-// only where a key exists.
-//
-// Exercising the populated path means writing to that real key, which would
-// modify the developer's own saver settings, so it is deliberately not done.
-// The way to make this guard unconditional is to give cyclone a settings header
-// with a pure clamp function - the starfieldSettings.h / rsWin32SaverSettings.h
-// pattern - and test that directly. That is Task 11's refactor.
-//
-// The same caveat applies to the ReadRegistry tests in the other suites, and it
-// is why coverage on CI sits about five points below a developer machine that
-// has run the savers.
+// cycloneSettings.h now holds the clamp as pure logic, so the dangerous inputs
+// are exercised directly above without modifying the developer's registry.
 
 TEST(CycloneBlockerGuard, ReadRegistryAlwaysLeavesComplexityInRange) {
     dComplexity = -5;
@@ -225,8 +273,8 @@ TEST_F(Cyclone, IdleProcSkipsDrawingWhenNotReady) {
 
 // --- dialog procedures -----------------------------------------------------
 
-TEST(CycloneDialogs, AboutProcColoursTheWebPageLabel) {
-    EXPECT_TRUE(savertest::AboutProcColoursTheWebPageLabel(aboutProc));
+TEST(CycloneDialogs, AboutProcHandlesTheStandardCloseCommand) {
+    EXPECT_TRUE(aboutProc(nullptr, WM_COMMAND, IDCANCEL, 0));
 }
 
 TEST(CycloneDialogs, AboutProcIgnoresMessagesItDoesNotHandle) {
@@ -247,8 +295,10 @@ TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
     setDefaults();
     const int defaultParticles = dParticles;
     dParticles = 3;
+    dFrameRateLimit = 144;
 
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
     EXPECT_EQ(dParticles, defaultParticles);
+    EXPECT_EQ(dFrameRateLimit, 0u);
 }
