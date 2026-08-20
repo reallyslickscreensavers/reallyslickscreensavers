@@ -151,6 +151,7 @@
     <ClInclude Include="triangleOfSpheres.h" />
     <ClInclude Include="ufo.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="microcosmSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />

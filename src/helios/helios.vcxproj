@@ -120,6 +120,7 @@
   <ItemGroup>
     <ClInclude Include="spheremap.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="heliosSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />

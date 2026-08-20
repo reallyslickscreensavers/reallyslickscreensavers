@@ -28,32 +28,30 @@
 #ifndef STARFIELD_SETTINGS_H
 #define STARFIELD_SETTINGS_H
 
-namespace starfield {
+#include "../common/saverSettings.h"
 
-struct Range { int lo; int hi; };
+namespace starfieldSettings {
 
-const Range kNumStars  = { 100, 10000 };
-const Range kSpeed     = { 1, 100 };
-const Range kStarSize  = { 1, 10 };
-const Range kFrameRate = { 1, 1000 };  // 0 means unlimited, handled separately
+// Re-exported, never redefined. The bodies live once in rssaver; without
+// these three lines a qualified call such as starfieldSettings::clampToRange
+// does not compile, because argument-dependent lookup does not apply to
+// qualified names and there is nothing of that name in this namespace.
+using rssaver::Range;
+using rssaver::clampToRange;
+using rssaver::clampIntToRange;
+
+constexpr Range kNumStars  = { 100, 10000 };
+constexpr Range kSpeed     = { 1, 100 };
+constexpr Range kStarSize  = { 1, 10 };
+constexpr Range kFrameRate = { 1, 1000 };  // 0 means unlimited, handled separately
 
 // Values applied by setDefaults() and by the Reset to defaults button
-const int kDefaultNumStars = 5000;
-const int kDefaultSpeed    = 5;
-const int kDefaultStarSize = 2;
+constexpr int kDefaultNumStars = 5000;
+constexpr int kDefaultSpeed    = 5;
+constexpr int kDefaultStarSize = 2;
 
 // Offered in the FPS field when the limit is switched off
-const int kDefaultFrameRate = 60;
-
-
-// Clamp an untrusted value into range.  Takes unsigned long because registry
-// values arrive as DWORD; converting to int first would turn 0xFFFFFFFF into
-// -1 and slip past a naive lower-bound check.
-inline int clampToRange(unsigned long v, Range r){
-	if(v > (unsigned long)r.hi) return r.hi;
-	if((int)v < r.lo) return r.lo;
-	return (int)v;
-}
+constexpr int kDefaultFrameRate = 60;
 
 
 // The stored frame rate limit keeps its original meaning, where 0 is

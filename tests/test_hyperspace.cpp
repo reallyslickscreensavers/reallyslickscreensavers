@@ -18,6 +18,7 @@
 #include <array>
 
 #include "resource.h"
+#include "hyperspaceSettings.h"
 
 // hyperspace.cpp has no header; its contract with the framework is by name. See
 // the note on cpp:S5421 in test_fieldlines.cpp - these are declarations, not
@@ -117,6 +118,23 @@ TEST(HyperspaceHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dStarSize, 10);
     EXPECT_EQ(dResolution, 10);
     EXPECT_EQ(dFov, 50);
+}
+
+TEST(HyperspaceHarness, DefaultsSitInsideTheDeclaredRanges) {
+    // The header declares the ranges and the saver picks the defaults; nothing
+    // else checks that the two agree.
+    setDefaults();
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dSpeed", dSpeed, hyperspaceSettings::kSpeed),
+        savertest::Ranged("dStars", dStars, hyperspaceSettings::kStars),
+        savertest::Ranged("dStarSize", dStarSize, hyperspaceSettings::kStarSize),
+        savertest::Ranged("dResolution", dResolution, hyperspaceSettings::kResolution),
+        savertest::Ranged("dDepth", dDepth, hyperspaceSettings::kDepth),
+        savertest::Ranged("dFov", dFov, hyperspaceSettings::kFov),
+        savertest::Ranged("dUseTunnels", dUseTunnels, hyperspaceSettings::kUseTunnels),
+        savertest::Ranged("dUseGoo", dUseGoo, hyperspaceSettings::kUseGoo),
+        savertest::Ranged("dShaders", dShaders, hyperspaceSettings::kShaders),
+    }));
 }
 
 TEST(HyperspaceHarness, KeepsShadersWhenTheExtensionsAreThere) {
@@ -418,18 +436,28 @@ TEST(HyperspaceFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestro
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(HyperspaceFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(HyperspaceFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine. That early return also
-    // means it covers little where the saver has never stored settings, CI
-    // included - see the note in test_cyclone.cpp.
+    // means the clamp itself covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
     setDefaults();
     readRegistry();
 
-    EXPECT_GT(dStars, 0) << "the star array is allocated with this count";
     EXPECT_GT(dResolution, 0) << "the goo mesh is sized from this";
     EXPECT_GT(dDepth, 0);
     EXPECT_GT(dFov, 0) << "the projection divides by half its tangent";
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dSpeed", dSpeed, hyperspaceSettings::kSpeed),
+        savertest::Ranged("dStars", dStars, hyperspaceSettings::kStars),
+        savertest::Ranged("dStarSize", dStarSize, hyperspaceSettings::kStarSize),
+        savertest::Ranged("dResolution", dResolution, hyperspaceSettings::kResolution),
+        savertest::Ranged("dDepth", dDepth, hyperspaceSettings::kDepth),
+        savertest::Ranged("dFov", dFov, hyperspaceSettings::kFov),
+        savertest::Ranged("dUseTunnels", dUseTunnels, hyperspaceSettings::kUseTunnels),
+        savertest::Ranged("dUseGoo", dUseGoo, hyperspaceSettings::kUseGoo),
+        savertest::Ranged("dShaders", dShaders, hyperspaceSettings::kShaders),
+    }));
 }
 
 // --- dialog procedures -----------------------------------------------------
