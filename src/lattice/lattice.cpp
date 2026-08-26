@@ -25,7 +25,6 @@
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
 
 #include <gl/gl.h>
 #include <gl/glu.h>
@@ -679,8 +678,6 @@ void initSaver(HWND hwnd){
 	RECT rect;
 	int i, j, k;
 	int left, right, top, bottom;
-
-	srand((unsigned)time(NULL));
 
 	// Window initialization
 	hdc = GetDC(hwnd);

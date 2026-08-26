@@ -42,7 +42,6 @@
 #include <stdio.h>
 #include <rsText/rsText.h>
 #include <math.h>
-#include <time.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <rsMath/rsMath.h>
@@ -540,9 +539,6 @@ void initSaver(HWND hwnd){
 #ifdef RS_XSCREENSAVER
 void initSaver(){
 #endif
-	// Seed random number generator
-	srand((unsigned)time(NULL));
-
 	// Limit memory consumption because the Windows previewer is just too darn slow
 	if(doingPreview){
 		dResolution = 6;

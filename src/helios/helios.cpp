@@ -25,7 +25,6 @@
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
 #include <list>
 
 #include <gl/gl.h>
@@ -755,9 +754,6 @@ void doSaver(HWND hwnd){
 	RECT rect;
 	int i, j;
 	float x, y, temp;
-
-	// Seed random number generator
-	srand((unsigned)time(NULL));
 
 	// Window initialization
 	hdc = GetDC(hwnd);
