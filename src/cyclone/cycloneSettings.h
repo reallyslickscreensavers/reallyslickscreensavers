@@ -23,19 +23,19 @@ namespace cycloneSettings {
 
 struct Range { int lo; int hi; };
 
-const Range kCyclones   = { 1, 10 };
-const Range kParticles  = { 1, 10000 };
-const Range kSize       = { 1, 100 };
-const Range kComplexity = { 1, 10 };
-const Range kSpeed      = { 1, 100 };
-const Range kFrameRate  = { 1, 1000 };  // Stored 0 means unlimited.
+constexpr Range kCyclones   = { 1, 10 };
+constexpr Range kParticles  = { 1, 10000 };
+constexpr Range kSize       = { 1, 100 };
+constexpr Range kComplexity = { 1, 10 };
+constexpr Range kSpeed      = { 1, 100 };
+constexpr Range kFrameRate  = { 1, 1000 };  // Stored 0 means unlimited.
 
-const int kDefaultCyclones   = 1;
-const int kDefaultParticles  = 400;
-const int kDefaultSize       = 7;
-const int kDefaultComplexity = 3;
-const int kDefaultSpeed      = 10;
-const int kDefaultFrameRate  = 60;
+constexpr int kDefaultCyclones   = 1;
+constexpr int kDefaultParticles  = 400;
+constexpr int kDefaultSize       = 7;
+constexpr int kDefaultComplexity = 3;
+constexpr int kDefaultSpeed      = 10;
+constexpr int kDefaultFrameRate  = 60;
 
 
 // Registry values arrive as DWORD. Keeping this unsigned until after the upper

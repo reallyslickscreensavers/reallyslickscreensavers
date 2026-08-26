@@ -36,6 +36,7 @@
 #include <Rgbhsl/Rgbhsl.h>
 #include "resource.h"
 #include "cycloneSettings.h"
+#include "../common/saverRegistry.h"
 
 
 class cyclone;
@@ -630,14 +631,6 @@ void setDefaults(){
 }
 
 
-static bool readRegistryDWORD(HKEY key, LPCTSTR name, DWORD& value){
-	DWORD type = 0;
-	DWORD size = sizeof(value);
-	return RegQueryValueEx(key, name, 0, &type, (LPBYTE)&value, &size) == ERROR_SUCCESS
-		&& type == REG_DWORD && size == sizeof(value);
-}
-
-
 // Initialize all user-defined stuff
 void readRegistry(){
 	LONG result;
@@ -650,21 +643,21 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	if(readRegistryDWORD(skey, "Cyclones", val))
+	if(rssaver::readRegistryDWORD(skey, "Cyclones", val))
 		dCyclones = cycloneSettings::clampToRange(val, cycloneSettings::kCyclones);
-	if(readRegistryDWORD(skey, "Particles", val))
+	if(rssaver::readRegistryDWORD(skey, "Particles", val))
 		dParticles = cycloneSettings::clampToRange(val, cycloneSettings::kParticles);
-	if(readRegistryDWORD(skey, "Size", val))
+	if(rssaver::readRegistryDWORD(skey, "Size", val))
 		dSize = cycloneSettings::clampToRange(val, cycloneSettings::kSize);
-	if(readRegistryDWORD(skey, "Complexity", val))
+	if(rssaver::readRegistryDWORD(skey, "Complexity", val))
 		dComplexity = cycloneSettings::clampToRange(val, cycloneSettings::kComplexity);
-	if(readRegistryDWORD(skey, "Speed", val))
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
 		dSpeed = cycloneSettings::clampToRange(val, cycloneSettings::kSpeed);
-	if(readRegistryDWORD(skey, "Stretch", val))
+	if(rssaver::readRegistryDWORD(skey, "Stretch", val))
 		dStretch = cycloneSettings::normalizeFlag(val);
-	if(readRegistryDWORD(skey, "ShowCurves", val))
+	if(rssaver::readRegistryDWORD(skey, "ShowCurves", val))
 		dShowCurves = cycloneSettings::normalizeFlag(val);
-	if(readRegistryDWORD(skey, "FrameRateLimit", val))
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = cycloneSettings::clampFrameRate(val);
 
 	RegCloseKey(skey);

@@ -45,6 +45,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "starfieldSettings.h"
+#include "../common/saverRegistry.h"
 
 
 // Globals
@@ -318,7 +319,7 @@ void cleanUp(HWND hwnd){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -326,19 +327,14 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "NumStars", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "NumStars", val))
 		dNumStars = starfieldSettings::clampToRange(val, starfieldSettings::kNumStars);
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
 		dSpeed = starfieldSettings::clampToRange(val, starfieldSettings::kSpeed);
-	result = RegQueryValueEx(skey, "StarSize", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "StarSize", val))
 		dStarSize = starfieldSettings::clampToRange(val, starfieldSettings::kStarSize);
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);

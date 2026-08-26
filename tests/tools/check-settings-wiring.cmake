@@ -13,16 +13,28 @@ if(NOT DEFINED REPO_ROOT)
     message(FATAL_ERROR "REPO_ROOT was not passed to check-settings-wiring.cmake")
 endif()
 
-# saver directory | source stem | expected clamped settings
+# saver directory | source stem | clamped settings | typed registry reads
+#
+# "clamped" counts dX = <ns>::clampToRange(val, <ns>::kX) sites. "reads" counts
+# rssaver::readRegistryDWORD calls, which is the clamped count plus the
+# FrameRateLimit read, plus any setting read through something other than a
+# Range - today only cyclone's two normalizeFlag checkboxes.
 set(SAVERS
-    "cyclone|cyclone|7"        "euphoria|euphoria|10"
-    "fieldlines|fieldlines|7"  "flocks|flocks|10"
-    "flux|flux|12"             "helios|helios|8"
-    "hyperspace|hyperspace|9"  "lattice|lattice|11"
-    "microcosm|microcosm|11"   "plasma|plasma|4"
-    "skyrocket|skyrocket|13"   "solarwinds|solarWinds|9"
-    "starfield|starfield|3")
-set(EXPECTED_TOTAL 114)
+    "cyclone|cyclone|5|8"        "euphoria|euphoria|10|11"
+    "fieldlines|fieldlines|7|8"  "flocks|flocks|10|11"
+    "flux|flux|12|13"            "helios|helios|8|9"
+    "hyperspace|hyperspace|9|10" "lattice|lattice|11|12"
+    "microcosm|microcosm|11|12"  "plasma|plasma|4|5"
+    "skyrocket|skyrocket|13|14"  "solarwinds|solarWinds|9|10"
+    "starfield|starfield|3|4")
+set(EXPECTED_TOTAL 112)
+
+# cyclone reached the shared clamp from the other direction, in PR #62: its
+# settings header also drives the dialog, so its two checkboxes go through
+# normalizeFlag rather than a {0,1} Range, and its frame rate keeps the
+# dialog's "0 means unlimited" semantics instead of rsWin32Saver's plain bound.
+set(CYCLONE_FRL_FORM "dFrameRateLimit *= *cycloneSettings::clampFrameRate[(]val[)];")
+set(SHARED_FRL_FORM "dFrameRateLimit *= *rsWin32Saver::clampFrameRateLimit[(]val[)];")
 
 set(FAILURES "")
 set(RUNNING_TOTAL 0)
@@ -32,6 +44,7 @@ foreach(entry ${SAVERS})
     list(GET parts 0 dir)
     list(GET parts 1 stem)
     list(GET parts 2 expected_count)
+    list(GET parts 3 expected_reads)
 
     set(header "${REPO_ROOT}/src/${dir}/${stem}Settings.h")
     set(source "${REPO_ROOT}/src/${dir}/${stem}.cpp")
@@ -101,15 +114,45 @@ foreach(entry ${SAVERS})
         endif()
     endforeach()
 
-    # --- Rule 6: exactly one whole-statement dFrameRateLimit clamp.
+    # --- Rule 6: exactly one whole-statement dFrameRateLimit clamp, in the
+    # form this saver uses. Whole-statement, so a bare clampFrameRateLimit(val);
+    # that drops the assignment cannot pass. No test can reach these lines - no
+    # test may write to the developer's real HKCU key - so this is the only
+    # check the frame rate limit gets anywhere.
+    if(stem STREQUAL "cyclone")
+        set(frl_form "${CYCLONE_FRL_FORM}")
+    else()
+        set(frl_form "${SHARED_FRL_FORM}")
+    endif()
     set(frl_count 0)
     foreach(line ${source_lines})
-        if(line MATCHES "dFrameRateLimit *= *rsWin32Saver::clampFrameRateLimit[(]val[)];")
+        if(line MATCHES "${frl_form}")
             math(EXPR frl_count "${frl_count} + 1")
         endif()
     endforeach()
     if(NOT frl_count EQUAL 1)
-        list(APPEND FAILURES "${source}: found ${frl_count} 'dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);' statements, expected 1")
+        list(APPEND FAILURES "${source}: found ${frl_count} dFrameRateLimit clamp statements matching '${frl_form}', expected 1")
+    endif()
+
+    # --- Rule 7: every settings read is typed.
+    #
+    # rssaver::readRegistryDWORD checks REG_DWORD and the size before reporting
+    # success, so a "Speed" stored as REG_SZ leaves the default in place instead
+    # of arriving as four bytes of text reinterpreted as a DWORD. A bare
+    # RegQueryValueEx here would silently reopen that hole.
+    set(read_count 0)
+    set(line_no 0)
+    foreach(line ${source_lines})
+        math(EXPR line_no "${line_no} + 1")
+        if(line MATCHES "rssaver::readRegistryDWORD[(]skey,")
+            math(EXPR read_count "${read_count} + 1")
+        endif()
+        if(line MATCHES "RegQueryValueEx[(]")
+            list(APPEND FAILURES "${source}:${line_no}: raw RegQueryValueEx - settings reads must go through rssaver::readRegistryDWORD")
+        endif()
+    endforeach()
+    if(NOT read_count EQUAL expected_reads)
+        list(APPEND FAILURES "${source}: found ${read_count} typed registry reads, expected ${expected_reads}")
     endif()
 endforeach()
 
@@ -117,27 +160,21 @@ if(NOT RUNNING_TOTAL EQUAL EXPECTED_TOTAL)
     list(APPEND FAILURES "total clamped settings across all savers is ${RUNNING_TOTAL}, expected ${EXPECTED_TOTAL}")
 endif()
 
-# --- Rule 7: cyclone's dComplexity guard, both lines.
-set(cyclone_source "${REPO_ROOT}/src/cyclone/cyclone.cpp")
-file(STRINGS "${cyclone_source}" cyclone_lines)
-set(guard_count 0)
-set(stale_if_count 0)
-foreach(line ${cyclone_lines})
-    if(line MATCHES "dComplexity *= *cycloneSettings::clampIntToRange[(]dComplexity, cycloneSettings::kComplexity[)];")
-        math(EXPR guard_count "${guard_count} + 1")
-    endif()
-    if(line MATCHES "if[(]dComplexity *[<>]")
-        math(EXPR stale_if_count "${stale_if_count} + 1")
+# --- Rule 8: readRegistryDWORD is defined exactly once, in the shared header.
+# Thirteen private copies is the duplication the shared headers exist to avoid.
+file(GLOB_RECURSE SAVER_SOURCES "${REPO_ROOT}/src/*.cpp")
+foreach(f ${SAVER_SOURCES})
+    file(STRINGS "${f}" dup_lines REGEX "(static|inline) +bool +readRegistryDWORD")
+    if(dup_lines)
+        list(APPEND FAILURES "${f}: defines its own readRegistryDWORD - use src/common/saverRegistry.h")
     endif()
 endforeach()
-if(NOT guard_count EQUAL 1)
-    list(APPEND FAILURES "${cyclone_source}: found ${guard_count} unconditional dComplexity clampIntToRange guards, expected 1")
-endif()
-if(NOT stale_if_count EQUAL 0)
-    list(APPEND FAILURES "${cyclone_source}: found ${stale_if_count} stale 'if(dComplexity <|>' lines, expected 0")
-endif()
 
-# --- Rule 8: no file under src/ names kSingleBackground.
+# --- Rule 9: no file under src/ names kSingleBackground.
+# microcosm is the one saver whose registry key name and global name diverge
+# ("SingleBackground" into dBackground), so its constant follows the global.
+# A constant named after the key would satisfy rule 2 while pairing the wrong
+# slider to the wrong value.
 file(GLOB_RECURSE ALL_SRC_FILES "${REPO_ROOT}/src/*.cpp" "${REPO_ROOT}/src/*.h")
 foreach(f ${ALL_SRC_FILES})
     file(STRINGS "${f}" f_lines REGEX "kSingleBackground")
@@ -153,4 +190,4 @@ if(failure_count GREATER 0)
 endif()
 
 list(LENGTH SAVERS saver_count)
-message(STATUS "SettingsClampWiring: ${RUNNING_TOTAL} clamped settings across ${saver_count} savers, all wired correctly")
+message(STATUS "SettingsClampWiring: ${RUNNING_TOTAL} clamped settings across ${saver_count} savers, all typed and wired correctly")

@@ -42,6 +42,7 @@
 #include "camera.h"
 #include "resource.h"
 #include "latticeSettings.h"
+#include "../common/saverRegistry.h"
 
 
 // Where in the registry to store user defined variables
@@ -916,7 +917,7 @@ void setDefaults(int which){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults(DEFAULTS1);
 
@@ -924,43 +925,30 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Longitude", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Longitude", val))
 		dLongitude = latticeSettings::clampToRange(val, latticeSettings::kLongitude);
-	result = RegQueryValueEx(skey, "Latitude", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Latitude", val))
 		dLatitude = latticeSettings::clampToRange(val, latticeSettings::kLatitude);
-	result = RegQueryValueEx(skey, "Thick", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Thick", val))
 		dThick = latticeSettings::clampToRange(val, latticeSettings::kThick);
-	result = RegQueryValueEx(skey, "Density", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Density", val))
 		dDensity = latticeSettings::clampToRange(val, latticeSettings::kDensity);
-	result = RegQueryValueEx(skey, "Depth", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Depth", val))
 		dDepth = latticeSettings::clampToRange(val, latticeSettings::kDepth);
-	result = RegQueryValueEx(skey, "Fov", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Fov", val))
 		dFov = latticeSettings::clampToRange(val, latticeSettings::kFov);
-	result = RegQueryValueEx(skey, "Pathrand", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Pathrand", val))
 		dPathrand = latticeSettings::clampToRange(val, latticeSettings::kPathrand);
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
 		dSpeed = latticeSettings::clampToRange(val, latticeSettings::kSpeed);
-	result = RegQueryValueEx(skey, "Texture", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Texture", val))
 		dTexture = latticeSettings::clampToRange(val, latticeSettings::kTexture);
-	result = RegQueryValueEx(skey, "Smooth", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Smooth", val))
 		dSmooth = latticeSettings::clampToRange(val, latticeSettings::kSmooth);
-	result = RegQueryValueEx(skey, "Fog", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Fog", val))
 		dFog = latticeSettings::clampToRange(val, latticeSettings::kFog);
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);

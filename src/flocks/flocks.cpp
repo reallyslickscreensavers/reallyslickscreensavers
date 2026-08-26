@@ -42,6 +42,7 @@
 #include <rsMath/rsMath.h>
 #include <Rgbhsl/Rgbhsl.h>
 #include "flocksSettings.h"
+#include "../common/saverRegistry.h"
 
 #define R2D 57.2957795131f
 
@@ -551,7 +552,7 @@ void cleanUp(HWND hwnd){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -559,40 +560,28 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Leaders", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Leaders", val))
 		dLeaders = flocksSettings::clampToRange(val, flocksSettings::kLeaders);
-	result = RegQueryValueEx(skey, "Followers", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Followers", val))
 		dFollowers = flocksSettings::clampToRange(val, flocksSettings::kFollowers);
-	result = RegQueryValueEx(skey, "Geometry", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Geometry", val))
 		dGeometry = flocksSettings::clampToRange(val, flocksSettings::kGeometry);
-	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Size", val))
 		dSize = flocksSettings::clampToRange(val, flocksSettings::kSize);
-	result = RegQueryValueEx(skey, "Complexity", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Complexity", val))
 		dComplexity = flocksSettings::clampToRange(val, flocksSettings::kComplexity);
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
 		dSpeed = flocksSettings::clampToRange(val, flocksSettings::kSpeed);
-	result = RegQueryValueEx(skey, "Stretch", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Stretch", val))
 		dStretch = flocksSettings::clampToRange(val, flocksSettings::kStretch);
-	result = RegQueryValueEx(skey, "Colorfadespeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Colorfadespeed", val))
 		dColorfadespeed = flocksSettings::clampToRange(val, flocksSettings::kColorfadespeed);
-	result = RegQueryValueEx(skey, "Chromatek", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Chromatek", val))
 		dChromatek = flocksSettings::clampToRange(val, flocksSettings::kChromatek);
-	result = RegQueryValueEx(skey, "Connections", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Connections", val))
 		dConnections = flocksSettings::clampToRange(val, flocksSettings::kConnections);
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);

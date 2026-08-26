@@ -36,20 +36,28 @@ struct NamedRange {
     rssaver::Range range;
 };
 
-// All 114 saver-specific settings (Task 11's own count), one row per
-// readRegistry clamp site. dFrameRateLimit is deliberately absent from every
-// saver here and from this table - see the note in tests/test_flux.cpp and
-// the "Why dFrameRateLimit is not asserted per-saver" section this table's
-// counterpart lives under in the per-saver suites.
+// cyclone declares its own Range rather than re-exporting rssaver::Range,
+// because its settings header also carries the dialog's frame-rate conversions
+// and predates the shared one (PR #62). The two are layout-identical, so its
+// rows are widened explicitly here rather than by changing that header.
+constexpr rssaver::Range Widen(cycloneSettings::Range r) {
+    return rssaver::Range{r.lo, r.hi};
+}
+
+// All 112 saver-specific settings, one row per readRegistry clamp site.
+//
+// dFrameRateLimit is deliberately absent from every saver here - see the
+// "Why dFrameRateLimit is not asserted per-saver" note in the per-saver
+// suites. cyclone contributes 5 rather than 7: its two checkboxes go through
+// cycloneSettings::normalizeFlag instead of a {0,1} Range, so they have no row
+// to carry. tests/test_cyclone.cpp asserts them as flags instead.
 constexpr NamedRange kAllSettings[] = {
-    // cyclone - 7
-    {"cyclone", "kCyclones", cycloneSettings::kCyclones},
-    {"cyclone", "kParticles", cycloneSettings::kParticles},
-    {"cyclone", "kSize", cycloneSettings::kSize},
-    {"cyclone", "kComplexity", cycloneSettings::kComplexity},
-    {"cyclone", "kSpeed", cycloneSettings::kSpeed},
-    {"cyclone", "kStretch", cycloneSettings::kStretch},
-    {"cyclone", "kShowCurves", cycloneSettings::kShowCurves},
+    // cyclone - 5
+    {"cyclone", "kCyclones", Widen(cycloneSettings::kCyclones)},
+    {"cyclone", "kParticles", Widen(cycloneSettings::kParticles)},
+    {"cyclone", "kSize", Widen(cycloneSettings::kSize)},
+    {"cyclone", "kComplexity", Widen(cycloneSettings::kComplexity)},
+    {"cyclone", "kSpeed", Widen(cycloneSettings::kSpeed)},
 
     // euphoria - 10
     {"euphoria", "kWisps", euphoriaSettings::kWisps},
@@ -183,7 +191,7 @@ constexpr NamedRange kAllSettings[] = {
     {"starfield", "kStarSize", starfieldSettings::kStarSize},
 };
 
-constexpr int kExpectedTotal = 114;
+constexpr int kExpectedTotal = 112;
 
 int CountForSaver(const char* saver) {
     int n = 0;
@@ -240,7 +248,7 @@ TEST(SaverSettings, ClampIntToRangeSendsNegativesToTheLowBound) {
 }
 
 TEST(SaverSettings, TableCoversEverySaversSettingCount) {
-    EXPECT_EQ(CountForSaver("cyclone"), 7);
+    EXPECT_EQ(CountForSaver("cyclone"), 5);  // 2 checkboxes use normalizeFlag
     EXPECT_EQ(CountForSaver("euphoria"), 10);
     EXPECT_EQ(CountForSaver("fieldlines"), 7);
     EXPECT_EQ(CountForSaver("flocks"), 10);

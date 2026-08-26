@@ -43,6 +43,7 @@
 
 #include "texture.h"
 #include "euphoriaSettings.h"
+#include "../common/saverRegistry.h"
 
 #define NUMCONSTS 9
 #define PIx2 6.28318530718f
@@ -703,7 +704,7 @@ void setDefaults(int which){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults(DEFAULTS1);
 
@@ -711,40 +712,28 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Wisps", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Wisps", val))
 		dWisps = euphoriaSettings::clampToRange(val, euphoriaSettings::kWisps);
-	result = RegQueryValueEx(skey, "Background", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Background", val))
 		dBackground = euphoriaSettings::clampToRange(val, euphoriaSettings::kBackground);
-	result = RegQueryValueEx(skey, "Density", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Density", val))
 		dDensity = euphoriaSettings::clampToRange(val, euphoriaSettings::kDensity);
-	result = RegQueryValueEx(skey, "Visibility", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Visibility", val))
 		dVisibility = euphoriaSettings::clampToRange(val, euphoriaSettings::kVisibility);
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
 		dSpeed = euphoriaSettings::clampToRange(val, euphoriaSettings::kSpeed);
-	result = RegQueryValueEx(skey, "Feedback", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Feedback", val))
 		dFeedback = euphoriaSettings::clampToRange(val, euphoriaSettings::kFeedback);
-	result = RegQueryValueEx(skey, "Feedbackspeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Feedbackspeed", val))
 		dFeedbackspeed = euphoriaSettings::clampToRange(val, euphoriaSettings::kFeedbackspeed);
-	result = RegQueryValueEx(skey, "Feedbacksize", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Feedbacksize", val))
 		dFeedbacksize = euphoriaSettings::clampToRange(val, euphoriaSettings::kFeedbacksize);
-	result = RegQueryValueEx(skey, "Texture", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Texture", val))
 		dTexture = euphoriaSettings::clampToRange(val, euphoriaSettings::kTexture);
-	result = RegQueryValueEx(skey, "Wireframe", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Wireframe", val))
 		dWireframe = euphoriaSettings::clampToRange(val, euphoriaSettings::kWireframe);
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);

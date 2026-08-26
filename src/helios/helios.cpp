@@ -47,6 +47,7 @@
 
 #include "spheremap.h"
 #include "heliosSettings.h"
+#include "../common/saverRegistry.h"
 
 
 #define LIGHTSIZE 64
@@ -909,7 +910,7 @@ void setDefaults(){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -917,34 +918,24 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Ions", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Ions", val))
 		dIons = heliosSettings::clampToRange(val, heliosSettings::kIons);
-	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Size", val))
 		dSize = heliosSettings::clampToRange(val, heliosSettings::kSize);
-	result = RegQueryValueEx(skey, "Emitters", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Emitters", val))
 		dEmitters = heliosSettings::clampToRange(val, heliosSettings::kEmitters);
-	result = RegQueryValueEx(skey, "Attracters", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Attracters", val))
 		dAttracters = heliosSettings::clampToRange(val, heliosSettings::kAttracters);
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
 		dSpeed = heliosSettings::clampToRange(val, heliosSettings::kSpeed);
-	result = RegQueryValueEx(skey, "Cameraspeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Cameraspeed", val))
 		dCameraspeed = heliosSettings::clampToRange(val, heliosSettings::kCameraspeed);
-	result = RegQueryValueEx(skey, "Surface", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Surface", val))
 		dSurface = heliosSettings::clampToRange(val, heliosSettings::kSurface);
-	result = RegQueryValueEx(skey, "Blur", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Blur", val))
 		dBlur = heliosSettings::clampToRange(val, heliosSettings::kBlur);
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);

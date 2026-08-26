@@ -43,6 +43,7 @@
 #include "particle.h"
 #include "world.h"
 #include "skyrocketSettings.h"
+#include "../common/saverRegistry.h"
 //#include "overlay.h"
 
 
@@ -1012,7 +1013,7 @@ void setDefaults(){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -1020,49 +1021,34 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Maxrockets", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Maxrockets", val))
 		dMaxrockets = skyrocketSettings::clampToRange(val, skyrocketSettings::kMaxrockets);
-	result = RegQueryValueEx(skey, "Smoke", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Smoke", val))
 		dSmoke = skyrocketSettings::clampToRange(val, skyrocketSettings::kSmoke);
-	result = RegQueryValueEx(skey, "Explosionsmoke", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Explosionsmoke", val))
 		dExplosionsmoke = skyrocketSettings::clampToRange(val, skyrocketSettings::kExplosionsmoke);
-	result = RegQueryValueEx(skey, "Wind", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Wind", val))
 		dWind = skyrocketSettings::clampToRange(val, skyrocketSettings::kWind);
-	result = RegQueryValueEx(skey, "Ambient", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Ambient", val))
 		dAmbient = skyrocketSettings::clampToRange(val, skyrocketSettings::kAmbient);
-	result = RegQueryValueEx(skey, "Stardensity", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Stardensity", val))
 		dStardensity = skyrocketSettings::clampToRange(val, skyrocketSettings::kStardensity);
-	result = RegQueryValueEx(skey, "Flare", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Flare", val))
 		dFlare = skyrocketSettings::clampToRange(val, skyrocketSettings::kFlare);
-	result = RegQueryValueEx(skey, "Moonglow", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Moonglow", val))
 		dMoonglow = skyrocketSettings::clampToRange(val, skyrocketSettings::kMoonglow);
-	result = RegQueryValueEx(skey, "Sound", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Sound", val))
 		dSound = skyrocketSettings::clampToRange(val, skyrocketSettings::kSound);
-	result = RegQueryValueEx(skey, "Moon", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Moon", val))
 		dMoon = skyrocketSettings::clampToRange(val, skyrocketSettings::kMoon);
-	result = RegQueryValueEx(skey, "Clouds", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Clouds", val))
 		dClouds = skyrocketSettings::clampToRange(val, skyrocketSettings::kClouds);
-	result = RegQueryValueEx(skey, "Earth", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Earth", val))
 		dEarth = skyrocketSettings::clampToRange(val, skyrocketSettings::kEarth);
-	result = RegQueryValueEx(skey, "Illumination", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "Illumination", val))
 		dIllumination = skyrocketSettings::clampToRange(val, skyrocketSettings::kIllumination);
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);

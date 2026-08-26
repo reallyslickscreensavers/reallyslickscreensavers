@@ -260,7 +260,7 @@ the guide here — see the note at the end of this section.
 
 ## Third — robustness against untrusted input
 
-7. **Task 11 — DONE.** All 114 saver-specific registry values, plus
+7. **Task 11 — DONE.** All 112 saver-specific registry values, plus
    `dFrameRateLimit` in all 13 savers, are now clamped on read. This is the
    `src/` counterpart of the rslibs L5 work, and likely the root cause behind
    some of Task 10's findings, which is why it followed rather than led them.
@@ -417,10 +417,11 @@ before — but almost none of that is fixes:
 Both sit in `initSaver`, where `xyz` is allocated as `new float*[dComplexity+3]`
 and indexed from `dComplexity+2` downwards. Reaching either needs a **negative
 `dComplexity`**, and that cannot happen: `screenSaverProc` calls `readRegistry()`
-before `initSaver()`, and `readRegistry` clamps to 1..10 **unconditionally** —
-the clamp sits outside the `RegQueryValueEx` success check, so it applies to the
-default value too (`cyclone.cpp:646`, now `cycloneSettings::clampIntToRange`,
-added by #35 and given a settings header by Task 11).
+before `initSaver()`, and every path through `readRegistry` leaves `dComplexity`
+bounded by `cycloneSettings::kComplexity` — `setDefaults` takes it from
+`kDefaultComplexity`, and a stored value is clamped against the same range on
+read. #35's separate unconditional `if(dComplexity < 1)/(> 10)` guard was
+removed by #62, which made the header the single source of the bound.
 
 Three `CycloneBlockerGuard` tests in `tests/test_cyclone.cpp` pin that reasoning,
 including the ordering. **They still report as BLOCKERs in SonarCloud** — the
@@ -430,13 +431,15 @@ there or leave them with this note attached. Do not "fix" them by adding casts.
 > One caveat, written up in full in the test file: `readRegistry` returns early
 > when the saver has never stored settings, which is the case on a fresh CI
 > runner. There the clamp lines never execute and the guard only confirms that
-> `setDefaults`' value survives. Task 11 is done and did **not** make this
-> unconditional — the registry read at `cyclone.cpp:643` still only runs where
-> a key exists. What Task 11 did do is make the clamp a pure function
-> (`cycloneSettings::clampIntToRange`), testable without a registry at all, and
-> add a source-text check (`SettingsClampWiring`) that would catch the clamp
-> being pointed at the wrong range constant — which a runtime test cannot,
-> because a wrong-but-similarly-shaped range still passes a range check.
+> `setDefaults`' value survives — which is now the whole guarantee on that path,
+> since `setDefaults` reads `kDefaultComplexity` from the same header that
+> bounds the registry read. Task 11 is done and did **not** make the clamp
+> itself unconditional: the registry read still only runs where a key exists.
+> What Task 11 did do is make the clamp a pure function, testable without a
+> registry at all, and add a source-text check (`SettingsClampWiring`) that
+> catches the clamp being pointed at the wrong range constant — which a runtime
+> test cannot, because a wrong-but-similarly-shaped range still passes a range
+> check.
 
 ### Four findings — RESOLVED
 
@@ -513,25 +516,37 @@ Remaining lower-severity rules: `cpp:S6232` (type punning, ×4), `cpp:S1763`
 
 ## Task 11 · Registry values are used unclamped — DONE
 
-**13 savers, 114 saver-specific assignments plus 13 `dFrameRateLimit` reads, all
-now clamped.** `src/common/saverSettings.h` holds the two pure clamp primitives
+**13 savers, 112 saver-specific assignments plus 13 `dFrameRateLimit` reads, all
+now clamped, and all 125 reads now type-checked.**
+`src/common/saverSettings.h` holds the two pure clamp primitives
 (`rssaver::clampToRange` for a raw `DWORD`, `rssaver::clampIntToRange` for a
 value already held in a signed `int`); each saver's `<name>Settings.h`
 re-exports them and declares its own `Range` per setting; `readRegistry` routes
 every `d* = val;` assignment through the matching clamp, and every
-`dFrameRateLimit` read now goes through `rsWin32Saver::clampFrameRateLimit`
-(including `starfield`, which used to assign it raw).
+`dFrameRateLimit` read goes through a clamp too — `rsWin32Saver::clampFrameRateLimit`
+in twelve savers (including `starfield`, which used to assign it raw), and
+`cycloneSettings::clampFrameRate` in `cyclone`, which keeps the dialog's
+"0 means unlimited" semantics.
+
+**The type guard is closed too.** `src/common/saverRegistry.h` holds
+`rssaver::readRegistryDWORD`, which reports success only when the value exists
+*and* is a `REG_DWORD` of the expected size. Every one of the 125 reads goes
+through it, so a `"Speed"` stored as `REG_SZ` now leaves `setDefaults`' value in
+place instead of arriving as the first four bytes of its text reinterpreted as a
+`DWORD`. Earlier revisions of this task listed that as out of scope; it was
+closed in the same pass, generalising the helper `cyclone` introduced in #62.
+`saverRegistry.h` is a separate header from `saverSettings.h` on purpose — the
+latter must stay free of `windows.h` so the ranges and clamps stay testable
+without an `HWND`, which `tests/test_saverSettings.cpp` compiling at all is what
+asserts.
 
 **What this does not do — read before relying on it.** The design is
 per-assignment clamping with `readRegistry`'s early return left in place: on a
 fresh CI runner, or any machine where a saver has never stored settings,
-`readRegistry` returns before any `RegQueryValueEx` call runs, so **no clamp
-line executes at all** on that path. The postcondition (every setting ends up
-inside its declared range) still holds there, but only because `setDefaults`
-already picks values inside range — not because of anything this task added.
-The `valtype`/`valsize` type guard is still absent from all 127 reads; a
-`REG_SZ` value of the right byte size still reads as if it were a `DWORD`. That
-was pre-existing and is out of scope here, same as before.
+`readRegistry` returns before any registry read runs, so **no clamp line
+executes at all** on that path. The postcondition (every setting ends up inside
+its declared range) still holds there, but only because `setDefaults` already
+picks values inside range — not because of anything this task added.
 
 **The pairing gate.** A mis-paired range constant — `dSize` clamped against
 `kSpeed`, say — compiles clean and, because it sits below the early return,
@@ -541,9 +556,11 @@ for why a range check specifically cannot). `tests/tools/check-settings-wiring.c
 registered as the `SettingsClampWiring` ctest case, is a source-text check
 instead: it parses each saver's `readRegistry` and asserts the clamped name and
 the range constant name agree, that the per-saver and total counts match a
-checked-in table (114), that no raw `dX = val;` survives, and that all 13
-`dFrameRateLimit` sites are wired. It runs on every `ctest` invocation, so a
-future mis-pairing fails the build rather than compiling clean.
+checked-in table (112), that no raw `dX = val;` survives, that all 13
+`dFrameRateLimit` sites are wired, that every read is typed (no bare
+`RegQueryValueEx`, and the per-saver read counts match), and that nothing
+redefines `readRegistryDWORD` privately. It runs on every `ctest` invocation, so
+a future mis-pairing fails the build rather than compiling clean.
 
 Former detection grep, now the standing regression tripwire for this task —
 expected output **0**, not ~124:
@@ -555,23 +572,33 @@ grep -rn "^\s*d[A-Za-z]* = val;" src/*/*.cpp | wc -l
 `SettingsClampWiring` enforces the same rule automatically (rule 5 in the
 script), so nobody has to remember to run the grep by hand.
 
-**cyclone's `dComplexity` keeps both of its guards**, and they are not
-redundant:
+**cyclone is the one saver that does not follow the shared shape**, because it
+arrived at the same place independently in #62 and its settings header also
+drives the redesigned dialog. Three differences, all deliberate:
 
-```cpp
-result = RegQueryValueEx(skey, "Complexity", 0, &valtype, (LPBYTE)&val, &valsize);
-if(result == ERROR_SUCCESS)
-    dComplexity = cycloneSettings::clampToRange(val, cycloneSettings::kComplexity);
-...
-dComplexity = cycloneSettings::clampIntToRange(dComplexity, cycloneSettings::kComplexity);
-```
-(`cyclone.cpp:643` and `:646`.) The first only runs when a `"Complexity"` value
-was actually read. The second is unconditional — it runs on every path past
-`readRegistry`'s early return, including the no-key path, and is what the
-`CycloneBlockerGuard` tests in `tests/test_cyclone.cpp` pin. It uses
-`clampIntToRange`, not `clampToRange`: the value there is a signed `int` that
-may already be negative, and `clampToRange((unsigned long)-5, {1,10})` returns
-**10**, the upper bound, not `1` — which would silently invert the guard.
+- Its two checkboxes go through `cycloneSettings::normalizeFlag` rather than a
+  `{0, 1}` `Range`, so it contributes 5 rows to the 112 rather than 7.
+  `tests/test_cyclone.cpp` asserts them as flags instead.
+- `dFrameRateLimit` goes through `cycloneSettings::clampFrameRate`, which keeps
+  the dialog's "stored 0 means unlimited" contract that
+  `rsWin32Saver::clampFrameRateLimit` has no notion of.
+- It declares its own `Range` rather than re-exporting `rssaver::Range`. The two
+  are layout-identical; `tests/test_saverSettings.cpp` widens its rows
+  explicitly rather than churn a header that had just landed.
+
+`SettingsClampWiring` encodes each of these as cyclone's expected shape rather
+than waiving them, so cyclone is as tightly checked as the other twelve.
+
+`cyclone.cpp` no longer carries the unconditional
+`if(dComplexity < 1)/(> 10)` guard that #35 added and that earlier revisions of
+this task described keeping as `clampIntToRange`: #62 removed it, because
+`setDefaults` now takes `dComplexity` from `kDefaultComplexity` and the registry
+read clamps against the same `kComplexity`, so every path into `initSaver` is
+bounded by the header. The `CycloneBlockerGuard` tests still pin that
+end-to-end. `rssaver::clampIntToRange` remains in the shared header for the
+signed-input case — `clampToRange((unsigned long)-5, {1,10})` returns **10**,
+the upper bound, not `1`, so the two are not interchangeable — and
+`SaverSettings.ClampIntToRangeSendsNegativesToTheLowBound` keeps it honest.
 
 **Two things the test work established.**
 
@@ -597,7 +624,7 @@ without a registry (`tests/test_saverSettings.cpp`, no `HWND` and no
 `readRegistry`'s control flow, so the coverage gap this section used to predict
 would close is still there. Restructuring to also clamp on the no-key path was
 considered and rejected — see the design-fork discussion in the Task 11 plan
-history — because a second, hand-written pass over 114 settings is itself a
+history — because a second, hand-written pass over 112 settings is itself a
 live mis-pairing risk, for a runtime property the wiring check already proves
 statically.
 
