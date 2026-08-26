@@ -11,6 +11,13 @@ executable, plus `implicitDemo` (a freeglut demo, not a saver). Supporting libra
 commands — and the long form of everything below. Read the relevant task before changing anything
 in `src/`.** `docs/MAINTENANCE-TOP10.md` derives the top ten; `-rslibs.md` covers the submodule.
 
+## Worktrees — mandatory
+
+- Create worktrees only at `<repo-parent>/<repo-name>.worktrees/<branch>`.
+- Never create worktrees inside the repository, including `.claude/worktrees`.
+- Base new task worktrees on the latest `origin/main` unless the user requests another ref.
+- Initialize submodules separately in every worktree.
+
 ## Build and test
 
 ```bash
