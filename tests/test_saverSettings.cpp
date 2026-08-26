@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <climits>
 #include <string>
 
@@ -51,7 +52,7 @@ constexpr rssaver::Range Widen(cycloneSettings::Range r) {
 // suites. cyclone contributes 5 rather than 7: its two checkboxes go through
 // cycloneSettings::normalizeFlag instead of a {0,1} Range, so they have no row
 // to carry. tests/test_cyclone.cpp asserts them as flags instead.
-constexpr NamedRange kAllSettings[] = {
+constexpr std::array<NamedRange, 112> kAllSettings = {{
     // cyclone - 5
     {"cyclone", "kCyclones", Widen(cycloneSettings::kCyclones)},
     {"cyclone", "kParticles", Widen(cycloneSettings::kParticles)},
@@ -189,7 +190,7 @@ constexpr NamedRange kAllSettings[] = {
     {"starfield", "kNumStars", starfieldSettings::kNumStars},
     {"starfield", "kSpeed", starfieldSettings::kSpeed},
     {"starfield", "kStarSize", starfieldSettings::kStarSize},
-};
+}};
 
 constexpr int kExpectedTotal = 112;
 
@@ -262,5 +263,5 @@ TEST(SaverSettings, TableCoversEverySaversSettingCount) {
     EXPECT_EQ(CountForSaver("solarwinds"), 9);
     EXPECT_EQ(CountForSaver("starfield"), 3);
 
-    EXPECT_EQ(static_cast<int>(sizeof(kAllSettings) / sizeof(kAllSettings[0])), kExpectedTotal);
+    EXPECT_EQ(static_cast<int>(kAllSettings.size()), kExpectedTotal);
 }

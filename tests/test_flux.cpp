@@ -52,6 +52,38 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+//
+// dComplexity is NOT in here, because the preset case cannot assert it - see
+// the note there. readRegistry does set it, so the readRegistry case adds it
+// back with declaredRangesWithComplexity() below.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dFluxes", dFluxes, fluxSettings::kFluxes),
+        savertest::Ranged("dParticles", dParticles, fluxSettings::kParticles),
+        savertest::Ranged("dTrail", dTrail, fluxSettings::kTrail),
+        savertest::Ranged("dGeometry", dGeometry, fluxSettings::kGeometry),
+        savertest::Ranged("dSize", dSize, fluxSettings::kSize),
+        savertest::Ranged("dRandomize", dRandomize, fluxSettings::kRandomize),
+        savertest::Ranged("dExpansion", dExpansion, fluxSettings::kExpansion),
+        savertest::Ranged("dRotation", dRotation, fluxSettings::kRotation),
+        savertest::Ranged("dWind", dWind, fluxSettings::kWind),
+        savertest::Ranged("dInstability", dInstability, fluxSettings::kInstability),
+        savertest::Ranged("dBlur", dBlur, fluxSettings::kBlur),
+    };
+}
+
+// readRegistry calls setDefaults(DEFAULTS1), which does assign dComplexity, so
+// the readRegistry case can cover the one setting the preset case has to skip.
+std::vector<savertest::RangedSetting> declaredRangesWithComplexity() {
+    std::vector<savertest::RangedSetting> settings = declaredRanges();
+    settings.push_back(
+        savertest::Ranged("dComplexity", dComplexity, fluxSettings::kComplexity));
+    return settings;
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -91,19 +123,7 @@ TEST(FluxHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dSize, 0) << "preset " << preset;
         EXPECT_GE(dGeometry, 0) << "preset " << preset;
         EXPECT_LE(dGeometry, 2) << "preset " << preset;
-        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-            savertest::Ranged("dFluxes", dFluxes, fluxSettings::kFluxes),
-            savertest::Ranged("dParticles", dParticles, fluxSettings::kParticles),
-            savertest::Ranged("dTrail", dTrail, fluxSettings::kTrail),
-            savertest::Ranged("dGeometry", dGeometry, fluxSettings::kGeometry),
-            savertest::Ranged("dSize", dSize, fluxSettings::kSize),
-            savertest::Ranged("dRandomize", dRandomize, fluxSettings::kRandomize),
-            savertest::Ranged("dExpansion", dExpansion, fluxSettings::kExpansion),
-            savertest::Ranged("dRotation", dRotation, fluxSettings::kRotation),
-            savertest::Ranged("dWind", dWind, fluxSettings::kWind),
-            savertest::Ranged("dInstability", dInstability, fluxSettings::kInstability),
-            savertest::Ranged("dBlur", dBlur, fluxSettings::kBlur),
-        })) << "preset " << preset;
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges())) << "preset " << preset;
     }
 }
 
@@ -279,20 +299,7 @@ TEST(FluxFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     readRegistry();
 
     EXPECT_GT(dComplexity, 0) << "gluSphere is given dComplexity + 2 slices";
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dFluxes", dFluxes, fluxSettings::kFluxes),
-        savertest::Ranged("dParticles", dParticles, fluxSettings::kParticles),
-        savertest::Ranged("dTrail", dTrail, fluxSettings::kTrail),
-        savertest::Ranged("dGeometry", dGeometry, fluxSettings::kGeometry),
-        savertest::Ranged("dSize", dSize, fluxSettings::kSize),
-        savertest::Ranged("dComplexity", dComplexity, fluxSettings::kComplexity),
-        savertest::Ranged("dRandomize", dRandomize, fluxSettings::kRandomize),
-        savertest::Ranged("dExpansion", dExpansion, fluxSettings::kExpansion),
-        savertest::Ranged("dRotation", dRotation, fluxSettings::kRotation),
-        savertest::Ranged("dWind", dWind, fluxSettings::kWind),
-        savertest::Ranged("dInstability", dInstability, fluxSettings::kInstability),
-        savertest::Ranged("dBlur", dBlur, fluxSettings::kBlur),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRangesWithComplexity()));
 }
 
 // --- dialog procedures -----------------------------------------------------

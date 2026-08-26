@@ -53,6 +53,24 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dWisps", dWisps, euphoriaSettings::kWisps),
+        savertest::Ranged("dBackground", dBackground, euphoriaSettings::kBackground),
+        savertest::Ranged("dDensity", dDensity, euphoriaSettings::kDensity),
+        savertest::Ranged("dVisibility", dVisibility, euphoriaSettings::kVisibility),
+        savertest::Ranged("dSpeed", dSpeed, euphoriaSettings::kSpeed),
+        savertest::Ranged("dFeedback", dFeedback, euphoriaSettings::kFeedback),
+        savertest::Ranged("dFeedbackspeed", dFeedbackspeed, euphoriaSettings::kFeedbackspeed),
+        savertest::Ranged("dFeedbacksize", dFeedbacksize, euphoriaSettings::kFeedbacksize),
+        savertest::Ranged("dTexture", dTexture, euphoriaSettings::kTexture),
+        savertest::Ranged("dWireframe", dWireframe, euphoriaSettings::kWireframe),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -77,18 +95,7 @@ TEST(EuphoriaHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dWisps + dBackground, 0) << "preset " << preset << ": nothing would draw";
         EXPECT_GT(dDensity, 0) << "preset " << preset << ": the mesh is sized from this";
         EXPECT_GE(dFeedback, 0) << "preset " << preset;
-        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-            savertest::Ranged("dWisps", dWisps, euphoriaSettings::kWisps),
-            savertest::Ranged("dBackground", dBackground, euphoriaSettings::kBackground),
-            savertest::Ranged("dDensity", dDensity, euphoriaSettings::kDensity),
-            savertest::Ranged("dVisibility", dVisibility, euphoriaSettings::kVisibility),
-            savertest::Ranged("dSpeed", dSpeed, euphoriaSettings::kSpeed),
-            savertest::Ranged("dFeedback", dFeedback, euphoriaSettings::kFeedback),
-            savertest::Ranged("dFeedbackspeed", dFeedbackspeed, euphoriaSettings::kFeedbackspeed),
-            savertest::Ranged("dFeedbacksize", dFeedbacksize, euphoriaSettings::kFeedbacksize),
-            savertest::Ranged("dTexture", dTexture, euphoriaSettings::kTexture),
-            savertest::Ranged("dWireframe", dWireframe, euphoriaSettings::kWireframe),
-        })) << "preset " << preset;
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges())) << "preset " << preset;
     }
 }
 
@@ -246,18 +253,7 @@ TEST(EuphoriaFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     setDefaults(DEFAULTS1);
     readRegistry();
 
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dWisps", dWisps, euphoriaSettings::kWisps),
-        savertest::Ranged("dBackground", dBackground, euphoriaSettings::kBackground),
-        savertest::Ranged("dDensity", dDensity, euphoriaSettings::kDensity),
-        savertest::Ranged("dVisibility", dVisibility, euphoriaSettings::kVisibility),
-        savertest::Ranged("dSpeed", dSpeed, euphoriaSettings::kSpeed),
-        savertest::Ranged("dFeedback", dFeedback, euphoriaSettings::kFeedback),
-        savertest::Ranged("dFeedbackspeed", dFeedbackspeed, euphoriaSettings::kFeedbackspeed),
-        savertest::Ranged("dFeedbacksize", dFeedbacksize, euphoriaSettings::kFeedbacksize),
-        savertest::Ranged("dTexture", dTexture, euphoriaSettings::kTexture),
-        savertest::Ranged("dWireframe", dWireframe, euphoriaSettings::kWireframe),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

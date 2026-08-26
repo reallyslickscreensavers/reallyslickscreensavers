@@ -104,6 +104,23 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dSpeed", dSpeed, hyperspaceSettings::kSpeed),
+        savertest::Ranged("dStars", dStars, hyperspaceSettings::kStars),
+        savertest::Ranged("dStarSize", dStarSize, hyperspaceSettings::kStarSize),
+        savertest::Ranged("dResolution", dResolution, hyperspaceSettings::kResolution),
+        savertest::Ranged("dDepth", dDepth, hyperspaceSettings::kDepth),
+        savertest::Ranged("dFov", dFov, hyperspaceSettings::kFov),
+        savertest::Ranged("dUseTunnels", dUseTunnels, hyperspaceSettings::kUseTunnels),
+        savertest::Ranged("dUseGoo", dUseGoo, hyperspaceSettings::kUseGoo),
+        savertest::Ranged("dShaders", dShaders, hyperspaceSettings::kShaders),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -124,17 +141,7 @@ TEST(HyperspaceHarness, DefaultsSitInsideTheDeclaredRanges) {
     // The header declares the ranges and the saver picks the defaults; nothing
     // else checks that the two agree.
     setDefaults();
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dSpeed", dSpeed, hyperspaceSettings::kSpeed),
-        savertest::Ranged("dStars", dStars, hyperspaceSettings::kStars),
-        savertest::Ranged("dStarSize", dStarSize, hyperspaceSettings::kStarSize),
-        savertest::Ranged("dResolution", dResolution, hyperspaceSettings::kResolution),
-        savertest::Ranged("dDepth", dDepth, hyperspaceSettings::kDepth),
-        savertest::Ranged("dFov", dFov, hyperspaceSettings::kFov),
-        savertest::Ranged("dUseTunnels", dUseTunnels, hyperspaceSettings::kUseTunnels),
-        savertest::Ranged("dUseGoo", dUseGoo, hyperspaceSettings::kUseGoo),
-        savertest::Ranged("dShaders", dShaders, hyperspaceSettings::kShaders),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 TEST(HyperspaceHarness, KeepsShadersWhenTheExtensionsAreThere) {
@@ -447,17 +454,7 @@ TEST(HyperspaceFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) 
     EXPECT_GT(dResolution, 0) << "the goo mesh is sized from this";
     EXPECT_GT(dDepth, 0);
     EXPECT_GT(dFov, 0) << "the projection divides by half its tangent";
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dSpeed", dSpeed, hyperspaceSettings::kSpeed),
-        savertest::Ranged("dStars", dStars, hyperspaceSettings::kStars),
-        savertest::Ranged("dStarSize", dStarSize, hyperspaceSettings::kStarSize),
-        savertest::Ranged("dResolution", dResolution, hyperspaceSettings::kResolution),
-        savertest::Ranged("dDepth", dDepth, hyperspaceSettings::kDepth),
-        savertest::Ranged("dFov", dFov, hyperspaceSettings::kFov),
-        savertest::Ranged("dUseTunnels", dUseTunnels, hyperspaceSettings::kUseTunnels),
-        savertest::Ranged("dUseGoo", dUseGoo, hyperspaceSettings::kUseGoo),
-        savertest::Ranged("dShaders", dShaders, hyperspaceSettings::kShaders),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

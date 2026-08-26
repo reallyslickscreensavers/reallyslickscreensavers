@@ -44,6 +44,17 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dNumStars", dNumStars, starfieldSettings::kNumStars),
+        savertest::Ranged("dSpeed", dSpeed, starfieldSettings::kSpeed),
+        savertest::Ranged("dStarSize", dStarSize, starfieldSettings::kStarSize),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -61,11 +72,7 @@ TEST(StarfieldHarness, DefaultsSitInsideTheDeclaredRanges) {
     // The header declares the ranges and the saver picks the defaults; nothing
     // else checks that the two agree.
     setDefaults();
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dNumStars", dNumStars, starfieldSettings::kNumStars),
-        savertest::Ranged("dSpeed", dSpeed, starfieldSettings::kSpeed),
-        savertest::Ranged("dStarSize", dStarSize, starfieldSettings::kStarSize),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -257,11 +264,7 @@ TEST(StarfieldFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
 
     readRegistry();
 
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dNumStars", dNumStars, starfieldSettings::kNumStars),
-        savertest::Ranged("dSpeed", dSpeed, starfieldSettings::kSpeed),
-        savertest::Ranged("dStarSize", dStarSize, starfieldSettings::kStarSize),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

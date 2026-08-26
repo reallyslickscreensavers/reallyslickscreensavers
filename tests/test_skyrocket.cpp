@@ -163,6 +163,27 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dMaxrockets", dMaxrockets, skyrocketSettings::kMaxrockets),
+        savertest::Ranged("dSmoke", dSmoke, skyrocketSettings::kSmoke),
+        savertest::Ranged("dExplosionsmoke", dExplosionsmoke, skyrocketSettings::kExplosionsmoke),
+        savertest::Ranged("dWind", dWind, skyrocketSettings::kWind),
+        savertest::Ranged("dAmbient", dAmbient, skyrocketSettings::kAmbient),
+        savertest::Ranged("dStardensity", dStardensity, skyrocketSettings::kStardensity),
+        savertest::Ranged("dFlare", dFlare, skyrocketSettings::kFlare),
+        savertest::Ranged("dMoonglow", dMoonglow, skyrocketSettings::kMoonglow),
+        savertest::Ranged("dSound", dSound, skyrocketSettings::kSound),
+        savertest::Ranged("dMoon", dMoon, skyrocketSettings::kMoon),
+        savertest::Ranged("dClouds", dClouds, skyrocketSettings::kClouds),
+        savertest::Ranged("dEarth", dEarth, skyrocketSettings::kEarth),
+        savertest::Ranged("dIllumination", dIllumination, skyrocketSettings::kIllumination),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -183,21 +204,7 @@ TEST(SkyrocketHarness, DefaultsSitInsideTheDeclaredRanges) {
     // The header declares the ranges and the saver picks the defaults; nothing
     // else checks that the two agree.
     setDefaults();
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dMaxrockets", dMaxrockets, skyrocketSettings::kMaxrockets),
-        savertest::Ranged("dSmoke", dSmoke, skyrocketSettings::kSmoke),
-        savertest::Ranged("dExplosionsmoke", dExplosionsmoke, skyrocketSettings::kExplosionsmoke),
-        savertest::Ranged("dWind", dWind, skyrocketSettings::kWind),
-        savertest::Ranged("dAmbient", dAmbient, skyrocketSettings::kAmbient),
-        savertest::Ranged("dStardensity", dStardensity, skyrocketSettings::kStardensity),
-        savertest::Ranged("dFlare", dFlare, skyrocketSettings::kFlare),
-        savertest::Ranged("dMoonglow", dMoonglow, skyrocketSettings::kMoonglow),
-        savertest::Ranged("dSound", dSound, skyrocketSettings::kSound),
-        savertest::Ranged("dMoon", dMoon, skyrocketSettings::kMoon),
-        savertest::Ranged("dClouds", dClouds, skyrocketSettings::kClouds),
-        savertest::Ranged("dEarth", dEarth, skyrocketSettings::kEarth),
-        savertest::Ranged("dIllumination", dIllumination, skyrocketSettings::kIllumination),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -755,21 +762,7 @@ TEST(SkyrocketFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     readRegistry();
 
     EXPECT_GT(dMaxrockets, 0) << "the rocket array is allocated with this count";
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dMaxrockets", dMaxrockets, skyrocketSettings::kMaxrockets),
-        savertest::Ranged("dSmoke", dSmoke, skyrocketSettings::kSmoke),
-        savertest::Ranged("dExplosionsmoke", dExplosionsmoke, skyrocketSettings::kExplosionsmoke),
-        savertest::Ranged("dWind", dWind, skyrocketSettings::kWind),
-        savertest::Ranged("dAmbient", dAmbient, skyrocketSettings::kAmbient),
-        savertest::Ranged("dStardensity", dStardensity, skyrocketSettings::kStardensity),
-        savertest::Ranged("dFlare", dFlare, skyrocketSettings::kFlare),
-        savertest::Ranged("dMoonglow", dMoonglow, skyrocketSettings::kMoonglow),
-        savertest::Ranged("dSound", dSound, skyrocketSettings::kSound),
-        savertest::Ranged("dMoon", dMoon, skyrocketSettings::kMoon),
-        savertest::Ranged("dClouds", dClouds, skyrocketSettings::kClouds),
-        savertest::Ranged("dEarth", dEarth, skyrocketSettings::kEarth),
-        savertest::Ranged("dIllumination", dIllumination, skyrocketSettings::kIllumination),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

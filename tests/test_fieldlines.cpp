@@ -53,6 +53,21 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dIons", dIons, fieldlinesSettings::kIons),
+        savertest::Ranged("dStepSize", dStepSize, fieldlinesSettings::kStepSize),
+        savertest::Ranged("dMaxSteps", dMaxSteps, fieldlinesSettings::kMaxSteps),
+        savertest::Ranged("dWidth", dWidth, fieldlinesSettings::kWidth),
+        savertest::Ranged("dSpeed", dSpeed, fieldlinesSettings::kSpeed),
+        savertest::Ranged("dConstwidth", dConstwidth, fieldlinesSettings::kConstwidth),
+        savertest::Ranged("dElectric", dElectric, fieldlinesSettings::kElectric),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -72,15 +87,7 @@ TEST(FieldlinesHarness, DefaultsSitInsideTheDeclaredRanges) {
     // The header declares the ranges and the saver picks the defaults; nothing
     // else checks that the two agree.
     setDefaults();
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dIons", dIons, fieldlinesSettings::kIons),
-        savertest::Ranged("dStepSize", dStepSize, fieldlinesSettings::kStepSize),
-        savertest::Ranged("dMaxSteps", dMaxSteps, fieldlinesSettings::kMaxSteps),
-        savertest::Ranged("dWidth", dWidth, fieldlinesSettings::kWidth),
-        savertest::Ranged("dSpeed", dSpeed, fieldlinesSettings::kSpeed),
-        savertest::Ranged("dConstwidth", dConstwidth, fieldlinesSettings::kConstwidth),
-        savertest::Ranged("dElectric", dElectric, fieldlinesSettings::kElectric),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -216,15 +223,7 @@ TEST(FieldlinesFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) 
     // settings, CI included - see the note in test_cyclone.cpp.
     readRegistry();
 
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dIons", dIons, fieldlinesSettings::kIons),
-        savertest::Ranged("dStepSize", dStepSize, fieldlinesSettings::kStepSize),
-        savertest::Ranged("dMaxSteps", dMaxSteps, fieldlinesSettings::kMaxSteps),
-        savertest::Ranged("dWidth", dWidth, fieldlinesSettings::kWidth),
-        savertest::Ranged("dSpeed", dSpeed, fieldlinesSettings::kSpeed),
-        savertest::Ranged("dConstwidth", dConstwidth, fieldlinesSettings::kConstwidth),
-        savertest::Ranged("dElectric", dElectric, fieldlinesSettings::kElectric),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

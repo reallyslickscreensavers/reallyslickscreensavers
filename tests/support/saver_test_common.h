@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include <initializer_list>
+#include <vector>
 
 #include <Windows.h>
 
@@ -239,8 +239,15 @@ RangedSetting Ranged(const char* name, int value, RangeT range) {
     return RangedSetting{name, value, range.lo, range.hi};
 }
 
+// Takes a vector rather than an initializer_list so each suite can build its
+// list once, in a declaredRanges() of its own, and hand the same list to both
+// its defaults case and its readRegistry case. Returning an initializer_list
+// from such a function would dangle - its backing array dies with the return
+// statement - and writing the list out twice per suite is what pushed this
+// change past the duplication gate the first time round. Braced call sites
+// still work unchanged.
 inline ::testing::AssertionResult SettingsWithinDeclaredRanges(
-        std::initializer_list<RangedSetting> settings) {
+        const std::vector<RangedSetting>& settings) {
     ::testing::AssertionResult failure = ::testing::AssertionFailure();
     bool bad = false;
     for (const RangedSetting& s : settings) {

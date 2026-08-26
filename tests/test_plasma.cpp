@@ -45,6 +45,18 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dZoom", dZoom, plasmaSettings::kZoom),
+        savertest::Ranged("dFocus", dFocus, plasmaSettings::kFocus),
+        savertest::Ranged("dSpeed", dSpeed, plasmaSettings::kSpeed),
+        savertest::Ranged("dResolution", dResolution, plasmaSettings::kResolution),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -65,12 +77,7 @@ TEST(PlasmaHarness, DefaultsSitInsideTheDeclaredRanges) {
     // The header declares the ranges and the saver picks the defaults; nothing
     // else checks that the two agree.
     setDefaults();
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dZoom", dZoom, plasmaSettings::kZoom),
-        savertest::Ranged("dFocus", dFocus, plasmaSettings::kFocus),
-        savertest::Ranged("dSpeed", dSpeed, plasmaSettings::kSpeed),
-        savertest::Ranged("dResolution", dResolution, plasmaSettings::kResolution),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- settings maths --------------------------------------------------------
@@ -245,12 +252,7 @@ TEST(PlasmaFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     readRegistry();
 
     EXPECT_NE(dZoom, 0) << "dZoom divides into 30.0f in setPlasmaSize";
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dZoom", dZoom, plasmaSettings::kZoom),
-        savertest::Ranged("dFocus", dFocus, plasmaSettings::kFocus),
-        savertest::Ranged("dSpeed", dSpeed, plasmaSettings::kSpeed),
-        savertest::Ranged("dResolution", dResolution, plasmaSettings::kResolution),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

@@ -51,7 +51,7 @@ namespace rssaver {
 inline bool readRegistryDWORD(HKEY key, LPCTSTR name, DWORD& value) {
     DWORD type = 0;
     DWORD size = sizeof(value);
-    return RegQueryValueEx(key, name, 0, &type, (LPBYTE)&value, &size) == ERROR_SUCCESS
+    return RegQueryValueEx(key, name, nullptr, &type, (LPBYTE)&value, &size) == ERROR_SUCCESS
         && type == REG_DWORD
         && size == sizeof(value);
 }

@@ -49,6 +49,23 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dWinds", dWinds, solarWindsSettings::kWinds),
+        savertest::Ranged("dEmitters", dEmitters, solarWindsSettings::kEmitters),
+        savertest::Ranged("dParticles", dParticles, solarWindsSettings::kParticles),
+        savertest::Ranged("dGeometry", dGeometry, solarWindsSettings::kGeometry),
+        savertest::Ranged("dSize", dSize, solarWindsSettings::kSize),
+        savertest::Ranged("dWindspeed", dWindspeed, solarWindsSettings::kWindspeed),
+        savertest::Ranged("dEmitterspeed", dEmitterspeed, solarWindsSettings::kEmitterspeed),
+        savertest::Ranged("dParticlespeed", dParticlespeed, solarWindsSettings::kParticlespeed),
+        savertest::Ranged("dBlur", dBlur, solarWindsSettings::kBlur),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -78,17 +95,7 @@ TEST(SolarWindsPresets, EachPresetProducesUsableSettings) {
         EXPECT_GT(dSize, 0) << "preset " << preset;
         EXPECT_GE(dGeometry, 0) << "preset " << preset;
         EXPECT_LE(dGeometry, 2) << "preset " << preset;
-        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-            savertest::Ranged("dWinds", dWinds, solarWindsSettings::kWinds),
-            savertest::Ranged("dEmitters", dEmitters, solarWindsSettings::kEmitters),
-            savertest::Ranged("dParticles", dParticles, solarWindsSettings::kParticles),
-            savertest::Ranged("dGeometry", dGeometry, solarWindsSettings::kGeometry),
-            savertest::Ranged("dSize", dSize, solarWindsSettings::kSize),
-            savertest::Ranged("dWindspeed", dWindspeed, solarWindsSettings::kWindspeed),
-            savertest::Ranged("dEmitterspeed", dEmitterspeed, solarWindsSettings::kEmitterspeed),
-            savertest::Ranged("dParticlespeed", dParticlespeed, solarWindsSettings::kParticlespeed),
-            savertest::Ranged("dBlur", dBlur, solarWindsSettings::kBlur),
-        })) << "preset " << preset;
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges())) << "preset " << preset;
     }
 }
 
@@ -250,17 +257,7 @@ TEST(SolarWindsFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) 
     // test_cyclone.cpp.
     readRegistry();
 
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dWinds", dWinds, solarWindsSettings::kWinds),
-        savertest::Ranged("dEmitters", dEmitters, solarWindsSettings::kEmitters),
-        savertest::Ranged("dParticles", dParticles, solarWindsSettings::kParticles),
-        savertest::Ranged("dGeometry", dGeometry, solarWindsSettings::kGeometry),
-        savertest::Ranged("dSize", dSize, solarWindsSettings::kSize),
-        savertest::Ranged("dWindspeed", dWindspeed, solarWindsSettings::kWindspeed),
-        savertest::Ranged("dEmitterspeed", dEmitterspeed, solarWindsSettings::kEmitterspeed),
-        savertest::Ranged("dParticlespeed", dParticlespeed, solarWindsSettings::kParticlespeed),
-        savertest::Ranged("dBlur", dBlur, solarWindsSettings::kBlur),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

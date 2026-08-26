@@ -76,6 +76,25 @@ int stripsWithVertices(unsigned n) {
     return count;
 }
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dLongitude", dLongitude, latticeSettings::kLongitude),
+        savertest::Ranged("dLatitude", dLatitude, latticeSettings::kLatitude),
+        savertest::Ranged("dThick", dThick, latticeSettings::kThick),
+        savertest::Ranged("dDensity", dDensity, latticeSettings::kDensity),
+        savertest::Ranged("dDepth", dDepth, latticeSettings::kDepth),
+        savertest::Ranged("dFov", dFov, latticeSettings::kFov),
+        savertest::Ranged("dPathrand", dPathrand, latticeSettings::kPathrand),
+        savertest::Ranged("dSpeed", dSpeed, latticeSettings::kSpeed),
+        savertest::Ranged("dTexture", dTexture, latticeSettings::kTexture),
+        savertest::Ranged("dSmooth", dSmooth, latticeSettings::kSmooth),
+        savertest::Ranged("dFog", dFog, latticeSettings::kFog),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -101,19 +120,7 @@ TEST(LatticeHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dDepth, 0) << "preset " << preset << ": the projection divides by it";
         EXPECT_GT(dFov, 0) << "preset " << preset << ": and by half its tangent";
         EXPECT_LT(dPathrand, 11) << "preset " << preset << ": rsRandi(11 - dPathrand) needs headroom";
-        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-            savertest::Ranged("dLongitude", dLongitude, latticeSettings::kLongitude),
-            savertest::Ranged("dLatitude", dLatitude, latticeSettings::kLatitude),
-            savertest::Ranged("dThick", dThick, latticeSettings::kThick),
-            savertest::Ranged("dDensity", dDensity, latticeSettings::kDensity),
-            savertest::Ranged("dDepth", dDepth, latticeSettings::kDepth),
-            savertest::Ranged("dFov", dFov, latticeSettings::kFov),
-            savertest::Ranged("dPathrand", dPathrand, latticeSettings::kPathrand),
-            savertest::Ranged("dSpeed", dSpeed, latticeSettings::kSpeed),
-            savertest::Ranged("dTexture", dTexture, latticeSettings::kTexture),
-            savertest::Ranged("dSmooth", dSmooth, latticeSettings::kSmooth),
-            savertest::Ranged("dFog", dFog, latticeSettings::kFog),
-        })) << "preset " << preset;
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges())) << "preset " << preset;
     }
 }
 
@@ -413,19 +420,7 @@ TEST(LatticeFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     EXPECT_LT(dPathrand, 11)
         << "draw() calls rsRandi(11 - dPathrand); rslibs L4 made that safe, but "
            "the setting still has to stay in range";
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dLongitude", dLongitude, latticeSettings::kLongitude),
-        savertest::Ranged("dLatitude", dLatitude, latticeSettings::kLatitude),
-        savertest::Ranged("dThick", dThick, latticeSettings::kThick),
-        savertest::Ranged("dDensity", dDensity, latticeSettings::kDensity),
-        savertest::Ranged("dDepth", dDepth, latticeSettings::kDepth),
-        savertest::Ranged("dFov", dFov, latticeSettings::kFov),
-        savertest::Ranged("dPathrand", dPathrand, latticeSettings::kPathrand),
-        savertest::Ranged("dSpeed", dSpeed, latticeSettings::kSpeed),
-        savertest::Ranged("dTexture", dTexture, latticeSettings::kTexture),
-        savertest::Ranged("dSmooth", dSmooth, latticeSettings::kSmooth),
-        savertest::Ranged("dFog", dFog, latticeSettings::kFog),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

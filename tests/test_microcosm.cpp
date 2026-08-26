@@ -105,6 +105,25 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dKaleidoscopeTime", dKaleidoscopeTime, microcosmSettings::kKaleidoscopeTime),
+        savertest::Ranged("dSingleTime", dSingleTime, microcosmSettings::kSingleTime),
+        savertest::Ranged("dBackground", dBackground, microcosmSettings::kBackground),
+        savertest::Ranged("dResolution", dResolution, microcosmSettings::kResolution),
+        savertest::Ranged("dDepth", dDepth, microcosmSettings::kDepth),
+        savertest::Ranged("dFov", dFov, microcosmSettings::kFov),
+        savertest::Ranged("dGizmoSpeed", dGizmoSpeed, microcosmSettings::kGizmoSpeed),
+        savertest::Ranged("dColorSpeed", dColorSpeed, microcosmSettings::kColorSpeed),
+        savertest::Ranged("dCameraSpeed", dCameraSpeed, microcosmSettings::kCameraSpeed),
+        savertest::Ranged("dShaders", dShaders, microcosmSettings::kShaders),
+        savertest::Ranged("dFog", dFog, microcosmSettings::kFog),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -129,19 +148,7 @@ TEST(MicrocosmHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dFov, 0) << "preset " << preset << ": the projection divides by half its tangent";
         EXPECT_GT(dSingleTime + dKaleidoscopeTime, 0)
             << "preset " << preset << ": one of the two modes has to last a while";
-        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-            savertest::Ranged("dKaleidoscopeTime", dKaleidoscopeTime, microcosmSettings::kKaleidoscopeTime),
-            savertest::Ranged("dSingleTime", dSingleTime, microcosmSettings::kSingleTime),
-            savertest::Ranged("dBackground", dBackground, microcosmSettings::kBackground),
-            savertest::Ranged("dResolution", dResolution, microcosmSettings::kResolution),
-            savertest::Ranged("dDepth", dDepth, microcosmSettings::kDepth),
-            savertest::Ranged("dFov", dFov, microcosmSettings::kFov),
-            savertest::Ranged("dGizmoSpeed", dGizmoSpeed, microcosmSettings::kGizmoSpeed),
-            savertest::Ranged("dColorSpeed", dColorSpeed, microcosmSettings::kColorSpeed),
-            savertest::Ranged("dCameraSpeed", dCameraSpeed, microcosmSettings::kCameraSpeed),
-            savertest::Ranged("dShaders", dShaders, microcosmSettings::kShaders),
-            savertest::Ranged("dFog", dFog, microcosmSettings::kFog),
-        })) << "preset " << preset;
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges())) << "preset " << preset;
     }
 }
 
@@ -365,19 +372,7 @@ TEST(MicrocosmFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     EXPECT_GT(dResolution, 0) << "the implicit volume is sized from this";
     EXPECT_GT(dDepth, 0);
     EXPECT_GT(dFov, 0);
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dKaleidoscopeTime", dKaleidoscopeTime, microcosmSettings::kKaleidoscopeTime),
-        savertest::Ranged("dSingleTime", dSingleTime, microcosmSettings::kSingleTime),
-        savertest::Ranged("dBackground", dBackground, microcosmSettings::kBackground),
-        savertest::Ranged("dResolution", dResolution, microcosmSettings::kResolution),
-        savertest::Ranged("dDepth", dDepth, microcosmSettings::kDepth),
-        savertest::Ranged("dFov", dFov, microcosmSettings::kFov),
-        savertest::Ranged("dGizmoSpeed", dGizmoSpeed, microcosmSettings::kGizmoSpeed),
-        savertest::Ranged("dColorSpeed", dColorSpeed, microcosmSettings::kColorSpeed),
-        savertest::Ranged("dCameraSpeed", dCameraSpeed, microcosmSettings::kCameraSpeed),
-        savertest::Ranged("dShaders", dShaders, microcosmSettings::kShaders),
-        savertest::Ranged("dFog", dFog, microcosmSettings::kFog),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

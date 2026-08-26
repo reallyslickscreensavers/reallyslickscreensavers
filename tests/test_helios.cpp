@@ -91,6 +91,22 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dIons", dIons, heliosSettings::kIons),
+        savertest::Ranged("dSize", dSize, heliosSettings::kSize),
+        savertest::Ranged("dEmitters", dEmitters, heliosSettings::kEmitters),
+        savertest::Ranged("dAttracters", dAttracters, heliosSettings::kAttracters),
+        savertest::Ranged("dSpeed", dSpeed, heliosSettings::kSpeed),
+        savertest::Ranged("dCameraspeed", dCameraspeed, heliosSettings::kCameraspeed),
+        savertest::Ranged("dSurface", dSurface, heliosSettings::kSurface),
+        savertest::Ranged("dBlur", dBlur, heliosSettings::kBlur),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -111,16 +127,7 @@ TEST(HeliosHarness, DefaultsSitInsideTheDeclaredRanges) {
     // The header declares the ranges and the saver picks the defaults; nothing
     // else checks that the two agree.
     setDefaults();
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dIons", dIons, heliosSettings::kIons),
-        savertest::Ranged("dSize", dSize, heliosSettings::kSize),
-        savertest::Ranged("dEmitters", dEmitters, heliosSettings::kEmitters),
-        savertest::Ranged("dAttracters", dAttracters, heliosSettings::kAttracters),
-        savertest::Ranged("dSpeed", dSpeed, heliosSettings::kSpeed),
-        savertest::Ranged("dCameraspeed", dCameraspeed, heliosSettings::kCameraspeed),
-        savertest::Ranged("dSurface", dSurface, heliosSettings::kSurface),
-        savertest::Ranged("dBlur", dBlur, heliosSettings::kBlur),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -386,16 +393,7 @@ TEST(HeliosFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     EXPECT_GT(dEmitters, 0) << "so is the emitter array";
     EXPECT_GT(dAttracters, 0);
     EXPECT_GT(dSpeed, 0);
-    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dIons", dIons, heliosSettings::kIons),
-        savertest::Ranged("dSize", dSize, heliosSettings::kSize),
-        savertest::Ranged("dEmitters", dEmitters, heliosSettings::kEmitters),
-        savertest::Ranged("dAttracters", dAttracters, heliosSettings::kAttracters),
-        savertest::Ranged("dSpeed", dSpeed, heliosSettings::kSpeed),
-        savertest::Ranged("dCameraspeed", dCameraspeed, heliosSettings::kCameraspeed),
-        savertest::Ranged("dSurface", dSurface, heliosSettings::kSurface),
-        savertest::Ranged("dBlur", dBlur, heliosSettings::kBlur),
-    }));
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------
