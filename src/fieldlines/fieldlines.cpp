@@ -33,8 +33,11 @@
 #include <regstr.h>
 #include <commctrl.h>
 #include "resource.h"
+#include "fieldlinesSettings.h"
+#include "../common/saverRegistry.h"
 
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <rsText/rsText.h>
 #include <rsMath/rsMath.h>
 
@@ -396,7 +399,7 @@ void setDefaults(){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -404,32 +407,23 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Ions", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dIons = val;
-	result = RegQueryValueEx(skey, "StepSize", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dStepSize = val;
-	result = RegQueryValueEx(skey, "MaxSteps", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dMaxSteps = val;
-	result = RegQueryValueEx(skey, "Width", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dWidth = val;
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSpeed = val;
-	result = RegQueryValueEx(skey, "Constwidth", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dConstwidth = val;
-	result = RegQueryValueEx(skey, "Electric", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dElectric = val;
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+	if(rssaver::readRegistryDWORD(skey, "Ions", val))
+		dIons = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kIons);
+	if(rssaver::readRegistryDWORD(skey, "StepSize", val))
+		dStepSize = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kStepSize);
+	if(rssaver::readRegistryDWORD(skey, "MaxSteps", val))
+		dMaxSteps = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kMaxSteps);
+	if(rssaver::readRegistryDWORD(skey, "Width", val))
+		dWidth = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kWidth);
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
+		dSpeed = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kSpeed);
+	if(rssaver::readRegistryDWORD(skey, "Constwidth", val))
+		dConstwidth = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kConstwidth);
+	if(rssaver::readRegistryDWORD(skey, "Electric", val))
+		dElectric = fieldlinesSettings::clampToRange(val, fieldlinesSettings::kElectric);
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

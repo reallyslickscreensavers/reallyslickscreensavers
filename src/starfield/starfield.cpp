@@ -24,6 +24,7 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <process.h>
 #include <regstr.h>
 #include <commctrl.h>
@@ -44,6 +45,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "starfieldSettings.h"
+#include "../common/saverRegistry.h"
 
 
 // Globals
@@ -208,9 +210,9 @@ void idleProc(){
 
 
 void setDefaults(){
-	dNumStars = starfield::kDefaultNumStars;
-	dSpeed = starfield::kDefaultSpeed;
-	dStarSize = starfield::kDefaultStarSize;
+	dNumStars = starfieldSettings::kDefaultNumStars;
+	dSpeed = starfieldSettings::kDefaultSpeed;
+	dStarSize = starfieldSettings::kDefaultStarSize;
 	dFrameRateLimit = 0;  // unlimited
 }
 
@@ -229,11 +231,11 @@ void allocateStars(){
 void handleCommandLine(int argc, char* argv[]){
 	setDefaults();
 	getArgumentsValue(argc, argv, std::string("-numstars"), dNumStars,
-		starfield::kNumStars.lo, starfield::kNumStars.hi);
+		starfieldSettings::kNumStars.lo, starfieldSettings::kNumStars.hi);
 	getArgumentsValue(argc, argv, std::string("-speed"), dSpeed,
-		starfield::kSpeed.lo, starfield::kSpeed.hi);
+		starfieldSettings::kSpeed.lo, starfieldSettings::kSpeed.hi);
 	getArgumentsValue(argc, argv, std::string("-starsize"), dStarSize,
-		starfield::kStarSize.lo, starfield::kStarSize.hi);
+		starfieldSettings::kStarSize.lo, starfieldSettings::kStarSize.hi);
 }
 
 void reshape(int width, int height){
@@ -317,7 +319,7 @@ void cleanUp(HWND hwnd){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -325,20 +327,15 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "NumStars", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dNumStars = starfield::clampToRange(val, starfield::kNumStars);
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSpeed = starfield::clampToRange(val, starfield::kSpeed);
-	result = RegQueryValueEx(skey, "StarSize", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dStarSize = starfield::clampToRange(val, starfield::kStarSize);
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+	if(rssaver::readRegistryDWORD(skey, "NumStars", val))
+		dNumStars = starfieldSettings::clampToRange(val, starfieldSettings::kNumStars);
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
+		dSpeed = starfieldSettings::clampToRange(val, starfieldSettings::kSpeed);
+	if(rssaver::readRegistryDWORD(skey, "StarSize", val))
+		dStarSize = starfieldSettings::clampToRange(val, starfieldSettings::kStarSize);
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }
@@ -401,7 +398,7 @@ void initControls(HWND hdlg){
 	char cval[16];
 
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETRANGE, 0,
-		LPARAM(MAKELONG(DWORD(starfield::kNumStars.lo), DWORD(starfield::kNumStars.hi))));
+		LPARAM(MAKELONG(DWORD(starfieldSettings::kNumStars.lo), DWORD(starfieldSettings::kNumStars.hi))));
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETPOS, 1, LPARAM(dNumStars));
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETLINESIZE, 0, LPARAM(100));
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETPAGESIZE, 0, LPARAM(500));
@@ -409,7 +406,7 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, NUMSTARSTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0,
-		LPARAM(MAKELONG(DWORD(starfield::kSpeed.lo), DWORD(starfield::kSpeed.hi))));
+		LPARAM(MAKELONG(DWORD(starfieldSettings::kSpeed.lo), DWORD(starfieldSettings::kSpeed.hi))));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
@@ -417,7 +414,7 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETRANGE, 0,
-		LPARAM(MAKELONG(DWORD(starfield::kStarSize.lo), DWORD(starfield::kStarSize.hi))));
+		LPARAM(MAKELONG(DWORD(starfieldSettings::kStarSize.lo), DWORD(starfieldSettings::kStarSize.hi))));
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETPOS, 1, LPARAM(dStarSize));
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETPAGESIZE, 0, LPARAM(1));
@@ -425,10 +422,10 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, STARSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	// dFrameRateLimit keeps its stored meaning, where 0 is unlimited
-	const starfield::FrameRateUi fr = starfield::frameRateToUi(dFrameRateLimit);
+	const starfieldSettings::FrameRateUi fr = starfieldSettings::frameRateToUi(dFrameRateLimit);
 	CheckDlgButton(hdlg, FRAMERATELIMITCHECK, fr.limited ? BST_CHECKED : BST_UNCHECKED);
 	SendDlgItemMessage(hdlg, FRAMERATELIMITSPIN, UDM_SETRANGE, 0,
-		LPARAM(MAKELONG(DWORD(starfield::kFrameRate.hi), DWORD(starfield::kFrameRate.lo))));
+		LPARAM(MAKELONG(DWORD(starfieldSettings::kFrameRate.hi), DWORD(starfieldSettings::kFrameRate.lo))));
 	SendDlgItemMessage(hdlg, FRAMERATELIMITSPIN, UDM_SETPOS, 0, LPARAM(fr.fps));
 	enableFrameRateControls(hdlg, fr.limited);
 }
@@ -451,7 +448,7 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 			dNumStars = SendDlgItemMessage(hdlg, NUMSTARS, TBM_GETPOS, 0, 0);
 			dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
 			dStarSize = SendDlgItemMessage(hdlg, STARSIZE, TBM_GETPOS, 0, 0);
-			dFrameRateLimit = starfield::frameRateFromUi(
+			dFrameRateLimit = starfieldSettings::frameRateFromUi(
 				IsDlgButtonChecked(hdlg, FRAMERATELIMITCHECK) == BST_CHECKED,
 				int(SendDlgItemMessage(hdlg, FRAMERATELIMITSPIN, UDM_GETPOS, 0, 0)));
 			writeRegistry();

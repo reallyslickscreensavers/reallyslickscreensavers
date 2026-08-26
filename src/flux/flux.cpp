@@ -24,10 +24,13 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include <time.h>
 #include "resource.h"
+#include "fluxSettings.h"
+#include "../common/saverRegistry.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -767,7 +770,7 @@ void cleanUp(HWND hwnd){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults(DEFAULTS1);
 
@@ -775,47 +778,33 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Fluxes", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFluxes = val;
-	result = RegQueryValueEx(skey, "Particles", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dParticles = val;
-	result = RegQueryValueEx(skey, "Trail", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dTrail = val;
-	result = RegQueryValueEx(skey, "Geometry", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dGeometry = val;
-	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSize = val;
-	result = RegQueryValueEx(skey, "Complexity", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dComplexity = val;
-	result = RegQueryValueEx(skey, "Randomize", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dRandomize = val;
-	result = RegQueryValueEx(skey, "Expansion", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dExpansion = val;
-	result = RegQueryValueEx(skey, "Rotation", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dRotation = val;
-	result = RegQueryValueEx(skey, "Wind", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dWind = val;
-	result = RegQueryValueEx(skey, "Instability", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dInstability = val;
-	result = RegQueryValueEx(skey, "Blur", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dBlur = val;
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+	if(rssaver::readRegistryDWORD(skey, "Fluxes", val))
+		dFluxes = fluxSettings::clampToRange(val, fluxSettings::kFluxes);
+	if(rssaver::readRegistryDWORD(skey, "Particles", val))
+		dParticles = fluxSettings::clampToRange(val, fluxSettings::kParticles);
+	if(rssaver::readRegistryDWORD(skey, "Trail", val))
+		dTrail = fluxSettings::clampToRange(val, fluxSettings::kTrail);
+	if(rssaver::readRegistryDWORD(skey, "Geometry", val))
+		dGeometry = fluxSettings::clampToRange(val, fluxSettings::kGeometry);
+	if(rssaver::readRegistryDWORD(skey, "Size", val))
+		dSize = fluxSettings::clampToRange(val, fluxSettings::kSize);
+	if(rssaver::readRegistryDWORD(skey, "Complexity", val))
+		dComplexity = fluxSettings::clampToRange(val, fluxSettings::kComplexity);
+	if(rssaver::readRegistryDWORD(skey, "Randomize", val))
+		dRandomize = fluxSettings::clampToRange(val, fluxSettings::kRandomize);
+	if(rssaver::readRegistryDWORD(skey, "Expansion", val))
+		dExpansion = fluxSettings::clampToRange(val, fluxSettings::kExpansion);
+	if(rssaver::readRegistryDWORD(skey, "Rotation", val))
+		dRotation = fluxSettings::clampToRange(val, fluxSettings::kRotation);
+	if(rssaver::readRegistryDWORD(skey, "Wind", val))
+		dWind = fluxSettings::clampToRange(val, fluxSettings::kWind);
+	if(rssaver::readRegistryDWORD(skey, "Instability", val))
+		dInstability = fluxSettings::clampToRange(val, fluxSettings::kInstability);
+	if(rssaver::readRegistryDWORD(skey, "Blur", val))
+		dBlur = fluxSettings::clampToRange(val, fluxSettings::kBlur);
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

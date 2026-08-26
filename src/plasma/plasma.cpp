@@ -24,11 +24,14 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <process.h>
 #include <time.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include "resource.h"
+#include "plasmaSettings.h"
+#include "../common/saverRegistry.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -353,7 +356,7 @@ void cleanUp(HWND hwnd){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -361,23 +364,17 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Zoom", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dZoom = val;
-	result = RegQueryValueEx(skey, "Focus", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFocus = val;
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSpeed = val;
-	result = RegQueryValueEx(skey, "Resolution", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dResolution = val;
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+	if(rssaver::readRegistryDWORD(skey, "Zoom", val))
+		dZoom = plasmaSettings::clampToRange(val, plasmaSettings::kZoom);
+	if(rssaver::readRegistryDWORD(skey, "Focus", val))
+		dFocus = plasmaSettings::clampToRange(val, plasmaSettings::kFocus);
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
+		dSpeed = plasmaSettings::clampToRange(val, plasmaSettings::kSpeed);
+	if(rssaver::readRegistryDWORD(skey, "Resolution", val))
+		dResolution = plasmaSettings::clampToRange(val, plasmaSettings::kResolution);
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

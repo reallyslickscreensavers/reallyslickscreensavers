@@ -11,6 +11,7 @@
 
 
 #include "resource.h"
+#include "fieldlinesSettings.h"
 
 // fieldlines.cpp has no header; its contract with the framework is by name.
 //
@@ -22,6 +23,7 @@ extern int dIons;
 extern int dStepSize;
 extern int dMaxSteps;
 extern int dWidth;
+extern int dSpeed;
 extern BOOL dConstwidth;
 extern BOOL dElectric;
 extern int readyToDraw;
@@ -51,6 +53,21 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dIons", dIons, fieldlinesSettings::kIons),
+        savertest::Ranged("dStepSize", dStepSize, fieldlinesSettings::kStepSize),
+        savertest::Ranged("dMaxSteps", dMaxSteps, fieldlinesSettings::kMaxSteps),
+        savertest::Ranged("dWidth", dWidth, fieldlinesSettings::kWidth),
+        savertest::Ranged("dSpeed", dSpeed, fieldlinesSettings::kSpeed),
+        savertest::Ranged("dConstwidth", dConstwidth, fieldlinesSettings::kConstwidth),
+        savertest::Ranged("dElectric", dElectric, fieldlinesSettings::kElectric),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -64,6 +81,13 @@ TEST(FieldlinesHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dStepSize, 10);
     EXPECT_EQ(dMaxSteps, 300);
     EXPECT_EQ(dWidth, 30);
+}
+
+TEST(FieldlinesHarness, DefaultsSitInsideTheDeclaredRanges) {
+    // The header declares the ranges and the saver picks the defaults; nothing
+    // else checks that the two agree.
+    setDefaults();
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -192,16 +216,14 @@ TEST(FieldlinesFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestro
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(FieldlinesFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(FieldlinesFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine. That early return also
-    // means it covers little where the saver has never stored settings, CI
-    // included - see the note in test_cyclone.cpp.
+    // means the clamp itself covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
     readRegistry();
 
-    EXPECT_GT(dIons, 0) << "the ion array is allocated with this count";
-    EXPECT_GT(dMaxSteps, 0);
-    EXPECT_GT(dStepSize, 0);
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

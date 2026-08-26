@@ -12,6 +12,7 @@
 
 
 #include "resource.h"
+#include "flocksSettings.h"
 
 // flocks.cpp has no header; its contract with the framework is by name.
 // SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
@@ -20,8 +21,11 @@ extern int dLeaders;
 extern int dFollowers;
 extern int dGeometry;
 extern int dSize;
+extern int dComplexity;
 extern int dSpeed;
 extern int dStretch;
+extern int dColorfadespeed;
+extern int dChromatek;
 extern int dConnections;
 extern int readyToDraw;
 
@@ -42,6 +46,24 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dLeaders", dLeaders, flocksSettings::kLeaders),
+        savertest::Ranged("dFollowers", dFollowers, flocksSettings::kFollowers),
+        savertest::Ranged("dGeometry", dGeometry, flocksSettings::kGeometry),
+        savertest::Ranged("dSize", dSize, flocksSettings::kSize),
+        savertest::Ranged("dComplexity", dComplexity, flocksSettings::kComplexity),
+        savertest::Ranged("dSpeed", dSpeed, flocksSettings::kSpeed),
+        savertest::Ranged("dStretch", dStretch, flocksSettings::kStretch),
+        savertest::Ranged("dColorfadespeed", dColorfadespeed, flocksSettings::kColorfadespeed),
+        savertest::Ranged("dChromatek", dChromatek, flocksSettings::kChromatek),
+        savertest::Ranged("dConnections", dConnections, flocksSettings::kConnections),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -54,6 +76,13 @@ TEST(FlocksHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dFollowers, 1000);
     EXPECT_EQ(dSize, 5);
     EXPECT_EQ(dSpeed, 15);
+}
+
+TEST(FlocksHarness, DefaultsSitInsideTheDeclaredRanges) {
+    // The header declares the ranges and the saver picks the defaults; nothing
+    // else checks that the two agree.
+    setDefaults();
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- startup ---------------------------------------------------------------
@@ -205,16 +234,14 @@ TEST(FlocksFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(FlocksFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(FlocksFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine. That early return also
-    // means it covers little where the saver has never stored settings, CI
-    // included - see the note in test_cyclone.cpp.
+    // means the clamp itself covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
     readRegistry();
 
-    EXPECT_GT(dLeaders, 0) << "lBugs is allocated with this count";
-    EXPECT_GT(dFollowers, 0) << "fBugs is allocated with this count";
-    EXPECT_GT(dSize, 0);
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

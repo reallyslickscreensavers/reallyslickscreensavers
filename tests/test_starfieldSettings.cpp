@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include <starfieldSettings.h>
 
-using namespace starfield;
+using namespace starfieldSettings;
 
 // ---------------------------------------------------------------------------
 // Range constants

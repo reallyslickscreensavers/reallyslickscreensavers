@@ -260,10 +260,10 @@ the guide here — see the note at the end of this section.
 
 ## Third — robustness against untrusted input
 
-7. **Task 11.** ~124 registry values assigned with no bounds check; exactly one
-   is clamped today. This is the `src/` counterpart of the rslibs L5 work, and
-   likely the root cause behind some of Task 10's findings, which is why it
-   follows rather than leads them.
+7. **Task 11 — DONE.** All 112 saver-specific registry values, plus
+   `dFrameRateLimit` in all 13 savers, are now clamped on read. This is the
+   `src/` counterpart of the rslibs L5 work, and likely the root cause behind
+   some of Task 10's findings, which is why it followed rather than led them.
 8. **Task 12 — DONE.** The seven private rand()/rsRandGen copies are gone; all
    thirteen savers share rsMath.h's generator.
 
@@ -417,9 +417,11 @@ before — but almost none of that is fixes:
 Both sit in `initSaver`, where `xyz` is allocated as `new float*[dComplexity+3]`
 and indexed from `dComplexity+2` downwards. Reaching either needs a **negative
 `dComplexity`**, and that cannot happen: `screenSaverProc` calls `readRegistry()`
-before `initSaver()`, and `readRegistry` clamps to 1..10 **unconditionally** —
-the clamp sits outside the `RegQueryValueEx` success check, so it applies to the
-default value too (`cyclone.cpp:646`, added by #35).
+before `initSaver()`, and every path through `readRegistry` leaves `dComplexity`
+bounded by `cycloneSettings::kComplexity` — `setDefaults` takes it from
+`kDefaultComplexity`, and a stored value is clamped against the same range on
+read. #35's separate unconditional `if(dComplexity < 1)/(> 10)` guard was
+removed by #62, which made the header the single source of the bound.
 
 Three `CycloneBlockerGuard` tests in `tests/test_cyclone.cpp` pin that reasoning,
 including the ordering. **They still report as BLOCKERs in SonarCloud** — the
@@ -429,7 +431,15 @@ there or leave them with this note attached. Do not "fix" them by adding casts.
 > One caveat, written up in full in the test file: `readRegistry` returns early
 > when the saver has never stored settings, which is the case on a fresh CI
 > runner. There the clamp lines never execute and the guard only confirms that
-> `setDefaults`' value survives. Task 11 is what would make it unconditional.
+> `setDefaults`' value survives — which is now the whole guarantee on that path,
+> since `setDefaults` reads `kDefaultComplexity` from the same header that
+> bounds the registry read. Task 11 is done and did **not** make the clamp
+> itself unconditional: the registry read still only runs where a key exists.
+> What Task 11 did do is make the clamp a pure function, testable without a
+> registry at all, and add a source-text check (`SettingsClampWiring`) that
+> catches the clamp being pointed at the wrong range constant — which a runtime
+> test cannot, because a wrong-but-similarly-shaped range still passes a range
+> check.
 
 ### Four findings — RESOLVED
 
@@ -504,67 +514,119 @@ Remaining lower-severity rules: `cpp:S6232` (type punning, ×4), `cpp:S1763`
 
 # P1 (new) — Robustness
 
-## Task 11 · Registry values are used unclamped
+## Task 11 · Registry values are used unclamped — DONE
 
-**13 savers, ~124 assignments, exactly one clamped.**
+**13 savers, 112 saver-specific assignments plus 13 `dFrameRateLimit` reads, all
+now clamped, and all 125 reads now type-checked.**
+`src/common/saverSettings.h` holds the two pure clamp primitives
+(`rssaver::clampToRange` for a raw `DWORD`, `rssaver::clampIntToRange` for a
+value already held in a signed `int`); each saver's `<name>Settings.h`
+re-exports them and declares its own `Range` per setting; `readRegistry` routes
+every `d* = val;` assignment through the matching clamp, and every
+`dFrameRateLimit` read goes through a clamp too — `rsWin32Saver::clampFrameRateLimit`
+in twelve savers (including `starfield`, which used to assign it raw), and
+`cycloneSettings::clampFrameRate` in `cyclone`, which keeps the dialog's
+"0 means unlimited" semantics.
+
+**The type guard is closed too.** `src/common/saverRegistry.h` holds
+`rssaver::readRegistryDWORD`, which reports success only when the value exists
+*and* is a `REG_DWORD` of the expected size. Every one of the 125 reads goes
+through it, so a `"Speed"` stored as `REG_SZ` now leaves `setDefaults`' value in
+place instead of arriving as the first four bytes of its text reinterpreted as a
+`DWORD`. Earlier revisions of this task listed that as out of scope; it was
+closed in the same pass, generalising the helper `cyclone` introduced in #62.
+`saverRegistry.h` is a separate header from `saverSettings.h` on purpose — the
+latter must stay free of `windows.h` so the ranges and clamps stay testable
+without an `HWND`, which `tests/test_saverSettings.cpp` compiling at all is what
+asserts.
+
+**What this does not do — read before relying on it.** The design is
+per-assignment clamping with `readRegistry`'s early return left in place: on a
+fresh CI runner, or any machine where a saver has never stored settings,
+`readRegistry` returns before any registry read runs, so **no clamp line
+executes at all** on that path. The postcondition (every setting ends up inside
+its declared range) still holds there, but only because `setDefaults` already
+picks values inside range — not because of anything this task added.
+
+**The pairing gate.** A mis-paired range constant — `dSize` clamped against
+`kSpeed`, say — compiles clean and, because it sits below the early return,
+never executes on CI regardless of what the ranges contain. No runtime
+assertion can be relied on to catch that reliably (see the cyclone note below
+for why a range check specifically cannot). `tests/tools/check-settings-wiring.cmake`,
+registered as the `SettingsClampWiring` ctest case, is a source-text check
+instead: it parses each saver's `readRegistry` and asserts the clamped name and
+the range constant name agree, that the per-saver and total counts match a
+checked-in table (112), that no raw `dX = val;` survives, that all 13
+`dFrameRateLimit` sites are wired, that every read is typed (no bare
+`RegQueryValueEx`, and the per-saver read counts match), and that nothing
+redefines `readRegistryDWORD` privately. It runs on every `ctest` invocation, so
+a future mis-pairing fails the build rather than compiling clean.
+
+Former detection grep, now the standing regression tripwire for this task —
+expected output **0**, not ~124:
 
 ```bash
 grep -rn "^\s*d[A-Za-z]* = val;" src/*/*.cpp | wc -l
 ```
 
-Every saver's `readRegistry` does:
+`SettingsClampWiring` enforces the same rule automatically (rule 5 in the
+script), so nobody has to remember to run the grep by hand.
 
-```cpp
-result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-if(result == ERROR_SUCCESS)
-    dSpeed = val;          // no bounds check, no valtype check
-```
+**cyclone is the one saver that does not follow the shared shape**, because it
+arrived at the same place independently in #62 and its settings header also
+drives the redesigned dialog. Three differences, all deliberate:
 
-Counts per file: `skyrocket` 14, `flux` 13, `lattice` 12, `microcosm` 12,
-`euphoria` 11, `flocks` 11, `hyperspace` 10, `solarWinds` 10, `helios` 9,
-`cyclone` 8, `fieldlines` 8, `plasma` 5.
+- Its two checkboxes go through `cycloneSettings::normalizeFlag` rather than a
+  `{0, 1}` `Range`, so it contributes 5 rows to the 112 rather than 7.
+  `tests/test_cyclone.cpp` asserts them as flags instead.
+- `dFrameRateLimit` goes through `cycloneSettings::clampFrameRate`, which keeps
+  the dialog's "stored 0 means unlimited" contract that
+  `rsWin32Saver::clampFrameRateLimit` has no notion of.
+- It declares its own `Range` rather than re-exporting `rssaver::Range`. The two
+  are layout-identical; `tests/test_saverSettings.cpp` widens its rows
+  explicitly rather than churn a header that had just landed.
 
-**Why it matters concretely:** `lattice` computes `rsRandf(150 - dSpeed)` and
-`rsRandi(11 - dPathrand)` directly from these values. rslibs L4/L5 hardened the
-library side — `rsRandi` no longer divides by zero and the frame rate limit is
-clamped on read — but that only stops the crash; the setting is still garbage.
+`SettingsClampWiring` encodes each of these as cyclone's expected shape rather
+than waiving them, so cyclone is as tightly checked as the other twelve.
 
-**Two patterns to copy, both already in the tree:**
-
-- `cyclone.cpp:646` (from #35) — the minimal inline form:
-  ```cpp
-  if(dComplexity < 1) dComplexity = 1;
-  if(dComplexity > 10) dComplexity = 10;
-  ```
-- `src/starfield/starfieldSettings.h` — the better form: a `windows.h`-free
-  header holding the ranges, with `clampToRange(unsigned long, Range)` taking the
-  value as `unsigned long` so an oversized `DWORD` is never converted to `int`
-  first. Casting first turns `0xFFFFFFFF` into `-1` and slips past a naive
-  lower-bound check. `rsWin32Saver/rsWin32SaverSettings.h` is the same idea in
-  the submodule.
-
-The header form is worth the extra effort: it makes the bounds testable without
-an `HWND`, which is how rslibs got `rsWin32Saver` under test at all.
-
-**One gap even in `starfield`:** its `readRegistry` assigns `dFrameRateLimit`
-directly rather than going through `readFrameRateLimitFromRegistry`, so it does
-not get L5's clamp. Fix that in the same pass.
+`cyclone.cpp` no longer carries the unconditional
+`if(dComplexity < 1)/(> 10)` guard that #35 added and that earlier revisions of
+this task described keeping as `clampIntToRange`: #62 removed it, because
+`setDefaults` now takes `dComplexity` from `kDefaultComplexity` and the registry
+read clamps against the same `kComplexity`, so every path into `initSaver` is
+bounded by the header. The `CycloneBlockerGuard` tests still pin that
+end-to-end. `rssaver::clampIntToRange` remains in the shared header for the
+signed-input case — `clampToRange((unsigned long)-5, {1,10})` returns **10**,
+the upper bound, not `1`, so the two are not interchangeable — and
+`SaverSettings.ClampIntToRangeSendsNegativesToTheLowBound` keeps it honest.
 
 **Two things the test work established.**
 
-`starfield` is the working model and it is now proven, not just asserted:
-`StarfieldFramework.ReadRegistryClampsEveryValueIntoRange` feeds it -1 and
-100000 and checks every value lands inside the declared range. That test holds
-**whether or not a registry key exists**, because the clamp runs on the
-values `setDefaults` supplies too. No other saver can be tested that way.
+Every saver now has a postcondition test named for what it proves rather than
+how — `<Saver>Framework.ReadRegistryLeavesEverySettingInsideItsDeclaredRange` —
+because on the no-key path the clamp never runs and `setDefaults` is what keeps
+the value in range there instead. `starfield`'s equivalent test
+(`StarfieldFramework.ReadRegistryLeavesEverySettingInsideItsDeclaredRange`,
+renamed from `...ReadRegistryClampsEveryValueIntoRange`) is no longer a special
+case: the postcondition holds on both paths through `readRegistry`, by the
+clamp on one and by `setDefaults` on the other, exactly like every other saver.
+`starfield.cpp:332-338` sits below its own early return at `:325-326` the same
+as everywhere else.
 
-That is also why this task blocks better testing elsewhere. Every other saver's
-`readRegistry` returns early when the key is absent — the case on a fresh CI
-runner — so on CI those lines never run at all. Concretely: coverage is about
-five points lower on CI than on a developer machine that has run the savers, and
-the `cyclone` BLOCKER guard (Task 10) only bites where a key exists. Giving each
-saver a settings header with a pure clamp function makes both problems go away,
-because the clamp becomes testable without a registry at all.
+That is also why this task could not, by itself, fix coverage elsewhere. Every
+saver's `readRegistry` still returns early when the key is absent — the case on
+a fresh CI runner — so on CI those clamp lines still never run. Coverage is
+still about five points lower on CI than on a developer machine that has run
+the savers, and the `cyclone` BLOCKER guard (Task 10) still only bites fully
+where a key exists — the pure-function refactor made the clamp *testable*
+without a registry (`tests/test_saverSettings.cpp`, no `HWND` and no
+`RegQueryValueEx` involved), which is a real improvement, but it did not touch
+`readRegistry`'s control flow, so the coverage gap this section used to predict
+would close is still there. Restructuring to also clamp on the no-key path was
+considered and rejected — see the design-fork discussion in the Task 11 plan
+history — because a second, hand-written pass over 112 settings is itself a
+live mis-pairing risk, for a runtime property the wiring check already proves
+statically.
 
 ## Task 12 · Seven savers carry private PRNG copies — and it is an ODR violation — DONE
 

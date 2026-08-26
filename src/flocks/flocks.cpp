@@ -24,6 +24,7 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <time.h>
 #include <regstr.h>
 #include <commctrl.h>
@@ -40,6 +41,8 @@
 #include <rsText/rsText.h>
 #include <rsMath/rsMath.h>
 #include <Rgbhsl/Rgbhsl.h>
+#include "flocksSettings.h"
+#include "../common/saverRegistry.h"
 
 #define R2D 57.2957795131f
 
@@ -549,7 +552,7 @@ void cleanUp(HWND hwnd){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -557,41 +560,29 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Leaders", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dLeaders = val;
-	result = RegQueryValueEx(skey, "Followers", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFollowers = val;
-	result = RegQueryValueEx(skey, "Geometry", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dGeometry = val;
-	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSize = val;
-	result = RegQueryValueEx(skey, "Complexity", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dComplexity = val;
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSpeed = val;
-	result = RegQueryValueEx(skey, "Stretch", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dStretch = val;
-	result = RegQueryValueEx(skey, "Colorfadespeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dColorfadespeed = val;
-	result = RegQueryValueEx(skey, "Chromatek", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dChromatek = val;
-	result = RegQueryValueEx(skey, "Connections", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dConnections = val;
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+	if(rssaver::readRegistryDWORD(skey, "Leaders", val))
+		dLeaders = flocksSettings::clampToRange(val, flocksSettings::kLeaders);
+	if(rssaver::readRegistryDWORD(skey, "Followers", val))
+		dFollowers = flocksSettings::clampToRange(val, flocksSettings::kFollowers);
+	if(rssaver::readRegistryDWORD(skey, "Geometry", val))
+		dGeometry = flocksSettings::clampToRange(val, flocksSettings::kGeometry);
+	if(rssaver::readRegistryDWORD(skey, "Size", val))
+		dSize = flocksSettings::clampToRange(val, flocksSettings::kSize);
+	if(rssaver::readRegistryDWORD(skey, "Complexity", val))
+		dComplexity = flocksSettings::clampToRange(val, flocksSettings::kComplexity);
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
+		dSpeed = flocksSettings::clampToRange(val, flocksSettings::kSpeed);
+	if(rssaver::readRegistryDWORD(skey, "Stretch", val))
+		dStretch = flocksSettings::clampToRange(val, flocksSettings::kStretch);
+	if(rssaver::readRegistryDWORD(skey, "Colorfadespeed", val))
+		dColorfadespeed = flocksSettings::clampToRange(val, flocksSettings::kColorfadespeed);
+	if(rssaver::readRegistryDWORD(skey, "Chromatek", val))
+		dChromatek = flocksSettings::clampToRange(val, flocksSettings::kChromatek);
+	if(rssaver::readRegistryDWORD(skey, "Connections", val))
+		dConnections = flocksSettings::clampToRange(val, flocksSettings::kConnections);
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

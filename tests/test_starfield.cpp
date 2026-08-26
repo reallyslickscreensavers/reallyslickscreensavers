@@ -44,6 +44,17 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dNumStars", dNumStars, starfieldSettings::kNumStars),
+        savertest::Ranged("dSpeed", dSpeed, starfieldSettings::kSpeed),
+        savertest::Ranged("dStarSize", dStarSize, starfieldSettings::kStarSize),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -52,21 +63,16 @@ TEST(StarfieldHarness, SaverBodyWasActuallyCompiled) {
     // Guards the WIN32-define trap: without it the saver preprocesses away and
     // every other test passes against an empty translation unit.
     setDefaults();
-    EXPECT_EQ(dNumStars, starfield::kDefaultNumStars);
-    EXPECT_EQ(dSpeed, starfield::kDefaultSpeed);
-    EXPECT_EQ(dStarSize, starfield::kDefaultStarSize);
+    EXPECT_EQ(dNumStars, starfieldSettings::kDefaultNumStars);
+    EXPECT_EQ(dSpeed, starfieldSettings::kDefaultSpeed);
+    EXPECT_EQ(dStarSize, starfieldSettings::kDefaultStarSize);
 }
 
 TEST(StarfieldHarness, DefaultsSitInsideTheDeclaredRanges) {
     // The header declares the ranges and the saver picks the defaults; nothing
     // else checks that the two agree.
     setDefaults();
-    EXPECT_GE(dNumStars, starfield::kNumStars.lo);
-    EXPECT_LE(dNumStars, starfield::kNumStars.hi);
-    EXPECT_GE(dSpeed, starfield::kSpeed.lo);
-    EXPECT_LE(dSpeed, starfield::kSpeed.hi);
-    EXPECT_GE(dStarSize, starfield::kStarSize.lo);
-    EXPECT_LE(dStarSize, starfield::kStarSize.hi);
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -106,7 +112,7 @@ TEST_F(Starfield, DrawsEveryStarOncePerFrame) {
 
     const int blocks = countPrimitives(GL_POINTS);
     EXPECT_GE(blocks, 1);
-    EXPECT_LE(blocks, starfield::kStarSize.hi) << "at most one block per size bucket";
+    EXPECT_LE(blocks, starfieldSettings::kStarSize.hi) << "at most one block per size bucket";
     EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(dNumStars))
         << "one vertex per star, however they are bucketed";
 }
@@ -136,7 +142,7 @@ TEST_F(Starfield, AnOversizedStarSizeStaysInsideTheSizeBuckets) {
     draw();
 
     EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(dNumStars));
-    EXPECT_LE(countPrimitives(GL_POINTS), starfield::kStarSize.hi);
+    EXPECT_LE(countPrimitives(GL_POINTS), starfieldSettings::kStarSize.hi);
 }
 
 // The step-4 guard (Task 12 in docs/MAINTENANCE.md). A NaN frameTime makes
@@ -169,7 +175,7 @@ TEST_F(Starfield, NanFrameTimeKeepsStarsInsideTheSizeBuckets) {
 // tripwire the ODR fix has.
 TEST_F(Starfield, StarLayoutRepeatsForTheSameSeed) {
     dNumStars = 50;
-    dSpeed = starfield::kSpeed.hi;  // both set before any start(), stop-change-start
+    dSpeed = starfieldSettings::kSpeed.hi;  // both set before any start(), stop-change-start
 
     rsRandGen().seed(savertest::kTestSeed);
     // Immediately before start(): start() draws a warm-up frame it then
@@ -246,23 +252,19 @@ TEST(StarfieldFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(StarfieldFramework, ReadRegistryClampsEveryValueIntoRange) {
-    // starfield is the one saver whose readRegistry runs every value through
-    // clampToRange, so this holds whether or not a registry key exists - unlike
-    // the equivalent tests in the other suites. This is what Task 11 should
-    // make true everywhere.
+TEST(StarfieldFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
+    // The postcondition holds on both paths through readRegistry, but not for
+    // the same reason: where a registry key exists, clampToRange enforces it
+    // (starfield.cpp:332-338, below the early return at :325-326); where no
+    // key exists, it holds only because setDefaults() already picked values
+    // inside range, exactly like every other saver.
     dNumStars = -1;
     dSpeed = 100000;
     dStarSize = -50;
 
     readRegistry();
 
-    EXPECT_GE(dNumStars, starfield::kNumStars.lo);
-    EXPECT_LE(dNumStars, starfield::kNumStars.hi);
-    EXPECT_GE(dSpeed, starfield::kSpeed.lo);
-    EXPECT_LE(dSpeed, starfield::kSpeed.hi);
-    EXPECT_GE(dStarSize, starfield::kStarSize.lo);
-    EXPECT_LE(dStarSize, starfield::kStarSize.hi);
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

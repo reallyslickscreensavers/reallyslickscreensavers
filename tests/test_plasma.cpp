@@ -11,6 +11,7 @@
 
 
 #include "resource.h"
+#include "plasmaSettings.h"
 
 // plasma.cpp has no header; its contract with the framework is by name.
 // SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
@@ -44,6 +45,18 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dZoom", dZoom, plasmaSettings::kZoom),
+        savertest::Ranged("dFocus", dFocus, plasmaSettings::kFocus),
+        savertest::Ranged("dSpeed", dSpeed, plasmaSettings::kSpeed),
+        savertest::Ranged("dResolution", dResolution, plasmaSettings::kResolution),
+    };
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -58,6 +71,13 @@ TEST(PlasmaHarness, SaverBodyWasActuallyCompiled) {
     EXPECT_EQ(dFocus, 30);
     EXPECT_EQ(dSpeed, 20);
     EXPECT_EQ(dResolution, 25);
+}
+
+TEST(PlasmaHarness, DefaultsSitInsideTheDeclaredRanges) {
+    // The header declares the ranges and the saver picks the defaults; nothing
+    // else checks that the two agree.
+    setDefaults();
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- settings maths --------------------------------------------------------
@@ -221,19 +241,18 @@ TEST(PlasmaFramework, ScreenSaverProcPassesUnhandledMessagesThrough) {
     EXPECT_NO_FATAL_FAILURE(screenSaverProc(testsupport::hostWindow(), WM_PAINT, 0, 0));
 }
 
-TEST(PlasmaFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(PlasmaFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // readRegistry only reads: it calls setDefaults first and returns early if
     // the key is absent, so running it cannot disturb the machine. That early
-    // return also means it covers little where the saver has never stored
-    // settings, CI included - see the note in test_cyclone.cpp.
+    // return also means the clamp itself covers little where the saver has
+    // never stored settings, CI included - see the note in test_cyclone.cpp.
     //
-    // This is the unclamped read Task 11 targets, so it asserts non-degeneracy
-    // rather than range.
+    // kZoom.lo == 1 is what makes EXPECT_NE(dZoom, 0) below structural rather
+    // than incidental: dZoom divides into 30.0f in setPlasmaSize.
     readRegistry();
 
     EXPECT_NE(dZoom, 0) << "dZoom divides into 30.0f in setPlasmaSize";
-    EXPECT_GT(dResolution, 0);
-    EXPECT_GT(dSpeed, 0);
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

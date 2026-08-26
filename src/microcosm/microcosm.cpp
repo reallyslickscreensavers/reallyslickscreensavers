@@ -22,11 +22,14 @@
 #ifdef WIN32
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <time.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include <process.h>
 #include "resource.h"
+#include "microcosmSettings.h"
+#include "../common/saverRegistry.h"
 #endif
 #ifdef RS_XSCREENSAVER
 #include <rsXScreenSaver/rsXScreenSaver.h>
@@ -1162,7 +1165,7 @@ void cleanUp(HWND hwnd){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults(0);
 
@@ -1170,44 +1173,31 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "KaleidoscopeTime", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dKaleidoscopeTime = val;
-	result = RegQueryValueEx(skey, "SingleTime", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSingleTime = val;
-	result = RegQueryValueEx(skey, "SingleBackground", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dBackground = val;
-	result = RegQueryValueEx(skey, "Resolution", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dResolution = val;
-	result = RegQueryValueEx(skey, "Depth", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dDepth = val;
-	result = RegQueryValueEx(skey, "Fov", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFov = val;
-	result = RegQueryValueEx(skey, "CameraSpeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dCameraSpeed = val;
-	result = RegQueryValueEx(skey, "GizmoSpeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dGizmoSpeed = val;
-	result = RegQueryValueEx(skey, "ColorSpeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dColorSpeed = val;
-	result = RegQueryValueEx(skey, "Shaders", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dShaders = val;
-	result = RegQueryValueEx(skey, "Fog", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFog = val;
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+	if(rssaver::readRegistryDWORD(skey, "KaleidoscopeTime", val))
+		dKaleidoscopeTime = microcosmSettings::clampToRange(val, microcosmSettings::kKaleidoscopeTime);
+	if(rssaver::readRegistryDWORD(skey, "SingleTime", val))
+		dSingleTime = microcosmSettings::clampToRange(val, microcosmSettings::kSingleTime);
+	if(rssaver::readRegistryDWORD(skey, "SingleBackground", val))
+		dBackground = microcosmSettings::clampToRange(val, microcosmSettings::kBackground);
+	if(rssaver::readRegistryDWORD(skey, "Resolution", val))
+		dResolution = microcosmSettings::clampToRange(val, microcosmSettings::kResolution);
+	if(rssaver::readRegistryDWORD(skey, "Depth", val))
+		dDepth = microcosmSettings::clampToRange(val, microcosmSettings::kDepth);
+	if(rssaver::readRegistryDWORD(skey, "Fov", val))
+		dFov = microcosmSettings::clampToRange(val, microcosmSettings::kFov);
+	if(rssaver::readRegistryDWORD(skey, "CameraSpeed", val))
+		dCameraSpeed = microcosmSettings::clampToRange(val, microcosmSettings::kCameraSpeed);
+	if(rssaver::readRegistryDWORD(skey, "GizmoSpeed", val))
+		dGizmoSpeed = microcosmSettings::clampToRange(val, microcosmSettings::kGizmoSpeed);
+	if(rssaver::readRegistryDWORD(skey, "ColorSpeed", val))
+		dColorSpeed = microcosmSettings::clampToRange(val, microcosmSettings::kColorSpeed);
+	if(rssaver::readRegistryDWORD(skey, "Shaders", val))
+		dShaders = microcosmSettings::clampToRange(val, microcosmSettings::kShaders);
+	if(rssaver::readRegistryDWORD(skey, "Fog", val))
+		dFog = microcosmSettings::clampToRange(val, microcosmSettings::kFog);
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

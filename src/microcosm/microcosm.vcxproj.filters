@@ -97,6 +97,9 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="microcosmSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ringOfTori.h">
       <Filter>Header Files</Filter>
     </ClInclude>

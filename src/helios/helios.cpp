@@ -35,6 +35,7 @@
 #include <commctrl.h>
 
 #include <rsWin32Saver/rsWin32Saver.h>
+#include <rsWin32Saver/rsWin32SaverSettings.h>
 #include <rsText/rsText.h>
 #include <rsMath/rsMath.h>
 #include <rgbhsl/rgbhsl.h>
@@ -45,6 +46,8 @@
 #include "resource.h"
 
 #include "spheremap.h"
+#include "heliosSettings.h"
+#include "../common/saverRegistry.h"
 
 
 #define LIGHTSIZE 64
@@ -907,7 +910,7 @@ void setDefaults(){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -915,35 +918,25 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
 
-	result = RegQueryValueEx(skey, "Ions", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dIons = val;
-	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSize = val;
-	result = RegQueryValueEx(skey, "Emitters", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dEmitters = val;
-	result = RegQueryValueEx(skey, "Attracters", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dAttracters = val;
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSpeed = val;
-	result = RegQueryValueEx(skey, "Cameraspeed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dCameraspeed = val;
-	result = RegQueryValueEx(skey, "Surface", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSurface = val;
-	result = RegQueryValueEx(skey, "Blur", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dBlur = val;
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+	if(rssaver::readRegistryDWORD(skey, "Ions", val))
+		dIons = heliosSettings::clampToRange(val, heliosSettings::kIons);
+	if(rssaver::readRegistryDWORD(skey, "Size", val))
+		dSize = heliosSettings::clampToRange(val, heliosSettings::kSize);
+	if(rssaver::readRegistryDWORD(skey, "Emitters", val))
+		dEmitters = heliosSettings::clampToRange(val, heliosSettings::kEmitters);
+	if(rssaver::readRegistryDWORD(skey, "Attracters", val))
+		dAttracters = heliosSettings::clampToRange(val, heliosSettings::kAttracters);
+	if(rssaver::readRegistryDWORD(skey, "Speed", val))
+		dSpeed = heliosSettings::clampToRange(val, heliosSettings::kSpeed);
+	if(rssaver::readRegistryDWORD(skey, "Cameraspeed", val))
+		dCameraspeed = heliosSettings::clampToRange(val, heliosSettings::kCameraspeed);
+	if(rssaver::readRegistryDWORD(skey, "Surface", val))
+		dSurface = heliosSettings::clampToRange(val, heliosSettings::kSurface);
+	if(rssaver::readRegistryDWORD(skey, "Blur", val))
+		dBlur = heliosSettings::clampToRange(val, heliosSettings::kBlur);
+	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
+		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
 	RegCloseKey(skey);
 }

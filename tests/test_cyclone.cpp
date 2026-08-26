@@ -138,6 +138,13 @@ TEST(CycloneSettings, CorruptStoredFrameRateIsClamped) {
     EXPECT_EQ(ui.fps, cycloneSettings::kFrameRate.hi);
 }
 
+// cyclone needs no DefaultsSitInsideTheDeclaredRanges case of its own: it
+// declares its defaults as kDefault* constants in cycloneSettings.h rather than
+// as literals in setDefaults, so CycloneSettings.DefaultsLieWithinTheirRanges
+// above pins the same property directly against the header, and covers
+// kFrameRate as well. The other twelve savers, whose defaults are literals,
+// each carry the SettingsWithinDeclaredRanges form instead.
+
 // --- the BLOCKER guard -----------------------------------------------------
 //
 // SonarCloud reports cpp:S3519 at cyclone.cpp:155 and :163: a heap access at a
@@ -151,6 +158,13 @@ TEST(CycloneSettings, CorruptStoredFrameRateIsClamped) {
 //
 // cycloneSettings.h now holds the clamp as pure logic, so the dangerous inputs
 // are exercised directly above without modifying the developer's registry.
+//
+// Setting-to-constant pairing (dComplexity clamped against kComplexity, not
+// some other saver's range of the same shape) is enforced separately by the
+// SettingsClampWiring ctest case (tests/tools/check-settings-wiring.cmake),
+// which is the only check that would catch a mis-paired constant - a runtime
+// assertion here cannot, because a wrong-but-similarly-shaped range can still
+// pass a range check.
 
 TEST(CycloneBlockerGuard, ReadRegistryAlwaysLeavesComplexityInRange) {
     dComplexity = -5;
@@ -182,6 +196,37 @@ TEST(CycloneBlockerGuard, CreateClampsBeforeAllocating) {
     EXPECT_EQ(readyToDraw, 1);
 
     screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
+}
+
+// No existing framework-level readRegistry test to rename: cyclone's
+// readRegistry coverage is the CycloneBlockerGuard suite above, which is left
+// byte-for-byte untouched. This is new, and is the cyclone member of the
+// per-saver postcondition family every saver now carries.
+//
+// cyclone's two flags are not in the range list: unlike the other twelve
+// savers, which clamp their checkboxes against a {0,1} Range, cyclone runs
+// them through cycloneSettings::normalizeFlag, so they are asserted as flags
+// rather than as bounded values.
+TEST(CycloneFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
+    dCyclones = -1;
+    dParticles = 100000;
+    dSize = -1;
+    dComplexity = -1;
+    dSpeed = 100000;
+    dStretch = -1;
+    dShowCurves = 100000;
+
+    readRegistry();
+
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
+        savertest::Ranged("dCyclones", dCyclones, cycloneSettings::kCyclones),
+        savertest::Ranged("dParticles", dParticles, cycloneSettings::kParticles),
+        savertest::Ranged("dSize", dSize, cycloneSettings::kSize),
+        savertest::Ranged("dComplexity", dComplexity, cycloneSettings::kComplexity),
+        savertest::Ranged("dSpeed", dSpeed, cycloneSettings::kSpeed),
+    }));
+    EXPECT_TRUE(dStretch == 0 || dStretch == 1) << "dStretch = " << dStretch;
+    EXPECT_TRUE(dShowCurves == 0 || dShowCurves == 1) << "dShowCurves = " << dShowCurves;
 }
 
 // --- a frame ---------------------------------------------------------------

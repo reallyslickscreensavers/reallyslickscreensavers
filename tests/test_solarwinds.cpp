@@ -10,6 +10,7 @@
 #include <array>
 
 #include "resource.h"
+#include "solarWindsSettings.h"
 
 // solarWinds.cpp has no header; its contract with the framework is by name.
 // SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
@@ -19,6 +20,10 @@ extern int dEmitters;
 extern int dParticles;
 extern int dGeometry;
 extern int dSize;
+extern int dWindspeed;
+extern int dEmitterspeed;
+extern int dParticlespeed;
+extern int dBlur;
 extern int readyToDraw;
 
 void setDefaults(int which);
@@ -43,6 +48,23 @@ protected:
         setDefaults(DEFAULTS1);
     }
 };
+
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dWinds", dWinds, solarWindsSettings::kWinds),
+        savertest::Ranged("dEmitters", dEmitters, solarWindsSettings::kEmitters),
+        savertest::Ranged("dParticles", dParticles, solarWindsSettings::kParticles),
+        savertest::Ranged("dGeometry", dGeometry, solarWindsSettings::kGeometry),
+        savertest::Ranged("dSize", dSize, solarWindsSettings::kSize),
+        savertest::Ranged("dWindspeed", dWindspeed, solarWindsSettings::kWindspeed),
+        savertest::Ranged("dEmitterspeed", dEmitterspeed, solarWindsSettings::kEmitterspeed),
+        savertest::Ranged("dParticlespeed", dParticlespeed, solarWindsSettings::kParticlespeed),
+        savertest::Ranged("dBlur", dBlur, solarWindsSettings::kBlur),
+    };
+}
 
 }  // namespace
 
@@ -73,6 +95,7 @@ TEST(SolarWindsPresets, EachPresetProducesUsableSettings) {
         EXPECT_GT(dSize, 0) << "preset " << preset;
         EXPECT_GE(dGeometry, 0) << "preset " << preset;
         EXPECT_LE(dGeometry, 2) << "preset " << preset;
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges())) << "preset " << preset;
     }
 }
 
@@ -224,6 +247,17 @@ TEST(SolarWindsFramework, ReadRegistryFallsBackToTheRegularPreset) {
     EXPECT_GT(dEmitters, 0) << "the emitter array is allocated with this count";
     EXPECT_GT(dParticles, 0);
     EXPECT_GT(dWinds, 0);
+}
+
+TEST(SolarWindsFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
+    // Read-only: setDefaults(DEFAULTS1) runs first and the function returns
+    // early if the key is absent, so this cannot disturb the machine. That
+    // early return also means the clamp itself covers little where the saver
+    // has never stored settings, CI included - see the note in
+    // test_cyclone.cpp.
+    readRegistry();
+
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
 // --- dialog procedures -----------------------------------------------------

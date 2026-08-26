@@ -23,17 +23,43 @@ set(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
 # Test executable for header-only settings logic that needs no saver body
 add_executable(rssavers_tests
     test_starfieldSettings.cpp
+    test_saverSettings.cpp
 )
 
 target_include_directories(rssavers_tests PRIVATE
     ${REPO_ROOT}/src/starfield    # for "starfieldSettings.h"
+    ${REPO_ROOT}/src              # for "<name>/<name>Settings.h"
 )
 
 target_link_libraries(rssavers_tests PRIVATE GTest::gtest_main)
 
 enable_testing()
 include(GoogleTest)
-gtest_discover_tests(rssavers_tests DISCOVERY_MODE PRE_TEST)
+
+# PRE_TEST discovery spawns cmake.exe at ctest time to run --gtest_list_tests.
+# Under the coverage job that child is instrumented by OpenCppCoverage
+# (--cover_children), which loads and maps every module it touches, and listing
+# tests then takes far longer than gtest_discover_tests' 5 second default -
+# it timed out here for real once rssavers_tests grew to include all thirteen
+# settings headers. The wall clock says nothing about the tests themselves, so
+# the limit is set well clear of it rather than tuned close.
+set(RSSAVERS_DISCOVERY_TIMEOUT 300)
+
+gtest_discover_tests(rssavers_tests
+    DISCOVERY_MODE PRE_TEST
+    DISCOVERY_TIMEOUT ${RSSAVERS_DISCOVERY_TIMEOUT})
+
+# Source-text gate on the settings clamps (Task 11 in docs/MAINTENANCE.md).
+# This is the only check that catches a mis-paired range constant: dSize =
+# flocksSettings::clampToRange(val, flocksSettings::kSpeed) compiles clean,
+# and every clamp site sits below readRegistry's early return, so on a
+# machine with no stored settings - CI included - none of those lines ever
+# executes. Runs as a ctest case so it fails the same pipeline steps the unit
+# tests do.
+add_test(NAME SettingsClampWiring
+         COMMAND ${CMAKE_COMMAND}
+                 -DREPO_ROOT=${REPO_ROOT}
+                 -P ${CMAKE_CURRENT_SOURCE_DIR}/tools/check-settings-wiring.cmake)
 
 # ---------------------------------------------------------------------------
 # Saver test harness
@@ -78,7 +104,9 @@ function(add_saver_test name)
     target_compile_definitions(test_${name} PRIVATE WIN32 _WINDOWS _GDI32_)
     target_link_libraries(test_${name} PRIVATE
         gl_stub saver_shim GTest::gtest_main ${ARG_LIBRARIES})
-    gtest_discover_tests(test_${name} DISCOVERY_MODE PRE_TEST)
+    gtest_discover_tests(test_${name}
+        DISCOVERY_MODE PRE_TEST
+        DISCOVERY_TIMEOUT ${RSSAVERS_DISCOVERY_TIMEOUT})
 endfunction()
 
 # The stub's own maths. Everything the saver suites assert about flare
@@ -87,7 +115,9 @@ endfunction()
 add_executable(test_gl_stub test_gl_stub.cpp)
 target_compile_definitions(test_gl_stub PRIVATE WIN32 _WINDOWS _GDI32_)
 target_link_libraries(test_gl_stub PRIVATE gl_stub GTest::gtest_main)
-gtest_discover_tests(test_gl_stub DISCOVERY_MODE PRE_TEST)
+gtest_discover_tests(test_gl_stub
+    DISCOVERY_MODE PRE_TEST
+    DISCOVERY_TIMEOUT ${RSSAVERS_DISCOVERY_TIMEOUT})
 
 add_saver_test(plasma SOURCES
     ${REPO_ROOT}/src/plasma/plasma.cpp

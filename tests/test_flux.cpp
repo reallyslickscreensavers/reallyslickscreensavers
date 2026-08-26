@@ -12,6 +12,7 @@
 #include <array>
 
 #include "resource.h"
+#include "fluxSettings.h"
 
 // flux.cpp has no header; its contract with the framework is by name. See the
 // note on cpp:S5421 in test_fieldlines.cpp - these are declarations, not
@@ -22,6 +23,11 @@ extern int dTrail;
 extern int dGeometry;
 extern int dSize;
 extern int dComplexity;
+extern int dRandomize;
+extern int dExpansion;
+extern int dRotation;
+extern int dWind;
+extern int dInstability;
 extern int dBlur;
 extern int readyToDraw;
 
@@ -46,6 +52,38 @@ protected:
     }
 };
 
+// The settings this saver reads and the ranges its own header declares.
+// Built once: both cases below assert against the same list, and writing it
+// out twice is what tripped the duplication gate.
+//
+// dComplexity is NOT in here, because the preset case cannot assert it - see
+// the note there. readRegistry does set it, so the readRegistry case adds it
+// back with declaredRangesWithComplexity() below.
+std::vector<savertest::RangedSetting> declaredRanges() {
+    return {
+        savertest::Ranged("dFluxes", dFluxes, fluxSettings::kFluxes),
+        savertest::Ranged("dParticles", dParticles, fluxSettings::kParticles),
+        savertest::Ranged("dTrail", dTrail, fluxSettings::kTrail),
+        savertest::Ranged("dGeometry", dGeometry, fluxSettings::kGeometry),
+        savertest::Ranged("dSize", dSize, fluxSettings::kSize),
+        savertest::Ranged("dRandomize", dRandomize, fluxSettings::kRandomize),
+        savertest::Ranged("dExpansion", dExpansion, fluxSettings::kExpansion),
+        savertest::Ranged("dRotation", dRotation, fluxSettings::kRotation),
+        savertest::Ranged("dWind", dWind, fluxSettings::kWind),
+        savertest::Ranged("dInstability", dInstability, fluxSettings::kInstability),
+        savertest::Ranged("dBlur", dBlur, fluxSettings::kBlur),
+    };
+}
+
+// readRegistry calls setDefaults(DEFAULTS1), which does assign dComplexity, so
+// the readRegistry case can cover the one setting the preset case has to skip.
+std::vector<savertest::RangedSetting> declaredRangesWithComplexity() {
+    std::vector<savertest::RangedSetting> settings = declaredRanges();
+    settings.push_back(
+        savertest::Ranged("dComplexity", dComplexity, fluxSettings::kComplexity));
+    return settings;
+}
+
 }  // namespace
 
 // --- the harness itself ----------------------------------------------------
@@ -65,6 +103,17 @@ TEST(FluxHarness, SaverBodyWasActuallyCompiled) {
 TEST(FluxHarness, EveryPresetLeavesTheSettingsUsable) {
     // The six presets are the only way flux sets its defaults; a preset that
     // left a count at zero would divide by zero in initSaver.
+    //
+    // dComplexity is deliberately absent, and that is a defect being left alone
+    // rather than a design choice. Only DEFAULTS1 (flux.cpp:522) and DEFAULTS4
+    // (flux.cpp:565) assign it; Hypnotic, Insane, Paradigm and Galactic leave
+    // whatever was there, and flux.cpp:675 feeds it straight into
+    // gluSphere(qobj, ..., dComplexity + 2, dComplexity + 1) - so those four
+    // presets draw with a value a previous run happened to leave behind, and here,
+    // in a fresh process, with the zero-initialised global. Out of scope for
+    // Task 11, which only clamps what readRegistry reads; readRegistry itself
+    // calls setDefaults(DEFAULTS1), which does set it, so the clamp test above
+    // does cover dComplexity.
     constexpr std::array presets = {DEFAULTS1, DEFAULTS2, DEFAULTS3, DEFAULTS4, DEFAULTS5, DEFAULTS6};
     for (int preset : presets) {
         setDefaults(preset);
@@ -74,6 +123,7 @@ TEST(FluxHarness, EveryPresetLeavesTheSettingsUsable) {
         EXPECT_GT(dSize, 0) << "preset " << preset;
         EXPECT_GE(dGeometry, 0) << "preset " << preset;
         EXPECT_LE(dGeometry, 2) << "preset " << preset;
+        EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges())) << "preset " << preset;
     }
 }
 
@@ -236,18 +286,20 @@ TEST(FluxFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
     EXPECT_EQ(readyToDraw, 0);
 }
 
-TEST(FluxFramework, ReadRegistryLeavesEveryValueUsable) {
+TEST(FluxFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // Read-only: setDefaults runs first and the function returns early if the
     // key is absent, so this cannot disturb the machine. That early return also
-    // means it covers little where the saver has never stored settings, CI
-    // included - see the note in test_cyclone.cpp.
+    // means the clamp itself covers little where the saver has never stored
+    // settings, CI included - see the note in test_cyclone.cpp.
+    //
+    // dComplexity is safe here even though it is excluded from the preset test
+    // above: readRegistry calls setDefaults(DEFAULTS1), which does assign it
+    // (flux.cpp:522), before the registry read that may clamp it again.
     setDefaults(DEFAULTS1);
     readRegistry();
 
-    EXPECT_GT(dFluxes, 0);
-    EXPECT_GT(dParticles, 0);
-    EXPECT_GT(dTrail, 0);
     EXPECT_GT(dComplexity, 0) << "gluSphere is given dComplexity + 2 slices";
+    EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRangesWithComplexity()));
 }
 
 // --- dialog procedures -----------------------------------------------------

@@ -85,9 +85,24 @@ examined) in `rsWin32SaverSettings.h` and dispatches through a `SaverOps` table.
   spells teardown `cleanup` (lowercase u); `flux` returns `LRESULT`. Each is a link error, worked
   around by a one-line shim in the test file rather than by touching saver source.
 - Settings are module globals named `d*` (`dSpeed`, `dParticles`, …), read from `HKEY_CURRENT_USER`
-  in `readRegistry()` and written by the config dialog's `IDOK`. **~124 are unclamped** (Task 11);
-  `src/starfield/starfieldSettings.h` is the model — a `windows.h`-free header with the ranges and a
-  pure `clampToRange`, which is what makes the bounds testable without an `HWND`.
+  in `readRegistry()` and written by the config dialog's `IDOK`. **All 112 saver-specific settings,
+  plus `dFrameRateLimit` in all 13 savers, are now clamped on read** (Task 11, done). Each saver has
+  a `windows.h`-free `<name>Settings.h` — `src/starfield/starfieldSettings.h` is still the worked
+  example — declaring a `Range` per setting and re-exporting the pure clamps
+  (`rssaver::clampToRange`/`clampIntToRange`) from the shared `src/common/saverSettings.h`, which is
+  what makes the bounds testable without an `HWND`. Reads themselves go through
+  `rssaver::readRegistryDWORD` (`src/common/saverRegistry.h` — the `windows.h` half, kept separate
+  for exactly that reason), which accepts a value only if it is a `REG_DWORD` of the right size, so a
+  wrongly typed value leaves the default in place. `tests/tools/check-settings-wiring.cmake`, run as
+  the `SettingsClampWiring` ctest case, is the gate that catches a setting clamped against the wrong
+  range constant — a mistake that otherwise compiles clean and, because `readRegistry` returns early
+  when no key exists, may never execute on CI. It also fails on a bare `RegQueryValueEx` or a private
+  copy of `readRegistryDWORD`.
+- **`cyclone` is the deliberate exception** (#62): its settings header also drives the redesigned
+  dialog, so its checkboxes use `normalizeFlag` rather than a `{0,1}` `Range`, its frame rate uses
+  `cycloneSettings::clampFrameRate` (stored 0 means unlimited) rather than
+  `rsWin32Saver::clampFrameRateLimit`, and it declares its own `Range`. `SettingsClampWiring` encodes
+  that shape rather than waiving it.
 - `readRegistry` returns early when the key does not exist, which is the case on a fresh CI runner,
   so coverage reads about five points lower in CI than on a machine that has run the savers.
 

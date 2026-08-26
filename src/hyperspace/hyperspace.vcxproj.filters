@@ -70,6 +70,9 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hyperspaceSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
