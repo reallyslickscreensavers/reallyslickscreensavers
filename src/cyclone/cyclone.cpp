@@ -35,6 +35,7 @@
 #include <commctrl.h>
 #include <Rgbhsl/Rgbhsl.h>
 #include "resource.h"
+#include "cycloneSettings.h"
 
 
 class cyclone;
@@ -524,6 +525,15 @@ void idleProc(){
 }
 
 
+static void disableVerticalSync(){
+	typedef BOOL (APIENTRY *PFNWGLSWAPINTERVALEXTPROC)(int);
+	PFNWGLSWAPINTERVALEXTPROC swapInterval =
+		(PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	if(swapInterval)
+		swapInterval(0);
+}
+
+
 void initSaver(HWND hwnd){
 	int i, j;
 	RECT rect;
@@ -534,6 +544,10 @@ void initSaver(HWND hwnd){
 	hglrc = wglCreateContext(hdc);
 	GetClientRect(hwnd, &rect);
 	wglMakeCurrent(hdc, hglrc);
+	// The WGL default is interval 1, which silently caps drawing at the display
+	// refresh rate. Cyclone's own limiter needs unsynchronised swaps so values
+	// above that refresh rate, and the explicit unlimited mode, remain meaningful.
+	disableVerticalSync();
 	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
 
 	glEnable(GL_DEPTH_TEST);
@@ -605,13 +619,22 @@ void cleanUp(HWND hwnd){
 
 
 void setDefaults(){
-	dCyclones = 1;
-	dParticles = 400;
-	dSize = 7;
-	dComplexity = 3;
-	dSpeed = 10;
+	dCyclones = cycloneSettings::kDefaultCyclones;
+	dParticles = cycloneSettings::kDefaultParticles;
+	dSize = cycloneSettings::kDefaultSize;
+	dComplexity = cycloneSettings::kDefaultComplexity;
+	dSpeed = cycloneSettings::kDefaultSpeed;
 	dStretch = TRUE;
 	dShowCurves = FALSE;
+	dFrameRateLimit = cycloneSettings::kDefaultFrameRate;
+}
+
+
+static bool readRegistryDWORD(HKEY key, LPCTSTR name, DWORD& value){
+	DWORD type = 0;
+	DWORD size = sizeof(value);
+	return RegQueryValueEx(key, name, 0, &type, (LPBYTE)&value, &size) == ERROR_SUCCESS
+		&& type == REG_DWORD && size == sizeof(value);
 }
 
 
@@ -619,7 +642,7 @@ void setDefaults(){
 void readRegistry(){
 	LONG result;
 	HKEY skey;
-	DWORD valtype, valsize, val;
+	DWORD val;
 
 	setDefaults();
 
@@ -627,34 +650,22 @@ void readRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	valsize=sizeof(val);
-
-	result = RegQueryValueEx(skey, "Cyclones", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dCyclones = val;
-	result = RegQueryValueEx(skey, "Particles", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dParticles = val;
-	result = RegQueryValueEx(skey, "Size", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSize = val;
-	result = RegQueryValueEx(skey, "Complexity", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dComplexity = val;
-	if(dComplexity < 1) dComplexity = 1;
-	if(dComplexity > 10) dComplexity = 10;
-	result = RegQueryValueEx(skey, "Speed", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dSpeed = val;
-	result = RegQueryValueEx(skey, "Stretch", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dStretch = val;
-	result = RegQueryValueEx(skey, "ShowCurves", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dShowCurves = val;
-	result = RegQueryValueEx(skey, "FrameRateLimit", 0, &valtype, (LPBYTE)&val, &valsize);
-	if(result == ERROR_SUCCESS)
-		dFrameRateLimit = val;
+	if(readRegistryDWORD(skey, "Cyclones", val))
+		dCyclones = cycloneSettings::clampToRange(val, cycloneSettings::kCyclones);
+	if(readRegistryDWORD(skey, "Particles", val))
+		dParticles = cycloneSettings::clampToRange(val, cycloneSettings::kParticles);
+	if(readRegistryDWORD(skey, "Size", val))
+		dSize = cycloneSettings::clampToRange(val, cycloneSettings::kSize);
+	if(readRegistryDWORD(skey, "Complexity", val))
+		dComplexity = cycloneSettings::clampToRange(val, cycloneSettings::kComplexity);
+	if(readRegistryDWORD(skey, "Speed", val))
+		dSpeed = cycloneSettings::clampToRange(val, cycloneSettings::kSpeed);
+	if(readRegistryDWORD(skey, "Stretch", val))
+		dStretch = cycloneSettings::normalizeFlag(val);
+	if(readRegistryDWORD(skey, "ShowCurves", val))
+		dShowCurves = cycloneSettings::normalizeFlag(val);
+	if(readRegistryDWORD(skey, "FrameRateLimit", val))
+		dFrameRateLimit = cycloneSettings::clampFrameRate(val);
 
 	RegCloseKey(skey);
 }
@@ -693,69 +704,100 @@ void writeRegistry(){
 
 INT_PTR CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 	switch(msg){
-	case WM_CTLCOLORSTATIC:
-		if(HWND(lpm) == GetDlgItem(hdlg, WEBPAGE)){
-			SetTextColor(HDC(wpm), RGB(0,0,255));
-			SetBkColor(HDC(wpm), COLORREF(GetSysColor(COLOR_3DFACE)));
-			return (INT_PTR)GetSysColorBrush(COLOR_3DFACE);
-		}
-		break;
     case WM_COMMAND:
 		switch(LOWORD(wpm)){
 		case IDOK:
 		case IDCANCEL:
 			EndDialog(hdlg, LOWORD(wpm));
-			break;
+			return TRUE;
 		case WEBPAGE:
 			ShellExecute(NULL, "open", "http://www.reallyslick.com", NULL, NULL, SW_SHOWNORMAL);
+			return TRUE;
 		}
+		break;
 	}
 	return FALSE;
 }
 
 
-void initControls(HWND hdlg){
+static void setSliderValueText(HWND hdlg, int textID, int value){
 	char cval[16];
+	sprintf_s(cval, "%d", value);
+	SendDlgItemMessage(hdlg, textID, WM_SETTEXT, 0, LPARAM(cval));
+}
 
-	SendDlgItemMessage(hdlg, CYCLONES, UDM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(10), DWORD(1))));
-	SendDlgItemMessage(hdlg, CYCLONES, UDM_SETPOS, 0, LPARAM(dCyclones));
 
-	SendDlgItemMessage(hdlg, PARTICLES, UDM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(10000), DWORD(1))));
-	SendDlgItemMessage(hdlg, PARTICLES, UDM_SETPOS, 0, LPARAM(dParticles));
+static void setSpinControl(HWND hdlg, int editID, int spinID,
+		cycloneSettings::Range range, int value){
+	SendDlgItemMessage(hdlg, spinID, UDM_SETRANGE32, WPARAM(range.lo), LPARAM(range.hi));
+	SendDlgItemMessage(hdlg, spinID, UDM_SETPOS32, 0, LPARAM(value));
+	// UDS_SETBUDDYINT normally mirrors the position into the edit. Setting the
+	// text explicitly also covers themed dialogs where the first buddy has not
+	// completed its initial synchronization before WM_INITDIALOG.
+	setSliderValueText(hdlg, editID, value);
+}
 
-	SendDlgItemMessage(hdlg, PARTICLESIZE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, PARTICLESIZE, TBM_SETPOS, 1, LPARAM(dSize));
-	SendDlgItemMessage(hdlg, PARTICLESIZE, TBM_SETLINESIZE, 0, LPARAM(1));
-	SendDlgItemMessage(hdlg, PARTICLESIZE, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf_s(cval, "%d", dSize);
-	SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
-	SendDlgItemMessage(hdlg, COMPLEXITY, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(10))));
-	SendDlgItemMessage(hdlg, COMPLEXITY, TBM_SETPOS, 1, LPARAM(dComplexity));
-	SendDlgItemMessage(hdlg, COMPLEXITY, TBM_SETLINESIZE, 0, LPARAM(1));
-	SendDlgItemMessage(hdlg, COMPLEXITY, TBM_SETPAGESIZE, 0, LPARAM(2));
-	sprintf_s(cval, "%d", dComplexity);
-	SendDlgItemMessage(hdlg, COMPLEXITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
+static int getSpinControl(HWND hdlg, int spinID, cycloneSettings::Range range){
+	BOOL error = FALSE;
+	const int value = (int)SendDlgItemMessage(hdlg, spinID, UDM_GETPOS32, 0,
+		LPARAM(&error));
+	if(error) return range.lo;
+	return cycloneSettings::clampToRange(value < 0 ? 0UL : (unsigned long)value,
+		range);
+}
 
-	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
-	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
-	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf_s(cval, "%d", dSpeed);
-	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
-	CheckDlgButton(hdlg, STRETCH, dStretch);
+static void enableFrameRateControls(HWND hdlg, bool enabled){
+	EnableWindow(GetDlgItem(hdlg, IDC_FRAME_RATE_EDIT), enabled);
+	EnableWindow(GetDlgItem(hdlg, IDC_FRAME_RATE_SPIN), enabled);
+}
 
-	CheckDlgButton(hdlg, SHOWCURVES, dShowCurves);
 
-	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
+void initControls(HWND hdlg){
+	setSpinControl(hdlg, IDC_CYCLONES_EDIT, IDC_CYCLONES_SPIN,
+		cycloneSettings::kCyclones, dCyclones);
+	setSpinControl(hdlg, IDC_PARTICLES_EDIT, IDC_PARTICLES_SPIN,
+		cycloneSettings::kParticles, dParticles);
+
+	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETRANGE, 0,
+		LPARAM(MAKELONG(DWORD(cycloneSettings::kSize.lo), DWORD(cycloneSettings::kSize.hi))));
+	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETPOS, 1, LPARAM(dSize));
+	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETLINESIZE, 0, LPARAM(1));
+	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETPAGESIZE, 0, LPARAM(5));
+	setSliderValueText(hdlg, IDC_PARTICLE_SIZE_VALUE, dSize);
+
+	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETRANGE, 0,
+		LPARAM(MAKELONG(DWORD(cycloneSettings::kComplexity.lo),
+			DWORD(cycloneSettings::kComplexity.hi))));
+	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETPOS, 1, LPARAM(dComplexity));
+	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETLINESIZE, 0, LPARAM(1));
+	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETPAGESIZE, 0, LPARAM(2));
+	setSliderValueText(hdlg, IDC_COMPLEXITY_VALUE, dComplexity);
+
+	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETRANGE, 0,
+		LPARAM(MAKELONG(DWORD(cycloneSettings::kSpeed.lo), DWORD(cycloneSettings::kSpeed.hi))));
+	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETPOS, 1, LPARAM(dSpeed));
+	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETLINESIZE, 0, LPARAM(1));
+	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETPAGESIZE, 0, LPARAM(10));
+	setSliderValueText(hdlg, IDC_SPEED_VALUE, dSpeed);
+
+	CheckDlgButton(hdlg, IDC_STRETCH_CHECK, dStretch ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hdlg, IDC_SHOW_CURVES_CHECK, dShowCurves ? BST_CHECKED : BST_UNCHECKED);
+
+	const cycloneSettings::FrameRateUi frameRate =
+		cycloneSettings::frameRateToUi(dFrameRateLimit);
+	CheckDlgButton(hdlg, IDC_FRAME_RATE_LIMIT_CHECK,
+		frameRate.limited ? BST_CHECKED : BST_UNCHECKED);
+	setSpinControl(hdlg, IDC_FRAME_RATE_EDIT, IDC_FRAME_RATE_SPIN,
+		cycloneSettings::kFrameRate, frameRate.fps);
+	enableFrameRateControls(hdlg, frameRate.limited);
 }
 
 
 INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 										 WPARAM wpm, LPARAM lpm){
 	int ival;
-	char cval[16];
 
     switch(msg){
     case WM_INITDIALOG:
@@ -766,14 +808,16 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
     case WM_COMMAND:
         switch(LOWORD(wpm)){
         case IDOK:
-            dCyclones = SendDlgItemMessage(hdlg, CYCLONES, UDM_GETPOS, 0, 0);
-			dParticles = SendDlgItemMessage(hdlg, PARTICLES, UDM_GETPOS, 0, 0);
-			dSize = SendDlgItemMessage(hdlg, PARTICLESIZE, TBM_GETPOS, 0, 0);
-			dComplexity = SendDlgItemMessage(hdlg, COMPLEXITY, TBM_GETPOS, 0, 0);
-			dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			dStretch = (IsDlgButtonChecked(hdlg, STRETCH) == BST_CHECKED);
-			dShowCurves = (IsDlgButtonChecked(hdlg, SHOWCURVES) == BST_CHECKED);
-			dFrameRateLimit = SendDlgItemMessage(hdlg, FRAMERATELIMIT, TBM_GETPOS, 0, 0);
+			dCyclones = getSpinControl(hdlg, IDC_CYCLONES_SPIN, cycloneSettings::kCyclones);
+			dParticles = getSpinControl(hdlg, IDC_PARTICLES_SPIN, cycloneSettings::kParticles);
+			dSize = SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_GETPOS, 0, 0);
+			dComplexity = SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_GETPOS, 0, 0);
+			dSpeed = SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_GETPOS, 0, 0);
+			dStretch = (IsDlgButtonChecked(hdlg, IDC_STRETCH_CHECK) == BST_CHECKED);
+			dShowCurves = (IsDlgButtonChecked(hdlg, IDC_SHOW_CURVES_CHECK) == BST_CHECKED);
+			dFrameRateLimit = cycloneSettings::frameRateFromUi(
+				IsDlgButtonChecked(hdlg, IDC_FRAME_RATE_LIMIT_CHECK) == BST_CHECKED,
+				getSpinControl(hdlg, IDC_FRAME_RATE_SPIN, cycloneSettings::kFrameRate));
 			writeRegistry();
             // Fall through
         case IDCANCEL:
@@ -783,28 +827,27 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 			setDefaults();
 			initControls(hdlg);
 			break;
+		case IDC_FRAME_RATE_LIMIT_CHECK:
+			enableFrameRateControls(hdlg,
+				IsDlgButtonChecked(hdlg, IDC_FRAME_RATE_LIMIT_CHECK) == BST_CHECKED);
+			break;
         case ABOUT:
 			DialogBox(mainInstance, MAKEINTRESOURCE(DLG_ABOUT), hdlg, aboutProc);
 		}
         return TRUE;
 	case WM_HSCROLL:
-		if(HWND(lpm) == GetDlgItem(hdlg, PARTICLESIZE)){
-			ival = SendDlgItemMessage(hdlg, PARTICLESIZE, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", ival);
-			SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
+		if(HWND(lpm) == GetDlgItem(hdlg, IDC_PARTICLE_SIZE_SLIDER)){
+			ival = SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_GETPOS, 0, 0);
+			setSliderValueText(hdlg, IDC_PARTICLE_SIZE_VALUE, ival);
 		}
-		if(HWND(lpm) == GetDlgItem(hdlg, COMPLEXITY)){
-			ival = SendDlgItemMessage(hdlg, COMPLEXITY, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", ival);
-			SendDlgItemMessage(hdlg, COMPLEXITYTEXT, WM_SETTEXT, 0, LPARAM(cval));
+		if(HWND(lpm) == GetDlgItem(hdlg, IDC_COMPLEXITY_SLIDER)){
+			ival = SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_GETPOS, 0, 0);
+			setSliderValueText(hdlg, IDC_COMPLEXITY_VALUE, ival);
 		}
-		if(HWND(lpm) == GetDlgItem(hdlg, SPEED)){
-			ival = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			sprintf_s(cval, "%d", ival);
-			SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
+		if(HWND(lpm) == GetDlgItem(hdlg, IDC_SPEED_SLIDER)){
+			ival = SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_GETPOS, 0, 0);
+			setSliderValueText(hdlg, IDC_SPEED_VALUE, ival);
 		}
-		if(HWND(lpm) == GetDlgItem(hdlg, FRAMERATELIMIT))
-			updateFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
 		return TRUE;
     }
     return FALSE;

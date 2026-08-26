@@ -44,6 +44,18 @@ Release and runs the tests.
 Seven `src/` dirs carry a stale `Makefile` for an `RS_XSCREENSAVER` Linux build with no working
 configuration here. Nothing compiles those `#ifdef` blocks, so a green Windows build says nothing.
 
+### Host desktop safety — mandatory
+
+- Never launch `/s`, `/c`, or an arbitrary `/p <hwnd>` on the developer's interactive desktop;
+  `/c` disables the foreground owner and a forced exit can leave that app unclickable.
+- For dialog QA, use an empty command line (no owner). For renderer smoke tests, use `/w` only.
+- Close GUI tests through Cancel, `WM_CLOSE`, or `CloseMainWindow()` and wait for exit. Never use
+  `Stop-Process`, `taskkill`, or another forced termination; if graceful close fails, ask the user.
+- Run fullscreen tests in Windows Sandbox, a VM, isolated CI, or a separate user session. Use `/p`
+  only with a disposable preview host created by the test.
+- Prefer headless CTest. If an app is left disabled, close the saver normally or re-enable only its
+  known owner with `EnableWindow(hwnd, TRUE)`, then tell the user.
+
 ## Architecture
 
 ### Saver framework
