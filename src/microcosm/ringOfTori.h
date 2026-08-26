@@ -47,6 +47,12 @@ public:
 		}
 	}
 
+	// Only the array of pointers is this class's to free.  The tori it holds
+	// are in mShapes, which the base destructor owns.
+	~RingOfTori(){
+		delete[] tori;
+	}
+
 	void update(float frametime){
 		updateConstants(frametime);
 		updateMatrix();

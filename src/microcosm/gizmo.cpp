@@ -49,6 +49,10 @@ Gizmo::Gizmo(){
 
 
 Gizmo::~Gizmo(){
+	// Every subclass builds its shapes with new and pushes them here, so this
+	// is where they are freed.
+	for(unsigned int i=0; i<mShapes.size(); ++i)
+		delete mShapes[i];
 	mShapes.clear();
 }
 

@@ -41,8 +41,6 @@ public:
 		}
 	}
 
-	~TriangleOfSpheres(){}
-
 	void setScale(float s){
 		mScale = s;
 

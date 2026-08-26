@@ -63,9 +63,13 @@ against the current tree on 2026-08-19. Check items off as they land.
 
 ## Just outside the top 10
 
-- [ ] **Task 26** — `microcosm` appends its gizmo list instead of clearing it
-      first (tab instead of newline) — `src/microcosm/microcosm.cpp:979`.
-      One-character fix for the split; freeing gizmos in `cleanUp` is the
-      larger half since it frees nothing today.
+- [x] **Task 26** — `microcosm` appended its gizmo list instead of clearing it
+      first (tab instead of newline) — was `src/microcosm/microcosm.cpp:979`.
+      The split was one character. Freeing the gizmos meant making `~Gizmo`
+      virtual and the sole owner of `mShapes`, which in turn meant deleting the
+      18 subclass destructors that would then have double-freed, and adding the
+      `delete[]` `RingOfTori` never had. `cleanUp` now also resets `gGizmoIndex`,
+      `shapes`, `gNumShapes` and `readyToDraw`, and the easter-egg timer moved to
+      file scope so it resets with the flag it drives
 
 Full detail, evidence and `grep` commands for every item: `docs/MAINTENANCE.md`.

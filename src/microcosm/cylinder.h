@@ -56,11 +56,6 @@ public:
 		}
 	}
 
-	~Cylinder(){
-		for(unsigned int i=0; i<mShapes.size(); i++)
-			delete mShapes[i];
-	}
-
 	void update(float frametime){
 		updateConstants(frametime);
 		updateMatrix();

@@ -933,30 +933,82 @@ emitters from indeterminate `oldpos`/`targetpos` until `setTargets` runs again
 — which is why the new tests drive `frameTime` well past `preinterp`'s PI
 threshold before asserting anything about the mesh.
 
-## Task 26 · `microcosm` appends its gizmo list instead of rebuilding it — OPEN
+## Task 26 · `microcosm` appends its gizmo list instead of rebuilding it — DONE
 
-`initSaver` pushes 55 gizmos onto `gizmos`, and the `clear()` that should come
-first is inside the comment on the line above them:
+`initSaver` pushed 55 gizmos onto `gizmos`, and the `clear()` that should have
+come first was inside the comment on the line above them:
 
 ```cpp
-	// initialize gizmos	gizmos.clear();      // microcosm.cpp:979
+	// initialize gizmos	gizmos.clear();      // was microcosm.cpp:979
 	{ Metaballs* gizmo = new Metaballs(7);  gizmos.push_back(gizmo); }
 ```
 
-A tab, not a newline, between the comment text and the statement. So it never
-runs: a second `initSaver` leaves 110 entries, and `chooseGizmo` then picks at
-random from the doubled range. `cleanUp` frees nothing at all, so the 55 original
-`Gizmo` objects leak as well.
+A tab, not a newline, between the comment text and the statement, so it never
+ran: a second `initSaver` left 110 entries and `chooseGizmo` picked at random
+from the doubled range. `cleanUp` freed nothing at all, so the 55 original
+`Gizmo` objects leaked as well.
 
-The last entry is an easter-egg gizmo that `chooseGizmo` deliberately withholds
-unless `gTennisAvailable`, by dropping one off the top of its random range. With
-the list doubled that guard still excludes only the *final* entry — so the first
-copy's easter egg becomes reachable at random. That is the one visible
+The last entry is an easter-egg gizmo that `chooseGizmo` withholds unless
+`gTennisAvailable`, by dropping one off the top of its random range. With the
+list doubled that guard still excluded only the *final* entry — so the first
+copy's easter egg became reachable at random. That was the one visible
 consequence beyond the leak.
 
-Splitting the line is a one-character fix. Freeing the gizmos in `cleanUp` is the
-larger half, since it frees nothing today. Pinned by
-`Microcosm.GizmoListGrowsOnEveryRestart`.
+**Fixed.** Splitting the line was the one-character half. Freeing the gizmos
+turned out to be the larger half for a reason the brief did not record: the
+ownership model underneath could not support a `delete` at all.
+
+1. **`Gizmo::~Gizmo` was not virtual** (`gizmo.h:63`), so deleting through the
+   `Gizmo*` the saver holds would have run no subclass destructor — undefined
+   behaviour, and every shape leaked anyway. It is now `virtual`, and it is the
+   single owner of `mShapes`: it deletes each shape rather than just clearing
+   the vector.
+2. **18 subclasses each carried an identical `~X(){ for(...) delete mShapes[i]; }`**
+   which, once the base freed them, would have been a double free. All 18 are
+   gone. So is `~Orbit`, whose `torus1..3` are aliases into `mShapes`; `TorusBox`
+   holds the same aliases and never had one.
+3. **`Brain` keeps its three `delete[]`** and **`RingOfTori` gained the one it
+   never had** — those are arrays *of* pointers, held alongside `mShapes` rather
+   than inside it, and they were leaking independently of any restart.
+4. **`cleanUp` deletes the list, clears it, and resets what indexes it**:
+   `gGizmoIndex`, `shapes` (borrowed pointers into the gizmos just freed),
+   `gNumShapes`, and `readyToDraw` — `screenSaverProc` clears that last one
+   before calling `cleanUp` (`microcosm.cpp:1539`), but `cleanUp` is reachable
+   directly and `draw()` dereferences `gizmos[gGizmoIndex]` unconditionally. The
+   leak was what made that safe before.
+5. **`easterEggTime` was hoisted** out of `draw()` to file scope as
+   `gEasterEggTime` and is reset with `gTennisAvailable`. Resetting the flag
+   alone would have been theatre: the static outlives it and unlocks the egg
+   again on the next frame.
+6. **`chooseSpecificGizmo`'s `gizmos.size() - 1`** (`microcosm.cpp:1458`) is
+   unsigned and now guarded by a size check. It could not underflow while the
+   list was never emptied; it can now.
+
+`crawlpoints` needed nothing: `impCrawlPoint` is three floats by value, and
+`draw` clears the vector every frame anyway.
+
+Pinned by three cases in `tests/test_microcosm.cpp`:
+`GizmoListRebuiltOnEveryRestart` (the size is now the same on every start, and
+the list is empty between them), `EasterEggStaysHiddenAcrossRestarts` (the
+visible symptom, asserted directly), and `GizmoDestructionIsVirtual` — a
+`static_assert` on `std::has_virtual_destructor<Gizmo>` plus a delete through
+`Gizmo*` of one gizmo per ownership shape, wrapped in a `_CrtMemDifference`
+check. The leak check was verified against a deliberate leak before being
+committed; without that it would assert nothing.
+
+### What this does not do
+
+`cleanUp` still leaks the three volumes, the six surfaces, `tex1d`, `textwriter`
+and the two thread handles, and `draw()`'s remaining statics (`first`,
+`transitionTime`, the camera vectors) still survive a restart. Both are the
+Task 27 pattern rather than this one, and neither is reachable from the shipped
+saver, which exits on `WM_DESTROY` rather than restarting.
+
+`impShape` (`libs/Implicit/impShape.h:56`) has virtual functions and a
+non-virtual destructor, which is the same defect one level down — every
+`delete mShapes[i]` formally relies on it. No shape subclass owns memory, so
+nothing leaks today. It belongs to rslibs; recorded in
+`docs/MAINTENANCE-rslibs.md` rather than fixed from here.
 
 ## Task 27 · `skyrocket` has two more restart-unsafe statics — OPEN
 

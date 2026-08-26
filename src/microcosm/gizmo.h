@@ -60,7 +60,11 @@ protected:
 
 public:
 	Gizmo();
-	~Gizmo();
+	// Virtual because the saver holds Gizmos by base pointer and deletes them
+	// through it.  It also makes the base the sole owner of mShapes: every
+	// subclass allocates its shapes into that vector, and none of them frees
+	// anything itself.
+	virtual ~Gizmo();
 
 	virtual void setScale(float s);
 

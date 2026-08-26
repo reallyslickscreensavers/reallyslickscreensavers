@@ -53,6 +53,8 @@ public:
 		}
 	}
 
+	// Only the three arrays of pointers are this class's to free.  The ellipsoids
+	// they hold are in mShapes, which the base destructor owns.
 	~Brain(){
 		delete[] xEllipsoids;
 		delete[] yEllipsoids;
