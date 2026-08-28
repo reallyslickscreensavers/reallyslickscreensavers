@@ -691,8 +691,11 @@ instead. That inherits the thread-local Mersenne Twister, removes the modulo
 bias, and deleted six blocks of duplicated code — a down payment on Task 8.
 
 The `srand((unsigned)time(NULL))` calls this made dead in six savers were
-removed along with the copies; they were already dead for the seven modules
-that used the library version.
+removed along with the copies. Six more dead calls survived in modules that
+already used the library generator (`euphoria`, `helios`, `hyperspace`,
+`lattice`, `microcosm` and `skyrocket`); those are now removed too. The
+`NoLegacyCPrngCalls` CTest gate scans parent-project sources so a direct
+`rand()` or `srand()` call cannot silently reintroduce a second generator.
 
 ## Task 13 · Clear-text `http://` URLs
 

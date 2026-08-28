@@ -23,7 +23,6 @@
 #include <windows.h>
 #include <rsWin32Saver/rsWin32Saver.h>
 #include <rsWin32Saver/rsWin32SaverSettings.h>
-#include <time.h>
 #include <regstr.h>
 #include <commctrl.h>
 #include <process.h>
@@ -935,8 +934,6 @@ void initSaver(HWND hwnd){
 #ifdef RS_XSCREENSAVER
 void initSaver(){
 #endif
-	srand((unsigned)time(NULL));
-
 	// Limit memory consumption because the Windows previewer is just too darn slow
 	if(doingPreview){
 		dResolution = 20;

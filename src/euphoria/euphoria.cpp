@@ -25,7 +25,6 @@
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
 
 #include <gl/gl.h>
 #include <gl/glu.h>
@@ -470,8 +469,6 @@ void idleProc(){
 
 void initSaver(HWND hwnd){
 	RECT rect;
-
-	srand((unsigned)time(NULL));
 
 	// Window initialization
 	hdc = GetDC(hwnd);

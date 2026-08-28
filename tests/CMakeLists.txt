@@ -61,6 +61,14 @@ add_test(NAME SettingsClampWiring
                  -DREPO_ROOT=${REPO_ROOT}
                  -P ${CMAKE_CURRENT_SOURCE_DIR}/tools/check-settings-wiring.cmake)
 
+# Every saver uses rsMath's self-seeded std::mt19937. A direct C rand/srand
+# call is either a second generator with unrelated state or a dead seed call.
+# SonarCloud did not report every surviving call, so keep this as a local gate.
+add_test(NAME NoLegacyCPrngCalls
+         COMMAND ${CMAKE_COMMAND}
+                 -DREPO_ROOT=${REPO_ROOT}
+                 -P ${CMAKE_CURRENT_SOURCE_DIR}/tools/check-legacy-prng.cmake)
+
 # ---------------------------------------------------------------------------
 # Saver test harness
 # ---------------------------------------------------------------------------

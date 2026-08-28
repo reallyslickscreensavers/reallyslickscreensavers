@@ -25,7 +25,6 @@
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
 #include <vector>
 
 #include <gl/gl.h>
@@ -922,9 +921,6 @@ void idleProc(){
 
 void initSaver(HWND hwnd){
 	RECT rect;
-
-	// Initialize pseudorandom number generator
-	srand((unsigned)time(NULL));
 
 	// Window initialization
 	hdc = GetDC(hwnd);
