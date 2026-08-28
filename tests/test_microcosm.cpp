@@ -18,6 +18,7 @@
 
 
 #include <array>
+#include <memory>
 #include <type_traits>
 #include <vector>
 
@@ -356,6 +357,10 @@ TEST_F(Microcosm, EasterEggStaysHiddenAcrossRestarts) {
     // earlier cases drove.
     gTennisAvailable = false;
 
+    // Asserted before the subtraction below, which is unsigned: an empty list
+    // would make tennis SIZE_MAX and the loop would pass without testing anything.
+    ASSERT_GT(gizmos.size(), 1u) << "initSaver builds the list";
+
     const size_t tennis = gizmos.size() - 1;
     for (int i = 0; i < 200; ++i) {
         chooseGizmo(-1);  // the random path; the default argument is on the definition
@@ -369,7 +374,7 @@ TEST_F(Microcosm, GizmoDestructionIsVirtual) {
     // has to be the one place mShapes is freed. The subclasses used to free
     // mShapes themselves; if any of those destructors comes back, this is a
     // double free rather than a leak.
-    static_assert(std::has_virtual_destructor<Gizmo>::value,
+    static_assert(std::has_virtual_destructor_v<Gizmo>,
                   "cleanUp deletes gizmos through a Gizmo*");
 
     // One per ownership shape. A double free trips the debug heap here, in a
@@ -383,10 +388,14 @@ TEST_F(Microcosm, GizmoDestructionIsVirtual) {
     _CrtMemCheckpoint(&before);
 #endif
 
-    delete static_cast<Gizmo*>(new Cube);
-    delete static_cast<Gizmo*>(new Orbit);
-    delete static_cast<Gizmo*>(new Brain(4));
-    delete static_cast<Gizmo*>(new RingOfTori(3));
+    {
+        // Held as Gizmo*, so unique_ptr destroys them through the base pointer -
+        // the same dispatch cleanUp relies on.
+        const std::unique_ptr<Gizmo> cube = std::make_unique<Cube>();
+        const std::unique_ptr<Gizmo> orbit = std::make_unique<Orbit>();
+        const std::unique_ptr<Gizmo> brain = std::make_unique<Brain>(4);
+        const std::unique_ptr<Gizmo> ring = std::make_unique<RingOfTori>(3);
+    }
 
 #ifdef _DEBUG
     _CrtMemState after;
