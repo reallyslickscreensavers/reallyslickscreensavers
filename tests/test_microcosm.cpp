@@ -18,12 +18,24 @@
 
 
 #include <array>
+#include <memory>
+#include <type_traits>
 #include <vector>
+
+// For the leak check in GizmoDestructionIsVirtual. Debug-only by construction:
+// the whole header is a no-op without _DEBUG.
+#include <crtdbg.h>
 
 #include "resource.h"
 // For the gizmo list below. It is the saver's own header, reached through the
 // module include directory the same way resource.h is.
 #include "gizmo.h"
+// One gizmo per ownership shape, for GizmoDestructionIsVirtual below. Every
+// other gizmo is one of these four in a different size.
+#include "brain.h"        // owns three arrays of pointers into mShapes
+#include "cube.h"         // owns nothing beyond mShapes
+#include "orbit.h"        // three named aliases into mShapes
+#include "ringOfTori.h"   // one array of pointers into mShapes
 #include "microcosmSettings.h"
 
 // microcosm.cpp has no header; its contract with the framework is by name. See
@@ -55,6 +67,10 @@ extern int doingPreview;
 // Built by initSaver and indexed by gGizmoIndex.
 extern std::vector<Gizmo*> gizmos;
 extern unsigned int gGizmoIndex;
+
+// Gates the Tennis easter egg, which chooseGizmo hides by dropping the last
+// entry off its random range until this turns true (microcosm.cpp:371).
+extern bool gTennisAvailable;
 
 void setDefaults(int which);
 void readRegistry();
@@ -298,39 +314,96 @@ TEST_F(Microcosm, EveryGizmoDrawsCoherently) {
     }
 }
 
-TEST_F(Microcosm, GizmoListGrowsOnEveryRestart) {
-    // DEFECT, pinned rather than fixed.
+TEST_F(Microcosm, GizmoListRebuiltOnEveryRestart) {
+    // Was pinned as a defect: initSaver appended its 55 gizmos to whatever was
+    // already there, because the clear that should precede them was swallowed by
+    // the comment on the same line -
     //
-    // initSaver appends 55 gizmos to the vector, and the clear that should
-    // precede them is swallowed by the comment on the same line:
+    //     // initialize gizmos    gizmos.clear();
     //
-    //     // initialize gizmos    gizmos.clear();     // microcosm.cpp:979
-    //
-    // so it never runs. cleanUp frees nothing either, so a second start leaves
-    // 110 entries and 55 leaked Gizmo objects, and chooseGizmo picks at random
-    // from the doubled range.
-    //
-    // Harmless in the shipped saver, which never restarts. Fixing it means
-    // splitting that line - and deleting the gizmos in cleanUp, which is a
-    // larger change since it frees nothing at all today.
-    // Asserted as a constant increment rather than a doubling, because any
-    // earlier case in the process has already grown the list and the ratio
-    // depends on how many.
+    // and cleanUp freed nothing, so a second start left 110 entries and 55
+    // leaked Gizmo objects. Now cleanUp deletes the list and initSaver rebuilds
+    // it, so the size is the same on every start.
     start();
     const size_t first = gizmos.size();
-    ASSERT_GT(first, 0u);
+    ASSERT_GT(first, 1u) << "initSaver builds the list";
 
     stop();
+    EXPECT_TRUE(gizmos.empty()) << "cleanUp owns the list it is handed";
+
     start();
     const size_t second = gizmos.size();
-
     stop();
     start();
     const size_t third = gizmos.size();
 
-    EXPECT_GT(second, first)
-        << "if this now fails the list is being cleared and the defect is gone";
-    EXPECT_EQ(second - first, third - second) << "one whole list appended each time";
+    EXPECT_EQ(second, first);
+    EXPECT_EQ(third, first);
+}
+
+TEST_F(Microcosm, EasterEggStaysHiddenAcrossRestarts) {
+    // chooseGizmo hides the Tennis gizmo - the last entry - by dropping one off
+    // the top of its random range while gTennisAvailable is false
+    // (microcosm.cpp:371). With the list doubled, that guard still excluded only
+    // the final entry, so the first copy's Tennis became reachable at random.
+    // This is the one visible consequence of the append bug, so it gets its own
+    // case rather than riding on the size assertion above.
+    start();
+    stop();
+    start();
+
+    // Set here rather than trusted from cleanUp: the flag also flips on elapsed
+    // time inside draw(), and this case should not depend on how much time
+    // earlier cases drove.
+    gTennisAvailable = false;
+
+    // Asserted before the subtraction below, which is unsigned: an empty list
+    // would make tennis SIZE_MAX and the loop would pass without testing anything.
+    ASSERT_GT(gizmos.size(), 1u) << "initSaver builds the list";
+
+    const size_t tennis = gizmos.size() - 1;
+    for (int i = 0; i < 200; ++i) {
+        chooseGizmo(-1);  // the random path; the default argument is on the definition
+        ASSERT_NE(static_cast<size_t>(gGizmoIndex), tennis)
+            << "easter egg drawn at random on iteration " << i;
+    }
+}
+
+TEST_F(Microcosm, GizmoDestructionIsVirtual) {
+    // cleanUp deletes the gizmos through Gizmo*, so ~Gizmo has to be virtual and
+    // has to be the one place mShapes is freed. The subclasses used to free
+    // mShapes themselves; if any of those destructors comes back, this is a
+    // double free rather than a leak.
+    static_assert(std::has_virtual_destructor_v<Gizmo>,
+                  "cleanUp deletes gizmos through a Gizmo*");
+
+    // One per ownership shape. A double free trips the debug heap here, in a
+    // named case, instead of anonymously inside some other case's teardown.
+    //
+    // The debug CRT also answers the other half of the question - whether the
+    // shapes are freed at all, which no assertion about the vector can show.
+    // Only the four constructions below run between the checkpoints.
+#ifdef _DEBUG
+    _CrtMemState before;
+    _CrtMemCheckpoint(&before);
+#endif
+
+    {
+        // Held as Gizmo*, so unique_ptr destroys them through the base pointer -
+        // the same dispatch cleanUp relies on.
+        const std::unique_ptr<Gizmo> cube = std::make_unique<Cube>();
+        const std::unique_ptr<Gizmo> orbit = std::make_unique<Orbit>();
+        const std::unique_ptr<Gizmo> brain = std::make_unique<Brain>(4);
+        const std::unique_ptr<Gizmo> ring = std::make_unique<RingOfTori>(3);
+    }
+
+#ifdef _DEBUG
+    _CrtMemState after;
+    _CrtMemCheckpoint(&after);
+    _CrtMemState diff;
+    EXPECT_EQ(_CrtMemDifference(&diff, &before, &after), 0)
+        << "a gizmo destroyed through Gizmo* left memory behind";
+#endif
 }
 
 // --- framework entry points ------------------------------------------------

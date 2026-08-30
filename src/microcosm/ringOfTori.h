@@ -32,18 +32,22 @@
 class RingOfTori : public Gizmo{
 public:
 	unsigned int numTori;
-	impTorus** tori;
+	// Borrowed views of the tori, for update() to address them by index.  They
+	// are owned by mShapes, which the base destructor frees, so this vector owns
+	// nothing and the class needs no destructor of its own.
+	std::vector<impTorus*> tori;
 
 	RingOfTori(unsigned int num){
 		mMaxDisplacement = 0.5f;
 
 		numTori = num >= 2 ? num : 2;  // at least 2
-		tori = new impTorus*[numTori];
+		tori.reserve(numTori);
 		for(unsigned int i=0; i<numTori; ++i){
-			tori[i] = new impTorus;
-			tori[i]->setRadius(0.18f);
-			tori[i]->setThickness(0.04f);
-			mShapes.push_back(tori[i]);
+			impTorus* torus = new impTorus;
+			torus->setRadius(0.18f);
+			torus->setThickness(0.04f);
+			tori.push_back(torus);
+			mShapes.push_back(torus);
 		}
 	}
 

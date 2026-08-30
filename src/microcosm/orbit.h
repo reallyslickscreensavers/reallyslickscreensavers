@@ -50,12 +50,6 @@ public:
 		mShapes.push_back(torus3);
 	}
 
-	~Orbit(){
-		delete torus1;
-		delete torus2;
-		delete torus3;
-	}
-
 	void update(float frametime){
 		updateConstants(frametime);
 		updateMatrix();

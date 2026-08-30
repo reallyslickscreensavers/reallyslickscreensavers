@@ -152,6 +152,11 @@ float sfEyeX, sfEyeY, sfEyeZ;
 // easter egg
 // Tennis gizmo is not immediately available
 bool gTennisAvailable = false;
+// How long the saver has been running, counted only until the egg unlocks.
+// File scope rather than a static inside draw() so that cleanUp can reset it
+// along with the flag it drives; a static would outlive the reset and unlock
+// the egg again on the next frame.
+float gEasterEggTime = 0.0f;
 
 // multi-threading
 // Two worker threads are used to compute frame (n+1)'s surfaces while frame n
@@ -404,10 +409,9 @@ void draw(){
 
 	// This is an Easter egg gizmo that shouldn't show up right when the saver
 	// starts, so we'll make it available a bit later.
-	static float easterEggTime = 0.0f;
 	if(!gTennisAvailable){
-		easterEggTime += frameTime;
-		if(easterEggTime >= 1200.0f)
+		gEasterEggTime += frameTime;
+		if(gEasterEggTime >= 1200.0f)
 			gTennisAvailable = true;
 	}
 
@@ -976,7 +980,8 @@ void initSaver(){
 		gDimSpecular1[i] = gSpecular1[i] * mult;
 	}
 
-	// initialize gizmos	gizmos.clear();
+	// initialize gizmos
+	gizmos.clear();
 	{ Metaballs* gizmo = new Metaballs(7);  gizmos.push_back(gizmo); }
 	{ TriangleOfSpheres* gizmo = new TriangleOfSpheres(5);  gizmos.push_back(gizmo); }
 	{ TriangleOfSpheres* gizmo = new TriangleOfSpheres(7);  gizmos.push_back(gizmo); }
@@ -1142,14 +1147,46 @@ void initSaver(){
 
 #ifdef RS_XSCREENSAVER
 void cleanUp(){
-	// Free memory
+	// Nothing may draw once the gizmos are gone.  screenSaverProc clears this
+	// before calling here, but cleanUp is also reachable directly and draw()
+	// dereferences gizmos[gGizmoIndex] unconditionally.
+	readyToDraw = 0;
+
+	// Free memory.  initSaver rebuilds the gizmo list from scratch, so anything
+	// left pointing into it here would be pointing at freed memory.
+	for(unsigned int i=0; i<gizmos.size(); ++i)
+		delete gizmos[i];
+	gizmos.clear();
+	gGizmoIndex = 0;
+	shapes.clear();  // borrowed pointers into the gizmos just freed
+	gNumShapes = 0;
+
+	// The easter egg unlocks on elapsed time, which starts over with the list.
+	gTennisAvailable = false;
+	gEasterEggTime = 0.0f;
 }
 #endif
 
 
 #ifdef WIN32
 void cleanUp(HWND hwnd){
-	// Free memory
+	// Nothing may draw once the gizmos are gone.  screenSaverProc clears this
+	// before calling here, but cleanUp is also reachable directly and draw()
+	// dereferences gizmos[gGizmoIndex] unconditionally.
+	readyToDraw = 0;
+
+	// Free memory.  initSaver rebuilds the gizmo list from scratch, so anything
+	// left pointing into it here would be pointing at freed memory.
+	for(unsigned int i=0; i<gizmos.size(); ++i)
+		delete gizmos[i];
+	gizmos.clear();
+	gGizmoIndex = 0;
+	shapes.clear();  // borrowed pointers into the gizmos just freed
+	gNumShapes = 0;
+
+	// The easter egg unlocks on elapsed time, which starts over with the list.
+	gTennisAvailable = false;
+	gEasterEggTime = 0.0f;
 
 	// Kill device context
 	ReleaseDC(hwnd, hdc);
@@ -1452,7 +1489,10 @@ void chooseSpecificGizmo(int n){
 	}
 	else{  // 2nd key pressed is 1's place digit
 		spec_gizmo += n;
-		if(static_cast<size_t>(spec_gizmo) < gizmos.size() - 1)  // select any gizmo except easter egg gizmo
+		// Select any gizmo except the easter egg one.  The size check comes first
+		// because the subtraction is unsigned, and cleanUp now leaves the list
+		// empty rather than populated-but-stale.
+		if(gizmos.size() > 1 && static_cast<size_t>(spec_gizmo) < gizmos.size() - 1)
 			gSpecificGizmo = spec_gizmo;
 		gNumberInputTimer = 0.0f;
 	}

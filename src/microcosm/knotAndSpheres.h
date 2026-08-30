@@ -49,11 +49,6 @@ public:
 		setScale(1.0f);
 	};
 
-	~KnotAndSpheres(){
-		for(unsigned int i=0; i<mShapes.size(); i++)
-			delete mShapes[i];
-	}
-
 	void setScale(float s){
 		mScale = s;
 

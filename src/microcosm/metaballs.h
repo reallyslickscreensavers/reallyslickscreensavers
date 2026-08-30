@@ -44,8 +44,6 @@ public:
 		}
 	}
 
-	~Metaballs(){}
-
 	void setScale(float s){
 		mScale = s;
 

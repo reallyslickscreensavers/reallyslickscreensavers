@@ -22,6 +22,7 @@ the parent's submodule pointer is at `42d251b` (parent PR #40).
 | L6 | Frame-rate limit control API | open — breaking, needs coordinated parent edits |
 | L7 | `rsText.h` global `to_string` | open — breaking, needs coordinated parent edits |
 | L8 | Test coverage gaps | **partial** — `rsWin32Saver` done in rslibs#23; `rsText` and `rsXScreenSaver` deliberately skipped |
+| L9 | `impShape` non-virtual destructor | open — contract only, nothing leaks today |
 
 The task descriptions below are kept as written, because the reasoning still
 explains *why* each change looks the way it does. Where reality differed from
@@ -308,6 +309,26 @@ worth not re-litigating:
 So L8 should be considered **closed in practice**, not pending, unless L7 changes
 what `rsText` looks like.
 
+## Task L9 · `impShape` has virtuals and a non-virtual destructor
+
+`impShape` (`Implicit/impShape.h:56`) declares `~impShape() {}` alongside three
+virtual functions, and every consumer holds shapes by base pointer. Deleting one
+through an `impShape*` is undefined behaviour — formally, not just by lint.
+
+Found from the parent while fixing its Task 26: `microcosm`'s gizmos own their
+shapes in a `ShapeVector` and now delete them from one place, which made the
+question unavoidable. Nothing leaks today, because no `impShape` subclass owns
+memory — `impSphere`, `impTorus`, `impKnot`, `impCapsule`, `impEllipsoid` and
+`impRoundedHexahedron` hold only scalars, and their destructors are empty. So
+this is a correctness-of-contract fix, not a live defect, which is why the
+parent recorded it here instead of working around it.
+
+The fix is one `virtual`. Watch the SSE trap below: `operator new` / `operator
+delete` are overridden on this class for 16-byte alignment, and a virtual
+destructor adds a vptr to every shape, so re-check the alignment assumption
+under `__SSE__` rather than assuming it still holds. MSVC does not define
+`__SSE__`, so the parent's Windows build never takes that path.
+
 ---
 
 # Traps
@@ -363,6 +384,8 @@ and it worked.
 3. ~~**L5**, optionally with **L8**'s `rsWin32Saver` tests~~ — done together in
    rslibs#23. Pairing them was right: L5's extraction is what made the logic
    testable.
-4. **L6** and **L7** — still to do, both breaking API changes needing coordinated
-   parent-side edits. Note L5 already moved the frame-rate bounds into shared
-   constants, so L6 has its groundwork.
+4. **L6**, **L7** and **L9** — still to do. L6 and L7 are breaking API changes
+   needing coordinated parent-side edits; L9 is one keyword, but read its note on
+   the SSE alignment override first.
+   L5 already moved the frame-rate bounds into shared constants, so L6 has its
+   groundwork.
