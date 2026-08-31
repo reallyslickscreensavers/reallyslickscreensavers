@@ -43,37 +43,25 @@
 #include <rsMath/rsMath.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include "plasmaState.h"
 
 #define PIx2 6.28318530718f
-#define NUMCONSTS 18
-#define TEXSIZE 1024
 
 // Globals
 #ifdef WIN32
+// The one global the framework mandates: rsWin32Saver.h declares it extern and
+// reads it back. Everything else this module owns is in plasmaState::State.
 LPCTSTR registryPath = ("Software\\Really Slick\\Plasma");
-HGLRC hglrc;
-HDC hdc;
 #endif
-int readyToDraw = 0;
-float frameTime = 0.0f;
-float aspectRatio;
-float wide;
-float high;
-float c[NUMCONSTS];  // constant
-float ct[NUMCONSTS];  // temporary value of constant
-float cv[NUMCONSTS];  // velocity of constant
-float position[TEXSIZE][TEXSIZE][2];
-float plasma[TEXSIZE][TEXSIZE][3];
-float plasmamap[TEXSIZE * TEXSIZE * 3];
-unsigned int tex;
-int plasmasize = 64;
-// text output
-rsText* textwriter;
-// Parameters edited in the dialog box
-int dZoom;
-int dFocus;
-int dSpeed;
-int dResolution;
+
+plasmaState::State& plasmaState::state(){
+	static State s;
+	return s;
+}
+
+using plasmaState::state;
+using plasmaState::kNumConsts;
+using plasmaState::kTexSize;
 
 
 // Find absolute value and truncate to 1.0
@@ -87,79 +75,80 @@ inline float fabstrunc(float f){
 
 
 void draw(){
+	auto& s = state();
 	int i, j;
 	float rgb[3];
 	float temp;
-	static float focus = float(dFocus) / 50.0f + 0.3f;
-	static float maxdiff = 0.004f * float(dSpeed);
+	static float focus = float(s.dFocus) / 50.0f + 0.3f;
+	static float maxdiff = 0.004f * float(s.dSpeed);
 	static int index;
 
 	//Update constants
-	for(i=0; i<NUMCONSTS; i++){
-		ct[i] += cv[i];
-		if(ct[i] > PIx2)
-			ct[i] -= PIx2;
-		c[i] = sinf(ct[i]) * focus;
+	for(i=0; i<kNumConsts; i++){
+		s.ct[i] += s.cv[i];
+		if(s.ct[i] > PIx2)
+			s.ct[i] -= PIx2;
+		s.c[i] = sinf(s.ct[i]) * focus;
 	}
 
 	// Update colors
-	for(i=0; i<plasmasize; i++){
-		for(j=0; j<int(float(plasmasize) / aspectRatio); j++){
+	for(i=0; i<s.plasmasize; i++){
+		for(j=0; j<int(float(s.plasmasize) / s.aspectRatio); j++){
 			// Calculate vertex colors
-			rgb[0] = plasma[i][j][0];
-			rgb[1] = plasma[i][j][1];
-			rgb[2] = plasma[i][j][2];
-			plasma[i][j][0] = 0.7f
-							* (c[0] * position[i][j][0] + c[1] * position[i][j][1]
-							+ c[2] * (position[i][j][0] * position[i][j][0] + 1.0f)
-							+ c[3] * position[i][j][0] * position[i][j][1]
-							+ c[4] * rgb[1] + c[5] * rgb[2]);
-			plasma[i][j][1] = 0.7f
-							* (c[6] * position[i][j][0] + c[7] * position[i][j][1]
-							+ c[8] * position[i][j][0] * position[i][j][0]
-							+ c[9] * (position[i][j][1] * position[i][j][1] - 1.0f)
-							+ c[10] * rgb[0] + c[11] * rgb[2]);
-			plasma[i][j][2] = 0.7f
-							* (c[12] * position[i][j][0] + c[13] * position[i][j][1]
-							+ c[14] * (1.0f - position[i][j][0] * position[i][j][1])
-							+ c[15] * position[i][j][1] * position[i][j][1]
-							+ c[16] * rgb[0] + c[17] * rgb[1]);
+			rgb[0] = s.plasma[i][j][0];
+			rgb[1] = s.plasma[i][j][1];
+			rgb[2] = s.plasma[i][j][2];
+			s.plasma[i][j][0] = 0.7f
+							* (s.c[0] * s.position[i][j][0] + s.c[1] * s.position[i][j][1]
+							+ s.c[2] * (s.position[i][j][0] * s.position[i][j][0] + 1.0f)
+							+ s.c[3] * s.position[i][j][0] * s.position[i][j][1]
+							+ s.c[4] * rgb[1] + s.c[5] * rgb[2]);
+			s.plasma[i][j][1] = 0.7f
+							* (s.c[6] * s.position[i][j][0] + s.c[7] * s.position[i][j][1]
+							+ s.c[8] * s.position[i][j][0] * s.position[i][j][0]
+							+ s.c[9] * (s.position[i][j][1] * s.position[i][j][1] - 1.0f)
+							+ s.c[10] * rgb[0] + s.c[11] * rgb[2]);
+			s.plasma[i][j][2] = 0.7f
+							* (s.c[12] * s.position[i][j][0] + s.c[13] * s.position[i][j][1]
+							+ s.c[14] * (1.0f - s.position[i][j][0] * s.position[i][j][1])
+							+ s.c[15] * s.position[i][j][1] * s.position[i][j][1]
+							+ s.c[16] * rgb[0] + s.c[17] * rgb[1]);
 
 			// Don't let the colors change too much
-			temp = plasma[i][j][0] - rgb[0];
+			temp = s.plasma[i][j][0] - rgb[0];
 			if(temp > maxdiff)
-				plasma[i][j][0] = rgb[0] + maxdiff;
+				s.plasma[i][j][0] = rgb[0] + maxdiff;
 			if(temp < -maxdiff)
-				plasma[i][j][0] = rgb[0] - maxdiff;
-			temp = plasma[i][j][1] - rgb[1];
+				s.plasma[i][j][0] = rgb[0] - maxdiff;
+			temp = s.plasma[i][j][1] - rgb[1];
 			if(temp > maxdiff)
-				plasma[i][j][1] = rgb[1] + maxdiff;
+				s.plasma[i][j][1] = rgb[1] + maxdiff;
 			if(temp < -maxdiff)
-				plasma[i][j][1] = rgb[1] - maxdiff;
-			temp = plasma[i][j][2] - rgb[2];
+				s.plasma[i][j][1] = rgb[1] - maxdiff;
+			temp = s.plasma[i][j][2] - rgb[2];
 			if(temp > maxdiff)
-				plasma[i][j][2] = rgb[2] + maxdiff;
+				s.plasma[i][j][2] = rgb[2] + maxdiff;
 			if(temp < -maxdiff)
-				plasma[i][j][2] = rgb[2] - maxdiff;
+				s.plasma[i][j][2] = rgb[2] - maxdiff;
 
 			// Put colors into texture
-			index = (i * TEXSIZE + j) * 3;
-			plasmamap[index] = fabstrunc(plasma[i][j][0]);
-			plasmamap[index+1] = fabstrunc(plasma[i][j][1]);
-			plasmamap[index+2] = fabstrunc(plasma[i][j][2]);
+			index = (i * kTexSize + j) * 3;
+			s.plasmamap[index] = fabstrunc(s.plasma[i][j][0]);
+			s.plasmamap[index+1] = fabstrunc(s.plasma[i][j][1]);
+			s.plasmamap[index+2] = fabstrunc(s.plasma[i][j][2]);
 		}
 	}
 
 	// Update texture
-	glPixelStorei(GL_UNPACK_ROW_LENGTH, TEXSIZE);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, int(float(plasmasize) / aspectRatio), plasmasize,
-		GL_RGB, GL_FLOAT, plasmamap);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, kTexSize);
+	glBindTexture(GL_TEXTURE_2D, s.tex);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, int(float(s.plasmasize) / s.aspectRatio), s.plasmasize,
+		GL_RGB, GL_FLOAT, s.plasmamap);
 
 	// Draw it
 	// The "- 1" cuts off right and top edges to get rid of blending to black
-	float texright = float(plasmasize - 1) / float(TEXSIZE);
-	float textop = float(int(float(plasmasize) / aspectRatio) - 1) / float(TEXSIZE);
+	float texright = float(s.plasmasize - 1) / float(kTexSize);
+	float textop = float(int(float(s.plasmasize) / s.aspectRatio) - 1) / float(kTexSize);
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2f(0.0f, 0.0f);
 		glVertex2f(0.0f, 0.0f);
@@ -173,7 +162,7 @@ void draw(){
 
 	// print text
 	static float totalTime = 0.0f;
-	totalTime += frameTime;
+	totalTime += s.frameTime;
 	static std::string str;
 	static int frames = 0;
 	++frames;
@@ -186,7 +175,7 @@ void draw(){
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
-		glOrtho(0.0f, 50.0f * aspectRatio, 0.0f, 50.0f, -1.0f, 1.0f);
+		glOrtho(0.0f, 50.0f * s.aspectRatio, 0.0f, 50.0f, -1.0f, 1.0f);
 
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
@@ -194,7 +183,7 @@ void draw(){
 		glTranslatef(1.0f, 48.0f, 0.0f);
 
 		glColor3f(1.0f, 0.6f, 0.0f);
-		textwriter->draw(str);
+		s.textwriter->draw(str);
 
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);
@@ -202,7 +191,7 @@ void draw(){
 	}
 
 #ifdef WIN32
-	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+	wglSwapLayerBuffers(s.hdc, WGL_SWAP_MAIN_PLANE);
 #endif
 #ifdef RS_XSCREENSAVER
 	glXSwapBuffers(xdisplay, xwindow);
@@ -211,14 +200,15 @@ void draw(){
 
 
 void idleProc(){
+	auto& s = state();
 	// update time
 	static rsTimer timer;
-	frameTime = float(timer.tick());
+	s.frameTime = float(timer.tick());
 
 #ifdef RS_XSCREENSAVER
-	const bool shouldDraw = (readyToDraw && !isSuspended && !checkingPassword);
+	const bool shouldDraw = (s.readyToDraw && !isSuspended && !checkingPassword);
 #else
-	const bool shouldDraw = (readyToDraw && !isSuspended);
+	const bool shouldDraw = (s.readyToDraw && !isSuspended);
 #endif
 	if(shouldDraw)
 		draw();
@@ -226,56 +216,60 @@ void idleProc(){
 
 
 void setPlasmaSize(){
-	if(aspectRatio >= 1.0f){
-		wide = 30.0f / float(dZoom);
-		high = wide / aspectRatio;
+	auto& s = state();
+	if(s.aspectRatio >= 1.0f){
+		s.wide = 30.0f / float(s.dZoom);
+		s.high = s.wide / s.aspectRatio;
 	}
 	else{
-		high = 30.0f / float(dZoom);
-		wide = high * aspectRatio;
+		s.high = 30.0f / float(s.dZoom);
+		s.wide = s.high * s.aspectRatio;
 	}
 
 	// Set resolution of plasma
-	if(aspectRatio >= 1.0f)
-		plasmasize = int(float(dResolution * TEXSIZE) * 0.01f);
+	if(s.aspectRatio >= 1.0f)
+		s.plasmasize = int(float(s.dResolution * kTexSize) * 0.01f);
 	else
-		plasmasize = int(float(dResolution * TEXSIZE) * aspectRatio * 0.01f);
+		s.plasmasize = int(float(s.dResolution * kTexSize) * s.aspectRatio * 0.01f);
 
-	for(int i=0; i<plasmasize; i++){
-		for(int j=0; j<int(float(plasmasize) / aspectRatio); j++){
-			plasma[i][j][0] = 0.0f;
-			plasma[i][j][1] = 0.0f;
-			plasma[i][j][2] = 0.0f;
-			position[i][j][0] = float(i * wide) / float(plasmasize - 1) - (wide * 0.5f);
-			position[i][j][1] = float(j * high) / (float(plasmasize) / aspectRatio - 1.0f) - (high * 0.5f);
+	for(int i=0; i<s.plasmasize; i++){
+		for(int j=0; j<int(float(s.plasmasize) / s.aspectRatio); j++){
+			s.plasma[i][j][0] = 0.0f;
+			s.plasma[i][j][1] = 0.0f;
+			s.plasma[i][j][2] = 0.0f;
+			s.position[i][j][0] = float(i * s.wide) / float(s.plasmasize - 1) - (s.wide * 0.5f);
+			s.position[i][j][1] = float(j * s.high) / (float(s.plasmasize) / s.aspectRatio - 1.0f) - (s.high * 0.5f);
 		}
 	}
 }
 
 
 void setDefaults(){
-	dZoom = 10;
-	dFocus = 30;
-	dSpeed = 20;
-	dResolution = 25;
+	auto& s = state();
+	s.dZoom = 10;
+	s.dFocus = 30;
+	s.dSpeed = 20;
+	s.dResolution = 25;
 	dFrameRateLimit = 30;
 }
 
 
 #ifdef RS_XSCREENSAVER
 void handleCommandLine(int argc, char* argv[]){
+	auto& s = state();
 	setDefaults();
-	getArgumentsValue(argc, argv, std::string("-zoom"), dZoom, 1, 100);
-	getArgumentsValue(argc, argv, std::string("-focus"), dFocus, 1, 100);
-	getArgumentsValue(argc, argv, std::string("-speed"), dSpeed, 1, 100);
-	getArgumentsValue(argc, argv, std::string("-resolution"), dResolution, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-zoom"), s.dZoom, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-focus"), s.dFocus, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-speed"), s.dSpeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-resolution"), s.dResolution, 1, 100);
 }
 
 void reshape(int width, int height){
+	auto& s = state();
 	glViewport(0, 0, width, height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	aspectRatio = float(width) / float(height);
+	s.aspectRatio = float(width) / float(height);
 	gluOrtho2D(0.0f, 1.0f, 0.0f, 1.0f);
 	glMatrixMode(GL_MODELVIEW);
 
@@ -286,16 +280,17 @@ void reshape(int width, int height){
 
 #ifdef WIN32
 void initSaver(HWND hwnd){
+	auto& s = state();
 	RECT rect;
 
 	// Window initialization
-	hdc = GetDC(hwnd);
-	setBestPixelFormat(hdc);
-	hglrc = wglCreateContext(hdc);
+	s.hdc = GetDC(hwnd);
+	setBestPixelFormat(s.hdc);
+	s.hglrc = wglCreateContext(s.hdc);
 	GetClientRect(hwnd, &rect);
-	wglMakeCurrent(hdc, hglrc);
+	wglMakeCurrent(s.hdc, s.hglrc);
 	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
-	aspectRatio = float(rect.right) / float(rect.bottom);
+	s.aspectRatio = float(rect.right) / float(rect.bottom);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -303,6 +298,7 @@ void initSaver(HWND hwnd){
 #endif
 #ifdef RS_XSCREENSAVER
 void initSaver(){
+	auto& s = state();
 #endif
 	int i;
 
@@ -310,29 +306,29 @@ void initSaver(){
 	glLoadIdentity();
 
 	// Initialize constants
-	for(i=0; i<NUMCONSTS; i++){
-		ct[i] = rsRandf(PIx2);
-		cv[i] = rsRandf(0.005f * float(dSpeed)) + 0.0001f;
+	for(i=0; i<kNumConsts; i++){
+		s.ct[i] = rsRandf(PIx2);
+		s.cv[i] = rsRandf(0.005f * float(s.dSpeed)) + 0.0001f;
 	}
 
 	// Make texture
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
+	glGenTextures(1, &s.tex);
+	glBindTexture(GL_TEXTURE_2D, s.tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, TEXSIZE, TEXSIZE, 0,
-		GL_RGB, GL_FLOAT, plasmamap);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, kTexSize, kTexSize, 0,
+		GL_RGB, GL_FLOAT, s.plasmamap);
 	glEnable(GL_TEXTURE_2D);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
 	setPlasmaSize();
 
 	// Initialize text
-	textwriter = new rsText;
+	s.textwriter = new rsText;
 
-	readyToDraw = 1;
+	s.readyToDraw = 1;
 }
 
 
@@ -345,15 +341,17 @@ void cleanUp(){
 
 #ifdef WIN32
 void cleanUp(HWND hwnd){
+	auto& s = state();
 	// Kill device context
-	ReleaseDC(hwnd, hdc);
+	ReleaseDC(hwnd, s.hdc);
 	wglMakeCurrent(NULL, NULL);
-	wglDeleteContext(hglrc);
+	wglDeleteContext(s.hglrc);
 }
 
 
 // Initialize all user-defined stuff
 void readRegistry(){
+	auto& s = state();
 	LONG result;
 	HKEY skey;
 	DWORD val;
@@ -366,13 +364,13 @@ void readRegistry(){
 
 
 	if(rssaver::readRegistryDWORD(skey, "Zoom", val))
-		dZoom = plasmaSettings::clampToRange(val, plasmaSettings::kZoom);
+		s.dZoom = plasmaSettings::clampToRange(val, plasmaSettings::kZoom);
 	if(rssaver::readRegistryDWORD(skey, "Focus", val))
-		dFocus = plasmaSettings::clampToRange(val, plasmaSettings::kFocus);
+		s.dFocus = plasmaSettings::clampToRange(val, plasmaSettings::kFocus);
 	if(rssaver::readRegistryDWORD(skey, "Speed", val))
-		dSpeed = plasmaSettings::clampToRange(val, plasmaSettings::kSpeed);
+		s.dSpeed = plasmaSettings::clampToRange(val, plasmaSettings::kSpeed);
 	if(rssaver::readRegistryDWORD(skey, "Resolution", val))
-		dResolution = plasmaSettings::clampToRange(val, plasmaSettings::kResolution);
+		s.dResolution = plasmaSettings::clampToRange(val, plasmaSettings::kResolution);
 	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
@@ -382,6 +380,7 @@ void readRegistry(){
 
 // Save all user-defined stuff
 void writeRegistry(){
+	auto& s = state();
     LONG result;
 	HKEY skey;
 	DWORD val, disp;
@@ -390,13 +389,13 @@ void writeRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	val = dZoom;
+	val = s.dZoom;
 	RegSetValueEx(skey, "Zoom", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dFocus;
+	val = s.dFocus;
 	RegSetValueEx(skey, "Focus", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dSpeed;
+	val = s.dSpeed;
 	RegSetValueEx(skey, "Speed", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dResolution;
+	val = s.dResolution;
 	RegSetValueEx(skey, "Resolution", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
 	val = dFrameRateLimit;
 	RegSetValueEx(skey, "FrameRateLimit", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
@@ -429,34 +428,35 @@ INT_PTR CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 
 
 void initControls(HWND hdlg){
+	auto& s = state();
 	char cval[16];
 
 	SendDlgItemMessage(hdlg, ZOOM, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, ZOOM, TBM_SETPOS, 1, LPARAM(dZoom));
+	SendDlgItemMessage(hdlg, ZOOM, TBM_SETPOS, 1, LPARAM(s.dZoom));
 	SendDlgItemMessage(hdlg, ZOOM, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, ZOOM, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf_s(cval, "%d", dZoom);
+	sprintf_s(cval, "%d", s.dZoom);
 	SendDlgItemMessage(hdlg, ZOOMTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, FOCUS, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, FOCUS, TBM_SETPOS, 1, LPARAM(dFocus));
+	SendDlgItemMessage(hdlg, FOCUS, TBM_SETPOS, 1, LPARAM(s.dFocus));
 	SendDlgItemMessage(hdlg, FOCUS, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, FOCUS, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf_s(cval, "%d", dFocus);
+	sprintf_s(cval, "%d", s.dFocus);
 	SendDlgItemMessage(hdlg, FOCUSTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
+	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(s.dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf_s(cval, "%d", dSpeed);
+	sprintf_s(cval, "%d", s.dSpeed);
 	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPOS, 1, LPARAM(dResolution));
+	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPOS, 1, LPARAM(s.dResolution));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, RESOLUTION, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf_s(cval, "%d", dResolution);
+	sprintf_s(cval, "%d", s.dResolution);
 	SendDlgItemMessage(hdlg, RESOLUTIONTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
@@ -465,6 +465,7 @@ void initControls(HWND hdlg){
 
 INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 										 WPARAM wpm, LPARAM lpm){
+	auto& s = state();
 	int ival;
 	char cval[16];
 
@@ -477,10 +478,10 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
     case WM_COMMAND:
         switch(LOWORD(wpm)){
         case IDOK:
-			dZoom = SendDlgItemMessage(hdlg, ZOOM, TBM_GETPOS, 0, 0);
-			dFocus = SendDlgItemMessage(hdlg, FOCUS, TBM_GETPOS, 0, 0);
-			dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			dResolution = SendDlgItemMessage(hdlg, RESOLUTION, TBM_GETPOS, 0, 0);
+			s.dZoom = SendDlgItemMessage(hdlg, ZOOM, TBM_GETPOS, 0, 0);
+			s.dFocus = SendDlgItemMessage(hdlg, FOCUS, TBM_GETPOS, 0, 0);
+			s.dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
+			s.dResolution = SendDlgItemMessage(hdlg, RESOLUTION, TBM_GETPOS, 0, 0);
 			dFrameRateLimit = SendDlgItemMessage(hdlg, FRAMERATELIMIT, TBM_GETPOS, 0, 0);
 			writeRegistry();
             // Fall through
@@ -525,14 +526,15 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 
 
 LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
+	auto& s = state();
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
 		initSaver(hwnd);
-		readyToDraw = 1;
+		s.readyToDraw = 1;
 		break;
 	case WM_DESTROY:
-		readyToDraw = 0;
+		s.readyToDraw = 0;
 		cleanUp(hwnd);
 		break;
 	}

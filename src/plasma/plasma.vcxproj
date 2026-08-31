@@ -120,6 +120,7 @@
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="plasmaSettings.h" />
+    <ClInclude Include="plasmaState.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />

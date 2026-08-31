@@ -31,6 +31,9 @@
     <ClInclude Include="plasmaSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="plasmaState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">
