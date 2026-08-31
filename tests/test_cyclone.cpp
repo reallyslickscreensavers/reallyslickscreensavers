@@ -16,19 +16,13 @@
 
 #include "resource.h"
 #include "cycloneSettings.h"
+// The saver's module state, reached through its accessor rather than through
+// externs of our own (Task 6 in docs/MAINTENANCE.md).
+#include "cycloneState.h"
+
+using cycloneState::state;
 
 // cyclone.cpp has no header; its contract with the framework is by name.
-// SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
-// the saver's own, which is Task 6 in docs/MAINTENANCE.md.
-extern int dCyclones;
-extern int dParticles;
-extern int dSize;
-extern int dComplexity;
-extern int dSpeed;
-extern BOOL dStretch;
-extern BOOL dShowCurves;
-extern int readyToDraw;
-
 void setDefaults();
 void readRegistry();
 void initControls(HWND hdlg);
@@ -57,13 +51,13 @@ protected:
 
 TEST(CycloneHarness, SaverBodyWasActuallyCompiled) {
     setDefaults();
-    EXPECT_EQ(dCyclones, cycloneSettings::kDefaultCyclones);
-    EXPECT_EQ(dParticles, cycloneSettings::kDefaultParticles);
-    EXPECT_EQ(dComplexity, cycloneSettings::kDefaultComplexity);
-    EXPECT_EQ(dSize, cycloneSettings::kDefaultSize);
-    EXPECT_EQ(dSpeed, cycloneSettings::kDefaultSpeed);
-    EXPECT_EQ(dStretch, TRUE);
-    EXPECT_EQ(dShowCurves, FALSE);
+    EXPECT_EQ(state().dCyclones, cycloneSettings::kDefaultCyclones);
+    EXPECT_EQ(state().dParticles, cycloneSettings::kDefaultParticles);
+    EXPECT_EQ(state().dComplexity, cycloneSettings::kDefaultComplexity);
+    EXPECT_EQ(state().dSize, cycloneSettings::kDefaultSize);
+    EXPECT_EQ(state().dSpeed, cycloneSettings::kDefaultSpeed);
+    EXPECT_EQ(state().dStretch, TRUE);
+    EXPECT_EQ(state().dShowCurves, FALSE);
     EXPECT_EQ(dFrameRateLimit, (unsigned int)cycloneSettings::kDefaultFrameRate);
 }
 
@@ -170,19 +164,19 @@ TEST(CycloneSettings, CorruptStoredFrameRateIsClamped) {
 // pass a range check.
 
 TEST(CycloneBlockerGuard, ReadRegistryAlwaysLeavesComplexityInRange) {
-    dComplexity = -5;
+    state().dComplexity = -5;
     readRegistry();
 
-    EXPECT_GE(dComplexity, 1) << "a negative complexity is what makes cyclone.cpp:155 reachable";
-    EXPECT_LE(dComplexity, 10);
+    EXPECT_GE(state().dComplexity, 1) << "a negative complexity is what makes cyclone.cpp:155 reachable";
+    EXPECT_LE(state().dComplexity, 10);
 }
 
 TEST(CycloneBlockerGuard, ComplexityStaysInRangeAcrossRepeatedReads) {
     for (int i = 0; i < 5; ++i) {
-        dComplexity = (i % 2) ? -100 : 100000;
+        state().dComplexity = (i % 2) ? -100 : 100000;
         readRegistry();
-        ASSERT_GE(dComplexity, 1);
-        ASSERT_LE(dComplexity, 10);
+        ASSERT_GE(state().dComplexity, 1);
+        ASSERT_LE(state().dComplexity, 10);
     }
 }
 
@@ -190,13 +184,13 @@ TEST(CycloneBlockerGuard, CreateClampsBeforeAllocating) {
     // The ordering is the whole guarantee: WM_CREATE must read (and clamp)
     // before it allocates. Corrupt the value first; a correct handler overwrites
     // it via readRegistry before initSaver sizes anything from it.
-    dComplexity = -42;
-    readyToDraw = 0;
+    state().dComplexity = -42;
+    state().readyToDraw = 0;
 
     screenSaverProc(testsupport::hostWindow(), WM_CREATE, 0, 0);
 
-    EXPECT_GE(dComplexity, 1) << "initSaver sized its arrays from an unclamped value";
-    EXPECT_EQ(readyToDraw, 1);
+    EXPECT_GE(state().dComplexity, 1) << "initSaver sized its arrays from an unclamped value";
+    EXPECT_EQ(state().readyToDraw, 1);
 
     screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
 }
@@ -211,25 +205,25 @@ TEST(CycloneBlockerGuard, CreateClampsBeforeAllocating) {
 // them through cycloneSettings::normalizeFlag, so they are asserted as flags
 // rather than as bounded values.
 TEST(CycloneFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
-    dCyclones = -1;
-    dParticles = 100000;
-    dSize = -1;
-    dComplexity = -1;
-    dSpeed = 100000;
-    dStretch = -1;
-    dShowCurves = 100000;
+    state().dCyclones = -1;
+    state().dParticles = 100000;
+    state().dSize = -1;
+    state().dComplexity = -1;
+    state().dSpeed = 100000;
+    state().dStretch = -1;
+    state().dShowCurves = 100000;
 
     readRegistry();
 
     EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges({
-        savertest::Ranged("dCyclones", dCyclones, cycloneSettings::kCyclones),
-        savertest::Ranged("dParticles", dParticles, cycloneSettings::kParticles),
-        savertest::Ranged("dSize", dSize, cycloneSettings::kSize),
-        savertest::Ranged("dComplexity", dComplexity, cycloneSettings::kComplexity),
-        savertest::Ranged("dSpeed", dSpeed, cycloneSettings::kSpeed),
+        savertest::Ranged("dCyclones", state().dCyclones, cycloneSettings::kCyclones),
+        savertest::Ranged("dParticles", state().dParticles, cycloneSettings::kParticles),
+        savertest::Ranged("dSize", state().dSize, cycloneSettings::kSize),
+        savertest::Ranged("dComplexity", state().dComplexity, cycloneSettings::kComplexity),
+        savertest::Ranged("dSpeed", state().dSpeed, cycloneSettings::kSpeed),
     }));
-    EXPECT_TRUE(dStretch == 0 || dStretch == 1) << "dStretch = " << dStretch;
-    EXPECT_TRUE(dShowCurves == 0 || dShowCurves == 1) << "dShowCurves = " << dShowCurves;
+    EXPECT_TRUE(state().dStretch == 0 || state().dStretch == 1) << "dStretch = " << state().dStretch;
+    EXPECT_TRUE(state().dShowCurves == 0 || state().dShowCurves == 1) << "dShowCurves = " << state().dShowCurves;
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -262,12 +256,12 @@ TEST_F(Cyclone, FrameDrawsEveryParticleFromTheCompiledBlob) {
     // cyclone's particles are a display list called once per particle, so a
     // frame emits no immediate-mode vertices at all. Counting glCallList is the
     // only way to see the geometry.
-    dCyclones = 2;
-    dParticles = 25;
+    state().dCyclones = 2;
+    state().dParticles = 25;
     start();
     draw();
 
-    EXPECT_EQ(glstub::trace().countCalls("glCallList"), dCyclones * dParticles);
+    EXPECT_EQ(glstub::trace().countCalls("glCallList"), state().dCyclones * state().dParticles);
     EXPECT_EQ(glstub::trace().totalVertices(), 0u)
         << "particles come from a display list; immediate-mode vertices would be a redesign";
 }
@@ -275,12 +269,12 @@ TEST_F(Cyclone, FrameDrawsEveryParticleFromTheCompiledBlob) {
 // --- settings change what is drawn -----------------------------------------
 
 TEST_F(Cyclone, ShowCurvesAddsLineStrips) {
-    dShowCurves = FALSE;
+    state().dShowCurves = FALSE;
     start();
     draw();
     const int without = countPrimitives(GL_LINE_STRIP);
 
-    dShowCurves = TRUE;
+    state().dShowCurves = TRUE;
     glstub::reset();
     draw();
     const int with = countPrimitives(GL_LINE_STRIP);
@@ -298,9 +292,9 @@ TEST_F(Cyclone, CurveOverlayDrawsAFixedNumberOfSamples) {
     // the particles are display lists that emit no immediate-mode vertices,
     // and textwriter->draw is behind kStatistics (0 in the test shim), so with
     // one cyclone these two strips are the only line strips in the frame.
-    dShowCurves = TRUE;
-    dCyclones = 1;
-    dParticles = 4;
+    state().dShowCurves = TRUE;
+    state().dCyclones = 1;
+    state().dParticles = 4;
     start();
     draw();
 
@@ -311,18 +305,18 @@ TEST_F(Cyclone, CurveOverlayDrawsAFixedNumberOfSamples) {
 
     ASSERT_EQ(strips.size(), 2u);
     EXPECT_EQ(strips[0].vertices, 50u) << "the sampled curve";
-    EXPECT_EQ(strips[1].vertices, static_cast<unsigned>(dComplexity + 3)) << "the control polygon";
+    EXPECT_EQ(strips[1].vertices, static_cast<unsigned>(state().dComplexity + 3)) << "the control polygon";
 }
 
 TEST_F(Cyclone, MoreCyclonesMeansMoreDrawing) {
-    dParticles = 20;
-    dCyclones = 1;
+    state().dParticles = 20;
+    state().dCyclones = 1;
     start();
     draw();
     const int one = glstub::trace().countCalls("glCallList");
 
     stop();                 // change counts only while nothing is allocated
-    dCyclones = 3;
+    state().dCyclones = 3;
     start();
     draw();
     const int three = glstub::trace().countCalls("glCallList");
@@ -333,13 +327,13 @@ TEST_F(Cyclone, MoreCyclonesMeansMoreDrawing) {
 
 TEST_F(Cyclone, IdleProcSkipsDrawingWhenNotReady) {
     start();
-    readyToDraw = 0;
+    state().readyToDraw = 0;
     glstub::reset();
 
     idleProc();
 
     EXPECT_EQ(glstub::trace().totalVertices(), 0u);
-    readyToDraw = 1;
+    state().readyToDraw = 1;
 }
 
 // --- dialog procedures -----------------------------------------------------
@@ -364,12 +358,12 @@ TEST(CycloneDialogs, ConfigureDialogHandlesTheStandardMessages) {
 
 TEST(CycloneDialogs, ConfigureDialogRestoresDefaults) {
     setDefaults();
-    const int defaultParticles = dParticles;
-    dParticles = 3;
+    const int defaultParticles = state().dParticles;
+    state().dParticles = 3;
     dFrameRateLimit = 144;
 
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
-    EXPECT_EQ(dParticles, defaultParticles);
+    EXPECT_EQ(state().dParticles, defaultParticles);
     EXPECT_EQ(dFrameRateLimit, (unsigned int)cycloneSettings::kDefaultFrameRate);
 }

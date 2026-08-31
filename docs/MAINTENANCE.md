@@ -1300,6 +1300,37 @@ measures.
 - **It is `auto&`, never `auto`.** The deleted copy constructor turns a dropped ampersand
   into a compile error rather than a silent copy whose writes go nowhere. For `plasma` that
   copy would be about 32 MB.
+- **Guard the statistics overlay's text writer, in that saver's own migration PR.** Where
+  `textwriter` is created in `initSaver`, write `if(kStatistics && s.textwriter)`. The struct's
+  explicit `= nullptr` makes a null provable that the old uninitialised global hid, and
+  SonarCloud raises `cpp:S2259` (a **bug**, so it fails the PR gate on
+  `new_reliability_rating`) wherever its path exploration happens to reach it. It reached
+  cyclone but not the byte-identical solarwinds, so it cannot be predicted per saver. Eager
+  construction is not an alternative — `rsText::rsText()` calls `glGenTextures` and
+  `glGenLists` immediately (`libs/rsText/rsText.cpp:25-37`), while the struct is built on the
+  first `state()` call, in `readRegistry` at `WM_CREATE`, before any GL context exists.
+
+  Two things not to do. Do **not** add the guard to `flocks`, `microcosm` or `skyrocket`:
+  those create `textwriter` at the top of `draw()` itself, so the pointer is assigned before
+  the dereference in the same function and the condition would be dead. And do **not** add it
+  to already-migrated savers speculatively — see the duplication note below. `starfield`,
+  `plasma` and `solarwinds` carry no `cpp:S2259` today; if one ever appears, guard that saver
+  alone.
+
+- **Never edit the same duplicated boilerplate in several savers in one PR.** The FPS/overlay
+  block, `readRegistry`/`writeRegistry` and the dialog procedure are duplicated across all
+  thirteen modules (Task 8). Touching one line of the overlay block in four savers at once
+  put new lines inside four copies of a known-duplicated region and drove
+  `new_duplicated_lines_density` from 1.0% to **3.2%**, past the 3% gate — while the state
+  headers themselves measured zero duplication. Inside a single migration PR the same edit is
+  harmless, because that saver's hundreds of new lines dominate the denominator. One saver per
+  PR, as the rest of this task already requires.
+- **`const auto& s = state();` wherever the function only reads state** (`cpp:S5350`). The
+  compiler is the check. `const State&` does not propagate through the pointer members, so
+  `s.cyclones[i]->update()` still compiles.
+- **Spell the include `<Windows.h>`** in state headers (`cpp:S3806`). That is the SDK's own
+  filename and what every file under `tests/` already uses. The savers' own `.cpp` files use
+  the lowercase spelling; leave those alone, they are pre-existing and out of scope.
 - **Watch the failure-message strings when renaming mechanically.** A search-and-replace
   over a suite rewrites moved identifiers inside `<< "..."` prose too. `test_plasma.cpp`
   had three such messages; `test_starfield.cpp` happened to have none. Check with
@@ -1348,8 +1379,29 @@ measures.
   names — build each saver's moved-name list from its own globals, never from the last
   saver's. `float lumdiff;` was deleted rather than moved: it is dead here, and live only
   in `flux`, which is evidently where it was copied from.
-- **Remaining:** the other ten savers and `implicitDemo`, then the `registryPath` change
+- **Step 5 — `cyclone`, done.** 17 findings in `src/` and 9 in the suite. It is the only
+  saver with no `RS_XSCREENSAVER` code at all, and the only one whose `#define`s
+  (`wide`, `high`) are unqualified object-like macros — the state header has to be included
+  above them, or any header pulled in later that uses either word is rewritten. Its
+  `CycloneBlockerGuard` cases, which pin the invariant behind the two `cpp:S3519` blockers,
+  now set `state().dComplexity` and pass unchanged.
+- **Remaining:** the other nine savers and `implicitDemo`, then the `registryPath` change
   described below.
+
+### What a migration PR looks like on SonarCloud
+
+A migration rewrites most lines of its saver, so **that saver's pre-existing smells are
+attributed to the PR as new code**. Expect 10-40 findings per saver; the four merged so far
+reported 1, 8, 8 and 24. Only a *bug*-type finding can fail the gate — the maintainability
+rating stayed at 1 in every case. Do not treat the count as damage done by the migration, and
+do not fix pre-existing smells inside a migration PR: the standing dispositions are
+
+- **`cpp:S5025` raw `new`/`delete`** — the ownership refactor this task defers by rule. In
+  cyclone it is also the exact code the two `cpp:S3519` blocker findings sit in.
+- **`cpp:S5955` loop-variable declarations** — pre-existing C89 style in the same code.
+- **`cpp:S5945` C-style arrays in the state headers** — worth doing, but separately: plasma's
+  six are passed straight to `glTexSubImage2D`/`glTexImage2D` and would need `.data()` at each
+  call site.
 
 ### The gate
 

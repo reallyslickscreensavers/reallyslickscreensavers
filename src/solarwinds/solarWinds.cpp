@@ -98,7 +98,7 @@ public:
 };
 
 wind::wind(){
-	auto& s = state();
+	const auto& s = state();
 	int i;
 
 	emitters = new float*[s.dEmitters];
