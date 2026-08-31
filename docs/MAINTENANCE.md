@@ -1300,18 +1300,31 @@ measures.
 - **It is `auto&`, never `auto`.** The deleted copy constructor turns a dropped ampersand
   into a compile error rather than a silent copy whose writes go nowhere. For `plasma` that
   copy would be about 32 MB.
-- **Guard the statistics overlay's text writer.** Where `textwriter` is created in
-  `initSaver` — starfield, plasma, solarwinds, cyclone and the savers still to migrate — write
-  `if(kStatistics && s.textwriter)`. The struct's explicit `= nullptr` makes a null provable
-  that the old uninitialised global hid, and SonarCloud raises `cpp:S2259` (a **bug**, so it
-  fails the PR gate on `new_reliability_rating`) wherever its path exploration happens to
-  reach it. It reached cyclone but not the byte-identical solarwinds, so it cannot be
-  predicted per saver. Do **not** add the guard to `flocks`, `microcosm` or `skyrocket`: those
-  create `textwriter` at the top of `draw()` itself, so the pointer is assigned before the
-  dereference in the same function and the condition would be dead. Eager construction is not
-  an alternative anywhere — `rsText::rsText()` calls `glGenTextures` and `glGenLists`
-  immediately (`libs/rsText/rsText.cpp:25-37`), while the struct is built on the first
-  `state()` call, in `readRegistry` at `WM_CREATE`, before any GL context exists.
+- **Guard the statistics overlay's text writer, in that saver's own migration PR.** Where
+  `textwriter` is created in `initSaver`, write `if(kStatistics && s.textwriter)`. The struct's
+  explicit `= nullptr` makes a null provable that the old uninitialised global hid, and
+  SonarCloud raises `cpp:S2259` (a **bug**, so it fails the PR gate on
+  `new_reliability_rating`) wherever its path exploration happens to reach it. It reached
+  cyclone but not the byte-identical solarwinds, so it cannot be predicted per saver. Eager
+  construction is not an alternative — `rsText::rsText()` calls `glGenTextures` and
+  `glGenLists` immediately (`libs/rsText/rsText.cpp:25-37`), while the struct is built on the
+  first `state()` call, in `readRegistry` at `WM_CREATE`, before any GL context exists.
+
+  Two things not to do. Do **not** add the guard to `flocks`, `microcosm` or `skyrocket`:
+  those create `textwriter` at the top of `draw()` itself, so the pointer is assigned before
+  the dereference in the same function and the condition would be dead. And do **not** add it
+  to already-migrated savers speculatively — see the duplication note below. `starfield`,
+  `plasma` and `solarwinds` carry no `cpp:S2259` today; if one ever appears, guard that saver
+  alone.
+
+- **Never edit the same duplicated boilerplate in several savers in one PR.** The FPS/overlay
+  block, `readRegistry`/`writeRegistry` and the dialog procedure are duplicated across all
+  thirteen modules (Task 8). Touching one line of the overlay block in four savers at once
+  put new lines inside four copies of a known-duplicated region and drove
+  `new_duplicated_lines_density` from 1.0% to **3.2%**, past the 3% gate — while the state
+  headers themselves measured zero duplication. Inside a single migration PR the same edit is
+  harmless, because that saver's hundreds of new lines dominate the denominator. One saver per
+  PR, as the rest of this task already requires.
 - **`const auto& s = state();` wherever the function only reads state** (`cpp:S5350`). The
   compiler is the check. `const State&` does not propagate through the pointer members, so
   `s.cyclones[i]->update()` still compiles.

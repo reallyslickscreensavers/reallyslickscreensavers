@@ -334,7 +334,7 @@ void draw(){
 		totalTime = 0.0f;
 		frames = 0;
 	}
-	if(kStatistics && s.textwriter){
+	if(kStatistics){
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();

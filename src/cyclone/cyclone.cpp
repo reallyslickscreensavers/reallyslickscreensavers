@@ -488,9 +488,7 @@ void draw(){
 		totalTime = 0.0f;
 		frames = 0;
 	}
-	// The writer is created in initSaver, which is also what sets readyToDraw,
-	// so draw() cannot run before it exists. Checked explicitly all the same:
-	// the null is now provable from the state struct (SonarCloud cpp:S2259).
+	// textwriter is checked as well as kStatistics; see Task 6 in docs/MAINTENANCE.md.
 	if(kStatistics && s.textwriter){
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
