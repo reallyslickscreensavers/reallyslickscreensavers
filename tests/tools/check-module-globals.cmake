@@ -49,17 +49,22 @@ set(SAVERS
     "cyclone|17"      "euphoria|29"     "fieldlines|18"
     "flocks|23"       "flux|27"         "helios|26"
     "hyperspace|56"   "lattice|26"      "microcosm|79"
-    "plasma|1"        "skyrocket|50"    "solarwinds|19"
+    "plasma|1"        "skyrocket|50"    "solarwinds|1"
     "starfield|1"     "implicitDemo|8")
 
 # Savers already migrated, and the variable names their state struct now owns.
 # Naming one of these at column 0, or unqualified anywhere in the module, means
 # a reference was missed.
-set(MIGRATED "starfield" "plasma")
+set(MIGRATED "starfield" "plasma" "solarwinds")
 set(starfield_MOVED
     hglrc hdc readyToDraw frameTime aspectRatio
     starX starY starZ starV textwriter
     dNumStars dSpeed dStarSize)
+set(solarwinds_MOVED
+    hglrc hdc aspectRatio frameTime readyToDraw
+    winds lightTexture textwriter
+    dWinds dEmitters dParticles dGeometry dSize
+    dParticlespeed dEmitterspeed dWindspeed dBlur)
 set(plasma_MOVED
     hglrc hdc readyToDraw frameTime aspectRatio
     wide high position plasmamap plasmasize textwriter

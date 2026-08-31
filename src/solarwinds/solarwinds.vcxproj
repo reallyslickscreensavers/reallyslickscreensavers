@@ -120,6 +120,7 @@
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="solarWindsSettings.h" />
+    <ClInclude Include="solarWindsState.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />
