@@ -46,7 +46,7 @@ endif()
 # Every number above 1 is a saver still waiting for Task 6. Lower them as each
 # migration lands; never raise one.
 set(SAVERS
-    "cyclone|1"       "euphoria|29"     "fieldlines|18"
+    "cyclone|1"       "euphoria|29"     "fieldlines|1"
     "flocks|23"       "flux|27"         "helios|26"
     "hyperspace|56"   "lattice|26"      "microcosm|79"
     "plasma|1"        "skyrocket|50"    "solarwinds|1"
@@ -55,11 +55,15 @@ set(SAVERS
 # Savers already migrated, and the variable names their state struct now owns.
 # Naming one of these at column 0, or unqualified anywhere in the module, means
 # a reference was missed.
-set(MIGRATED "starfield" "plasma" "solarwinds" "cyclone")
+set(MIGRATED "starfield" "plasma" "solarwinds" "cyclone" "fieldlines")
 set(starfield_MOVED
     hglrc hdc readyToDraw frameTime aspectRatio
     starX starY starZ starV textwriter
     dNumStars dSpeed dStarSize)
+set(fieldlines_MOVED
+    hdc hglrc readyToDraw wide high deep
+    ions aspectRatio frameTime textwriter
+    dIons dStepSize dMaxSteps dWidth dSpeed dConstwidth dElectric)
 set(cyclone_MOVED
     hglrc hdc readyToDraw aspectRatio frameTime
     cyclones particles fact textwriter

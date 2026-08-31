@@ -1385,7 +1385,12 @@ measures.
   above them, or any header pulled in later that uses either word is rewritten. Its
   `CycloneBlockerGuard` cases, which pin the invariant behind the two `cpp:S3519` blockers,
   now set `state().dComplexity` and pass unchanged.
-- **Remaining:** the other nine savers and `implicitDemo`, then the `registryPath` change
+- **Step 6 — `fieldlines`, done.** 18 findings in `src/` and 8 in the suite. It is the first
+  saver to hit the shadowing collision this task predicted: `draw()` held
+  `static float s`, the half-step distance passed to the eight `drawfieldline` calls. Renamed
+  to `axisStep` **before** hoisting, so the redefinition never happened. `microcosm`'s five
+  `setScale(float s)` bodies are the one remaining collision on the list.
+- **Remaining:** the other eight savers and `implicitDemo`, then the `registryPath` change
   described below.
 
 ### What a migration PR looks like on SonarCloud
