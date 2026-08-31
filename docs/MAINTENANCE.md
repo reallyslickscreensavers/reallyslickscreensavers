@@ -1348,7 +1348,13 @@ measures.
   names — build each saver's moved-name list from its own globals, never from the last
   saver's. `float lumdiff;` was deleted rather than moved: it is dead here, and live only
   in `flux`, which is evidently where it was copied from.
-- **Remaining:** the other ten savers and `implicitDemo`, then the `registryPath` change
+- **Step 5 — `cyclone`, done.** 17 findings in `src/` and 9 in the suite. It is the only
+  saver with no `RS_XSCREENSAVER` code at all, and the only one whose `#define`s
+  (`wide`, `high`) are unqualified object-like macros — the state header has to be included
+  above them, or any header pulled in later that uses either word is rewritten. Its
+  `CycloneBlockerGuard` cases, which pin the invariant behind the two `cpp:S3519` blockers,
+  now set `state().dComplexity` and pass unchanged.
+- **Remaining:** the other nine savers and `implicitDemo`, then the `registryPath` change
   described below.
 
 ### The gate

@@ -36,6 +36,7 @@
 #include <Rgbhsl/Rgbhsl.h>
 #include "resource.h"
 #include "cycloneSettings.h"
+#include "cycloneState.h"
 #include "../common/saverRegistry.h"
 
 
@@ -49,26 +50,16 @@ class particle;
 #define high 200
 
 // Global variables
+// The one global the framework mandates: rsWin32Saver.h declares it extern and
+// reads it back. Everything else this module owns is in cycloneState::State.
 LPCTSTR registryPath = ("Software\\Really Slick\\Cyclone");
-HGLRC hglrc;
-HDC hdc;
-int readyToDraw = 0;
-// Parameters edited in the dialog box
-int dCyclones;
-int dParticles;
-int dSize;
-int dComplexity;
-int dSpeed;
-BOOL dStretch;
-BOOL dShowCurves;
-// Other globals
-float aspectRatio;
-cyclone **cyclones;
-particle **particles;
-float fact[13];
-float frameTime = 0.0f;
-// text output
-rsText* textwriter;
+
+cycloneState::State& cycloneState::state(){
+	static State s;
+	return s;
+}
+
+using cycloneState::state;
 
 
 // useful vector functions
@@ -132,24 +123,25 @@ public:
 };
 
 cyclone::cyclone(){
+	auto& s = state();
 	int i;
 
 	// Initialize position stuff
-	targetxyz = new float*[dComplexity+3];
-	xyz = new float*[dComplexity+3];
-	oldxyz = new float*[dComplexity+3];
-	for(i=0; i<int(dComplexity)+3; i++){
+	targetxyz = new float*[s.dComplexity+3];
+	xyz = new float*[s.dComplexity+3];
+	oldxyz = new float*[s.dComplexity+3];
+	for(i=0; i<int(s.dComplexity)+3; i++){
 		targetxyz[i] = new float[3];
 		xyz[i] = new float[3];
 		oldxyz[i] = new float[3];
 	}
-	xyz[dComplexity+2][0] = rsRandf(float(wide*2)) - float(wide);
-	xyz[dComplexity+2][1] = float(high);
-	xyz[dComplexity+2][2] = rsRandf(float(wide*2)) - float(wide);
-	xyz[dComplexity+1][0] = xyz[dComplexity+2][0];
-	xyz[dComplexity+1][1] = rsRandf(float(high / 3)) + float(high / 4);
-	xyz[dComplexity+1][2] = xyz[dComplexity+2][2];
-	for(i=dComplexity; i>1; i--){
+	xyz[s.dComplexity+2][0] = rsRandf(float(wide*2)) - float(wide);
+	xyz[s.dComplexity+2][1] = float(high);
+	xyz[s.dComplexity+2][2] = rsRandf(float(wide*2)) - float(wide);
+	xyz[s.dComplexity+1][0] = xyz[s.dComplexity+2][0];
+	xyz[s.dComplexity+1][1] = rsRandf(float(high / 3)) + float(high / 4);
+	xyz[s.dComplexity+1][2] = xyz[s.dComplexity+2][2];
+	for(i=s.dComplexity; i>1; i--){
 		xyz[i][0] = xyz[i+1][0] + rsRandf(float(wide)) - float(wide / 2);
 		xyz[i][1] = rsRandf(float(high * 2)) - float(high);
 		xyz[i][2] = xyz[i+1][2] + rsRandf(float(wide)) - float(wide / 2);
@@ -161,19 +153,19 @@ cyclone::cyclone(){
 	xyz[0][1] = float(-high);
 	xyz[0][2] = xyz[1][2] + rsRandf(float(wide / 8)) - float(wide / 16);
 	// Initialize width stuff
-	targetWidth = new float[dComplexity+3];
-	width = new float[dComplexity+3];
-	oldWidth = new float[dComplexity+3];
-	width[dComplexity+2] = rsRandf(175.0f) + 75.0f;
-	width[dComplexity+1] = rsRandf(60.0f) + 15.0f;
-	for(i=dComplexity; i>1; i--)
+	targetWidth = new float[s.dComplexity+3];
+	width = new float[s.dComplexity+3];
+	oldWidth = new float[s.dComplexity+3];
+	width[s.dComplexity+2] = rsRandf(175.0f) + 75.0f;
+	width[s.dComplexity+1] = rsRandf(60.0f) + 15.0f;
+	for(i=s.dComplexity; i>1; i--)
 		width[i] = rsRandf(25.0f) + 15.0f;
 	width[1] = rsRandf(25.0f) + 5.0f;
 	width[0] = rsRandf(15.0f) + 5.0f;
 	// Initialize transition stuff
-	xyzChange = new float*[dComplexity + 3];
-	widthChange = new float*[dComplexity + 3];
-	for(i=0; i<(dComplexity+3); i++){
+	xyzChange = new float*[s.dComplexity + 3];
+	widthChange = new float*[s.dComplexity + 3];
+	for(i=0; i<(s.dComplexity+3); i++){
 		xyzChange[i] = new float[2];	// 0 = step   1 = total steps
 		widthChange[i] = new float[2];
 		xyzChange[i][0] = 0.0f;
@@ -193,6 +185,7 @@ cyclone::cyclone(){
 }
 
 void cyclone::update(){
+	auto& s = state();
 	int i;
 	int temp;
 	float between;
@@ -203,7 +196,7 @@ void cyclone::update(){
 	float blend;
 
 	// update cyclone's path
-	temp = dComplexity + 2;
+	temp = s.dComplexity + 2;
 	if(xyzChange[temp][0] >= xyzChange[temp][1]){
 		oldxyz[temp][0] = xyz[temp][0];
 		oldxyz[temp][1] = xyz[temp][1];
@@ -212,9 +205,9 @@ void cyclone::update(){
 		targetxyz[temp][1] = float(high);
 		targetxyz[temp][2] = rsRandf(float(wide*2)) - float(wide);
 		xyzChange[temp][0] = 0.0f;
-		xyzChange[temp][1] = rsRandf(150.0f / float(dSpeed)) + 75.0f / float(dSpeed);
+		xyzChange[temp][1] = rsRandf(150.0f / float(s.dSpeed)) + 75.0f / float(s.dSpeed);
 	}
-	temp = dComplexity + 1;
+	temp = s.dComplexity + 1;
 	if(xyzChange[temp][0] >= xyzChange[temp][1]){
 		oldxyz[temp][0] = xyz[temp][0];
 		oldxyz[temp][1] = xyz[temp][1];
@@ -223,9 +216,9 @@ void cyclone::update(){
 		targetxyz[temp][1] = rsRandf(float(high / 3)) + float(high / 4);
 		targetxyz[temp][2] = xyz[temp+1][2];
 		xyzChange[temp][0] = 0.0f;
-		xyzChange[temp][1] = rsRandf(100.0f / float(dSpeed)) + 75.0f / float(dSpeed);
+		xyzChange[temp][1] = rsRandf(100.0f / float(s.dSpeed)) + 75.0f / float(s.dSpeed);
 	}
-	for(i=dComplexity; i>1; i--){
+	for(i=s.dComplexity; i>1; i--){
 		if(xyzChange[i][0] >= xyzChange[i][1]){
 			oldxyz[i][0] = xyz[i][0];
 			oldxyz[i][1] = xyz[i][1];
@@ -238,7 +231,7 @@ void cyclone::update(){
 			if(targetxyz[i][1] < -high)
 				targetxyz[i][1] = -high;
 			xyzChange[i][0] = 0.0f;
-			xyzChange[i][1] = rsRandf(75.0f / float(dSpeed)) + 50.0f / float(dSpeed);
+			xyzChange[i][1] = rsRandf(75.0f / float(s.dSpeed)) + 50.0f / float(s.dSpeed);
 		}
 	}
 	if(xyzChange[1][0] >= xyzChange[1][1]){
@@ -249,7 +242,7 @@ void cyclone::update(){
 		targetxyz[1][1] = -rsRandf(float(high / 2)) - float(high / 4);
 		targetxyz[1][2] = targetxyz[2][2] + rsRandf(float(wide / 2)) - float(wide / 4);
 		xyzChange[1][0] = 0.0f;
-		xyzChange[1][1] = rsRandf(50.0f / float(dSpeed)) + 30.0f / float(dSpeed);
+		xyzChange[1][1] = rsRandf(50.0f / float(s.dSpeed)) + 30.0f / float(s.dSpeed);
 	}
 	if(xyzChange[0][0] >= xyzChange[0][1]){
 		oldxyz[0][0] = xyz[0][0];
@@ -259,56 +252,56 @@ void cyclone::update(){
 		targetxyz[0][1] = float(-high);
 		targetxyz[0][2] = xyz[1][2] + rsRandf(float(wide / 8)) - float(wide / 16);
 		xyzChange[0][0] = 0.0f;
-		xyzChange[0][1] = rsRandf(100.0f / float(dSpeed)) + 75.0f / float(dSpeed);
+		xyzChange[0][1] = rsRandf(100.0f / float(s.dSpeed)) + 75.0f / float(s.dSpeed);
 	}
-	for(i=0; i<(dComplexity+3); i++){
+	for(i=0; i<(s.dComplexity+3); i++){
 		between = xyzChange[i][0] / xyzChange[i][1] * PIx2;
 		between = (1.0f - float(cos(between))) / 2.0f; 
 		xyz[i][0] = ((targetxyz[i][0] - oldxyz[i][0]) * between) + oldxyz[i][0];
 		xyz[i][1] = ((targetxyz[i][1] - oldxyz[i][1]) * between) + oldxyz[i][1];
 		xyz[i][2] = ((targetxyz[i][2] - oldxyz[i][2]) * between) + oldxyz[i][2];
-		xyzChange[i][0] += frameTime;
+		xyzChange[i][0] += s.frameTime;
 	}
 
 	// Update cyclone's widths
-	temp = dComplexity + 2;
+	temp = s.dComplexity + 2;
 	if(widthChange[temp][0] >= widthChange[temp][1]){
 		oldWidth[temp] = width[temp];
 		targetWidth[temp] = rsRandf(225.0f) + 75.0f;
 		widthChange[temp][0] = 0.0f;
-		widthChange[temp][1] = rsRandf(50.0f / float(dSpeed)) + 50.0f / float(dSpeed);
+		widthChange[temp][1] = rsRandf(50.0f / float(s.dSpeed)) + 50.0f / float(s.dSpeed);
 	}
-	temp = dComplexity + 1;
+	temp = s.dComplexity + 1;
 	if(widthChange[temp][0] >= widthChange[temp][1]){
 		oldWidth[temp] = width[temp];
 		targetWidth[temp] = rsRandf(100.0f) + 15.0f;
 		widthChange[temp][0] = 0.0f;
-		widthChange[temp][1] = rsRandf(50.0f / float(dSpeed)) + 50.0f / float(dSpeed);
+		widthChange[temp][1] = rsRandf(50.0f / float(s.dSpeed)) + 50.0f / float(s.dSpeed);
 	}
-	for(i=dComplexity; i>1; i--){
+	for(i=s.dComplexity; i>1; i--){
 		if(widthChange[i][0] >= widthChange[i][1]){
 			oldWidth[i] = width[i];
 			targetWidth[i] = rsRandf(50.0f) + 15.0f;
 			widthChange[i][0] = 0.0f;
-			widthChange[i][1] = rsRandf(50.0f / float(dSpeed)) + 40.0f / float(dSpeed);
+			widthChange[i][1] = rsRandf(50.0f / float(s.dSpeed)) + 40.0f / float(s.dSpeed);
 		}
 	}
 	if(widthChange[1][0] >= widthChange[1][1]){
 		oldWidth[1] = width[1];
 		targetWidth[1] = rsRandf(40.0f) + 5.0f;
 		widthChange[1][0] = 0.0f;
-		widthChange[1][1] = rsRandf(50.0f / float(dSpeed)) + 30.0f / float(dSpeed);
+		widthChange[1][1] = rsRandf(50.0f / float(s.dSpeed)) + 30.0f / float(s.dSpeed);
 	}
 	if(widthChange[0][0] >= widthChange[0][1]){
 		oldWidth[0] = width[0];
 		targetWidth[0] = rsRandf(30.0f) + 5.0f;
 		widthChange[0][0] = 0.0f;
-		widthChange[0][1] = rsRandf(50.0f / float(dSpeed)) + 20.0f / float(dSpeed);
+		widthChange[0][1] = rsRandf(50.0f / float(s.dSpeed)) + 20.0f / float(s.dSpeed);
 	}
-	for(i=0; i<(dComplexity+3); i++){
+	for(i=0; i<(s.dComplexity+3); i++){
 		between = widthChange[i][0] / widthChange[i][1];
 		width[i] = ((targetWidth[i] - oldWidth[i]) * between) + oldWidth[i];
-		widthChange[i][0] += frameTime;
+		widthChange[i][0] += s.frameTime;
 	}
 
 	// Update cyclones color
@@ -333,9 +326,9 @@ void cyclone::update(){
 	hslTween(oldhsl[0], oldhsl[1], oldhsl[2],
 			targethsl[0], targethsl[1], targethsl[2], between, direction,
 			hsl[0], hsl[1], hsl[2]);
-	hslChange[0] += frameTime;
+	hslChange[0] += s.frameTime;
 
-	if(dShowCurves){
+	if(s.dShowCurves){
 		glDisable(GL_LIGHTING);
 		glColor3f(0.0f, 1.0f, 0.0f);
 		glBegin(GL_LINE_STRIP);
@@ -349,10 +342,10 @@ void cyclone::update(){
 		for(int sample=0; sample<curveSamples; sample++){
 			step = float(sample) / float(curveSamples);
 			point[0] = point[1] = point[2] = 0.0f;
-			for(i=0; i<(dComplexity+3); i++){
-				blend = fact[dComplexity+2] / (fact[i]
-					* fact[dComplexity+2-i]) * powf(step, float(i))
-					* powf((1.0f - step), float(dComplexity+2-i));
+			for(i=0; i<(s.dComplexity+3); i++){
+				blend = s.fact[s.dComplexity+2] / (s.fact[i]
+					* s.fact[s.dComplexity+2-i]) * powf(step, float(i))
+					* powf((1.0f - step), float(s.dComplexity+2-i));
 				point[0] += xyz[i][0] * blend;
 				point[1] += xyz[i][1] * blend;
 				point[2] += xyz[i][2] * blend;
@@ -362,7 +355,7 @@ void cyclone::update(){
 		glEnd();
 		glColor3f(1.0f, 0.0f, 0.0f);
 		glBegin(GL_LINE_STRIP);
-		for(i=0; i<(dComplexity+3); i++)
+		for(i=0; i<(s.dComplexity+3); i++)
 			glVertex3fv(&xyz[i][0]);
 		glEnd();
 		glEnable(GL_LIGHTING);
@@ -398,6 +391,7 @@ void particle::init(){
 }
 
 void particle::update(){
+	auto& s = state();
 	int i;
 	float scale, temp;
 	float newStep;
@@ -416,19 +410,19 @@ void particle::update(){
 	if(step > 1.0f)
 		init();
 	xyz[0] = xyz[1] = xyz[2] = 0.0f;
-	for(i=0; i<(dComplexity+3); i++){
-		blend = fact[dComplexity+2] / (fact[i]
-			* fact[dComplexity+2-i]) * powf(step, float(i))
-			* powf((1.0f - step), float(dComplexity+2-i));
+	for(i=0; i<(s.dComplexity+3); i++){
+		blend = s.fact[s.dComplexity+2] / (s.fact[i]
+			* s.fact[s.dComplexity+2-i]) * powf(step, float(i))
+			* powf((1.0f - step), float(s.dComplexity+2-i));
 		xyz[0] += cy->xyz[i][0] * blend;
 		xyz[1] += cy->xyz[i][1] * blend;
 		xyz[2] += cy->xyz[i][2] * blend;
 	}
 	dir[0] = dir[1] = dir[2] = 0.0f;
-	for(i=0; i<(dComplexity+3); i++){
-		blend = fact[dComplexity+2] / (fact[i]
-			* fact[dComplexity+2-i]) * powf(step - 0.01f, float(i))
-			* powf((1.0f - (step - 0.01f)), float(dComplexity+2-i));
+	for(i=0; i<(s.dComplexity+3); i++){
+		blend = s.fact[s.dComplexity+2] / (s.fact[i]
+			* s.fact[s.dComplexity+2-i]) * powf(step - 0.01f, float(i))
+			* powf((1.0f - (step - 0.01f)), float(s.dComplexity+2-i));
 		dir[0] += cy->xyz[i][0] * blend;
 		dir[1] += cy->xyz[i][1] * blend;
 		dir[2] += cy->xyz[i][2] * blend;
@@ -439,18 +433,18 @@ void particle::update(){
 	normalize(dir);
 	cross(dir, up, crossVec);
 	tiltAngle = -acosf(dot(dir, up)) * 180.0f / PI;
-	i = int(step * (float(dComplexity) + 2.0f));
-	if(i >= (dComplexity + 2))
-		i = dComplexity + 1;
-	between = (step - (float(i) / float(dComplexity + 2))) * float(dComplexity + 2);
+	i = int(step * (float(s.dComplexity) + 2.0f));
+	if(i >= (s.dComplexity + 2))
+		i = s.dComplexity + 1;
+	between = (step - (float(i) / float(s.dComplexity + 2))) * float(s.dComplexity + 2);
 	cyWidth = cy->width[i] * (1.0f - between) + cy->width[i+1] * (between);
-	newStep = (0.2f * frameTime * float(dSpeed)) / (width * width * cyWidth);
+	newStep = (0.2f * s.frameTime * float(s.dSpeed)) / (width * width * cyWidth);
 	step += newStep;
-	newSpinAngle = (1500.0f * frameTime * float(dSpeed)) / (width * cyWidth);
+	newSpinAngle = (1500.0f * s.frameTime * float(s.dSpeed)) / (width * cyWidth);
 	spinAngle += newSpinAngle;
-	if(dStretch){
+	if(s.dStretch){
 		scale = width * cyWidth * newSpinAngle * 0.02f;
-		temp = cyWidth * 2.0f / float(dSize);
+		temp = cyWidth * 2.0f / float(s.dSize);
 		if(scale > temp)
 			scale = temp;
 		if(scale < 3.0f)
@@ -463,7 +457,7 @@ void particle::update(){
 		glRotatef(tiltAngle, crossVec[0], crossVec[1], crossVec[2]);
 		glRotatef(spinAngle, 0, 1, 0);
 		glTranslatef(width * cyWidth, 0, 0);
-		if(dStretch)
+		if(s.dStretch)
 			glScalef(1.0f, 1.0f, scale);
 		glCallList(1);
 	glPopMatrix();
@@ -471,20 +465,21 @@ void particle::update(){
 
 
 void draw(){
+	auto& s = state();
 	int i, j;
 
 	glMatrixMode(GL_MODELVIEW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for(i=0; i<dCyclones; i++){
-		cyclones[i]->update();
-		for(j=(i * dParticles); j<((i+1) * dParticles); j++)
-			particles[j]->update();
+	for(i=0; i<s.dCyclones; i++){
+		s.cyclones[i]->update();
+		for(j=(i * s.dParticles); j<((i+1) * s.dParticles); j++)
+			s.particles[j]->update();
 	}
 
 	// print text
 	static float totalTime = 0.0f;
-	totalTime += frameTime;
+	totalTime += s.frameTime;
 	static std::string str;
 	static int frames = 0;
 	++frames;
@@ -497,7 +492,7 @@ void draw(){
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
-		glOrtho(0.0f, 50.0f * aspectRatio, 0.0f, 50.0f, -1.0f, 1.0f);
+		glOrtho(0.0f, 50.0f * s.aspectRatio, 0.0f, 50.0f, -1.0f, 1.0f);
 
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
@@ -505,23 +500,24 @@ void draw(){
 		glTranslatef(1.0f, 48.0f, 0.0f);
 
 		glColor3f(1.0f, 0.6f, 0.0f);
-		textwriter->draw(str);
+		s.textwriter->draw(str);
 
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 	}
 
-    wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+    wglSwapLayerBuffers(s.hdc, WGL_SWAP_MAIN_PLANE);
 }
 
 
 void idleProc(){
+	auto& s = state();
 	// update time
 	static rsTimer timer;
-	frameTime = float(timer.tick());
+	s.frameTime = float(timer.tick());
 
-	if(readyToDraw && !isSuspended)
+	if(s.readyToDraw && !isSuspended)
 		draw();
 }
 
@@ -536,15 +532,16 @@ static void disableVerticalSync(){
 
 
 void initSaver(HWND hwnd){
+	auto& s = state();
 	int i, j;
 	RECT rect;
 
 	// Window initialization
-	hdc = GetDC(hwnd);
-	setBestPixelFormat(hdc);
-	hglrc = wglCreateContext(hdc);
+	s.hdc = GetDC(hwnd);
+	setBestPixelFormat(s.hdc);
+	s.hglrc = wglCreateContext(s.hdc);
 	GetClientRect(hwnd, &rect);
-	wglMakeCurrent(hdc, hglrc);
+	wglMakeCurrent(s.hdc, s.hglrc);
 	// The WGL default is interval 1, which silently caps drawing at the display
 	// refresh rate. Cyclone's own limiter needs unsynchronised swaps so values
 	// above that refresh rate, and the explicit unlimited mode, remain meaningful.
@@ -558,8 +555,8 @@ void initSaver(HWND hwnd){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	aspectRatio = float(rect.right) / float(rect.bottom);
-	gluPerspective(80.0, aspectRatio, 50, 3000);
+	s.aspectRatio = float(rect.right) / float(rect.bottom);
+	gluPerspective(80.0, s.aspectRatio, 50, 3000);
 	if(!rsRandi(500)){  // Easter egg view
 		glRotatef(90, 1, 0, 0);
 		glTranslatef(0.0f, -(wide * 2), 0.0f);
@@ -571,7 +568,7 @@ void initSaver(HWND hwnd){
 
 	glNewList(1, GL_COMPILE);
 		GLUquadricObj *qobj = gluNewQuadric();
-		gluSphere(qobj, float(dSize) / 4.0f, 3, 2);
+		gluSphere(qobj, float(s.dSize) / 4.0f, 3, 2);
 		gluDeleteQuadric(qobj);
 	glEndList();
 
@@ -593,46 +590,49 @@ void initSaver(HWND hwnd){
 
 	// Initialize cyclones and their particles
 	for(i=0; i<13; i++)
-		fact[i] = float(factorial(i));
-	cyclones = new cyclone*[dCyclones];
-	particles = new particle*[dParticles * dCyclones];
-	for(i=0; i<dCyclones; i++){
-		cyclones[i] = new cyclone;
-		for(j=i*dParticles; j<((i+1)*dParticles); j++)
-			particles[j] = new particle(cyclones[i]);
+		s.fact[i] = float(factorial(i));
+	s.cyclones = new cyclone*[s.dCyclones];
+	s.particles = new particle*[s.dParticles * s.dCyclones];
+	for(i=0; i<s.dCyclones; i++){
+		s.cyclones[i] = new cyclone;
+		for(j=i*s.dParticles; j<((i+1)*s.dParticles); j++)
+			s.particles[j] = new particle(s.cyclones[i]);
 	}
 
 	// Initialize text
-	textwriter = new rsText;
+	s.textwriter = new rsText;
 }
 
 
 void cleanUp(HWND hwnd){
+	auto& s = state();
 	// Free memory
-	delete[] particles;
-	delete[] cyclones;
+	delete[] s.particles;
+	delete[] s.cyclones;
 
 	// Kill device context
-	ReleaseDC(hwnd, hdc);
+	ReleaseDC(hwnd, s.hdc);
 	wglMakeCurrent(NULL, NULL);
-	wglDeleteContext(hglrc);
+	wglDeleteContext(s.hglrc);
 }
 
 
 void setDefaults(){
-	dCyclones = cycloneSettings::kDefaultCyclones;
-	dParticles = cycloneSettings::kDefaultParticles;
-	dSize = cycloneSettings::kDefaultSize;
-	dComplexity = cycloneSettings::kDefaultComplexity;
-	dSpeed = cycloneSettings::kDefaultSpeed;
-	dStretch = TRUE;
-	dShowCurves = FALSE;
+	auto& s = state();
+	s.dCyclones = cycloneSettings::kDefaultCyclones;
+	s.dParticles = cycloneSettings::kDefaultParticles;
+	s.dSize = cycloneSettings::kDefaultSize;
+	s.dComplexity = cycloneSettings::kDefaultComplexity;
+	s.dSpeed = cycloneSettings::kDefaultSpeed;
+	s.dStretch = TRUE;
+	s.dShowCurves = FALSE;
 	dFrameRateLimit = cycloneSettings::kDefaultFrameRate;
 }
 
 
 // Initialize all user-defined stuff
 void readRegistry(){
+	auto& s = state();
 	LONG result;
 	HKEY skey;
 	DWORD val;
@@ -644,19 +644,19 @@ void readRegistry(){
 		return;
 
 	if(rssaver::readRegistryDWORD(skey, "Cyclones", val))
-		dCyclones = cycloneSettings::clampToRange(val, cycloneSettings::kCyclones);
+		s.dCyclones = cycloneSettings::clampToRange(val, cycloneSettings::kCyclones);
 	if(rssaver::readRegistryDWORD(skey, "Particles", val))
-		dParticles = cycloneSettings::clampToRange(val, cycloneSettings::kParticles);
+		s.dParticles = cycloneSettings::clampToRange(val, cycloneSettings::kParticles);
 	if(rssaver::readRegistryDWORD(skey, "Size", val))
-		dSize = cycloneSettings::clampToRange(val, cycloneSettings::kSize);
+		s.dSize = cycloneSettings::clampToRange(val, cycloneSettings::kSize);
 	if(rssaver::readRegistryDWORD(skey, "Complexity", val))
-		dComplexity = cycloneSettings::clampToRange(val, cycloneSettings::kComplexity);
+		s.dComplexity = cycloneSettings::clampToRange(val, cycloneSettings::kComplexity);
 	if(rssaver::readRegistryDWORD(skey, "Speed", val))
-		dSpeed = cycloneSettings::clampToRange(val, cycloneSettings::kSpeed);
+		s.dSpeed = cycloneSettings::clampToRange(val, cycloneSettings::kSpeed);
 	if(rssaver::readRegistryDWORD(skey, "Stretch", val))
-		dStretch = cycloneSettings::normalizeFlag(val);
+		s.dStretch = cycloneSettings::normalizeFlag(val);
 	if(rssaver::readRegistryDWORD(skey, "ShowCurves", val))
-		dShowCurves = cycloneSettings::normalizeFlag(val);
+		s.dShowCurves = cycloneSettings::normalizeFlag(val);
 	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = cycloneSettings::clampFrameRate(val);
 
@@ -666,6 +666,7 @@ void readRegistry(){
 
 // Save all user-defined stuff
 void writeRegistry(){
+	auto& s = state();
     LONG result;
 	HKEY skey;
 	DWORD val, disp;
@@ -674,19 +675,19 @@ void writeRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	val = dCyclones;
+	val = s.dCyclones;
 	RegSetValueEx(skey, "Cyclones", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dParticles;
+	val = s.dParticles;
 	RegSetValueEx(skey, "Particles", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dSize;
+	val = s.dSize;
 	RegSetValueEx(skey, "Size", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dComplexity;
+	val = s.dComplexity;
 	RegSetValueEx(skey, "Complexity", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dSpeed;
+	val = s.dSpeed;
 	RegSetValueEx(skey, "Speed", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dStretch;
+	val = s.dStretch;
 	RegSetValueEx(skey, "Stretch", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dShowCurves;
+	val = s.dShowCurves;
 	RegSetValueEx(skey, "ShowCurves", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
 	val = dFrameRateLimit;
 	RegSetValueEx(skey, "FrameRateLimit", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
@@ -748,35 +749,36 @@ static void enableFrameRateControls(HWND hdlg, bool enabled){
 
 
 void initControls(HWND hdlg){
+	auto& s = state();
 	setSpinControl(hdlg, IDC_CYCLONES_EDIT, IDC_CYCLONES_SPIN,
-		cycloneSettings::kCyclones, dCyclones);
+		cycloneSettings::kCyclones, s.dCyclones);
 	setSpinControl(hdlg, IDC_PARTICLES_EDIT, IDC_PARTICLES_SPIN,
-		cycloneSettings::kParticles, dParticles);
+		cycloneSettings::kParticles, s.dParticles);
 
 	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETRANGE, 0,
 		LPARAM(MAKELONG(DWORD(cycloneSettings::kSize.lo), DWORD(cycloneSettings::kSize.hi))));
-	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETPOS, 1, LPARAM(dSize));
+	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETPOS, 1, LPARAM(s.dSize));
 	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_SETPAGESIZE, 0, LPARAM(5));
-	setSliderValueText(hdlg, IDC_PARTICLE_SIZE_VALUE, dSize);
+	setSliderValueText(hdlg, IDC_PARTICLE_SIZE_VALUE, s.dSize);
 
 	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETRANGE, 0,
 		LPARAM(MAKELONG(DWORD(cycloneSettings::kComplexity.lo),
 			DWORD(cycloneSettings::kComplexity.hi))));
-	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETPOS, 1, LPARAM(dComplexity));
+	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETPOS, 1, LPARAM(s.dComplexity));
 	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_SETPAGESIZE, 0, LPARAM(2));
-	setSliderValueText(hdlg, IDC_COMPLEXITY_VALUE, dComplexity);
+	setSliderValueText(hdlg, IDC_COMPLEXITY_VALUE, s.dComplexity);
 
 	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETRANGE, 0,
 		LPARAM(MAKELONG(DWORD(cycloneSettings::kSpeed.lo), DWORD(cycloneSettings::kSpeed.hi))));
-	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETPOS, 1, LPARAM(dSpeed));
+	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETPOS, 1, LPARAM(s.dSpeed));
 	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_SETPAGESIZE, 0, LPARAM(10));
-	setSliderValueText(hdlg, IDC_SPEED_VALUE, dSpeed);
+	setSliderValueText(hdlg, IDC_SPEED_VALUE, s.dSpeed);
 
-	CheckDlgButton(hdlg, IDC_STRETCH_CHECK, dStretch ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hdlg, IDC_SHOW_CURVES_CHECK, dShowCurves ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hdlg, IDC_STRETCH_CHECK, s.dStretch ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hdlg, IDC_SHOW_CURVES_CHECK, s.dShowCurves ? BST_CHECKED : BST_UNCHECKED);
 
 	const cycloneSettings::FrameRateUi frameRate =
 		cycloneSettings::frameRateToUi(dFrameRateLimit);
@@ -790,6 +792,7 @@ void initControls(HWND hdlg){
 
 INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 										 WPARAM wpm, LPARAM lpm){
+	auto& s = state();
 	int ival;
 
     switch(msg){
@@ -801,13 +804,13 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
     case WM_COMMAND:
         switch(LOWORD(wpm)){
         case IDOK:
-			dCyclones = getSpinControl(hdlg, IDC_CYCLONES_SPIN, cycloneSettings::kCyclones);
-			dParticles = getSpinControl(hdlg, IDC_PARTICLES_SPIN, cycloneSettings::kParticles);
-			dSize = SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_GETPOS, 0, 0);
-			dComplexity = SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_GETPOS, 0, 0);
-			dSpeed = SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_GETPOS, 0, 0);
-			dStretch = (IsDlgButtonChecked(hdlg, IDC_STRETCH_CHECK) == BST_CHECKED);
-			dShowCurves = (IsDlgButtonChecked(hdlg, IDC_SHOW_CURVES_CHECK) == BST_CHECKED);
+			s.dCyclones = getSpinControl(hdlg, IDC_CYCLONES_SPIN, cycloneSettings::kCyclones);
+			s.dParticles = getSpinControl(hdlg, IDC_PARTICLES_SPIN, cycloneSettings::kParticles);
+			s.dSize = SendDlgItemMessage(hdlg, IDC_PARTICLE_SIZE_SLIDER, TBM_GETPOS, 0, 0);
+			s.dComplexity = SendDlgItemMessage(hdlg, IDC_COMPLEXITY_SLIDER, TBM_GETPOS, 0, 0);
+			s.dSpeed = SendDlgItemMessage(hdlg, IDC_SPEED_SLIDER, TBM_GETPOS, 0, 0);
+			s.dStretch = (IsDlgButtonChecked(hdlg, IDC_STRETCH_CHECK) == BST_CHECKED);
+			s.dShowCurves = (IsDlgButtonChecked(hdlg, IDC_SHOW_CURVES_CHECK) == BST_CHECKED);
 			dFrameRateLimit = cycloneSettings::frameRateFromUi(
 				IsDlgButtonChecked(hdlg, IDC_FRAME_RATE_LIMIT_CHECK) == BST_CHECKED,
 				getSpinControl(hdlg, IDC_FRAME_RATE_SPIN, cycloneSettings::kFrameRate));
@@ -848,14 +851,15 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 
 
 LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
+	auto& s = state();
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
 		initSaver(hwnd);
-		readyToDraw = 1;
+		s.readyToDraw = 1;
 		break;
 	case WM_DESTROY:
-		readyToDraw = 0;
+		s.readyToDraw = 0;
 		cleanUp(hwnd);
 		break;
 	}
