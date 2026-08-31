@@ -23,7 +23,7 @@
 
 
 
-extern float frameTime, simulationTime;
+extern float frameTime;
 
 
 

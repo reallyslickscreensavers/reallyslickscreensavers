@@ -15,6 +15,11 @@
 
 #include "support/saver_test_common.h"
 
+// For doingPreview, which the framework owns and the shim defines. Declaring it
+// here instead would be a mutable global of our own (cpp:S5421); the header is
+// outside the analysed sources.
+#include <rsWin32Saver/rsWin32Saver.h>
+
 #include <array>
 
 #include "resource.h"
@@ -37,9 +42,6 @@ extern int readyToDraw;
 // How many frames the caustic and cube-map animations are built from
 // (hyperspace.cpp:92). Not a setting - no registry entry, no dialog control.
 extern int numAnimTexFrames;
-
-// Owned by tests/support/saver_shim.cpp, not by the saver.
-extern int doingPreview;
 
 // Set only by idleProc from an rsTimer tick, so a direct draw() call redraws a
 // frozen instant unless a test drives this itself.

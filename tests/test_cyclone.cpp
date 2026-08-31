@@ -9,6 +9,10 @@
 
 #include "support/saver_test_common.h"
 
+// For dFrameRateLimit, which the framework owns and the shim defines. Declaring
+// it here instead would be a mutable global of our own (cpp:S5421); the header
+// is outside the analysed sources.
+#include <rsWin32Saver/rsWin32Saver.h>
 
 #include "resource.h"
 #include "cycloneSettings.h"
@@ -23,7 +27,6 @@ extern int dComplexity;
 extern int dSpeed;
 extern BOOL dStretch;
 extern BOOL dShowCurves;
-extern unsigned int dFrameRateLimit;
 extern int readyToDraw;
 
 void setDefaults();

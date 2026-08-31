@@ -16,6 +16,10 @@
 
 #include "support/saver_test_common.h"
 
+// For doingPreview, which the framework owns and the shim defines. Declaring it
+// here instead would be a mutable global of our own (cpp:S5421); the header is
+// outside the analysed sources.
+#include <rsWin32Saver/rsWin32Saver.h>
 
 #include <array>
 #include <memory>
@@ -60,9 +64,6 @@ extern int readyToDraw;
 // (microcosm.cpp:163). Not a setting - it is never read from the registry and
 // has no dialog control.
 extern bool gUseThreads;
-
-// Owned by tests/support/saver_shim.cpp, not by the saver.
-extern int doingPreview;
 
 // Built by initSaver and indexed by gGizmoIndex.
 extern std::vector<Gizmo*> gizmos;

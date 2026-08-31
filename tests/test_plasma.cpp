@@ -9,6 +9,10 @@
 
 #include "support/saver_test_common.h"
 
+// For kStatistics, which the framework owns and the shim defines. Declaring it
+// here instead would be a mutable global of our own (cpp:S5421); the header is
+// outside the analysed sources.
+#include <rsWin32Saver/rsWin32Saver.h>
 
 #include "resource.h"
 #include "plasmaSettings.h"
@@ -22,7 +26,6 @@ extern int dSpeed;
 extern int dResolution;
 extern int plasmasize;
 extern int readyToDraw;
-extern int kStatistics;   // owned by the shim, toggled by the s key in a real saver
 extern float aspectRatio;
 extern float wide;
 extern float high;
