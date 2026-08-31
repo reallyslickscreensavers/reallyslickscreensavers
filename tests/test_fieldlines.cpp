@@ -12,22 +12,13 @@
 
 #include "resource.h"
 #include "fieldlinesSettings.h"
+// The saver's module state, reached through its accessor rather than through
+// externs of our own (Task 6 in docs/MAINTENANCE.md).
+#include "fieldlinesState.h"
+
+using fieldlinesState::state;
 
 // fieldlines.cpp has no header; its contract with the framework is by name.
-//
-// SonarCloud cpp:S5421 flags these as mutable globals. They are declarations,
-// not definitions - the variables live in fieldlines.cpp - but the rule cannot
-// tell the difference. The finding is really about the savers exposing their
-// settings as mutable globals at all, which is Task 6 in docs/MAINTENANCE.md.
-extern int dIons;
-extern int dStepSize;
-extern int dMaxSteps;
-extern int dWidth;
-extern int dSpeed;
-extern BOOL dConstwidth;
-extern BOOL dElectric;
-extern int readyToDraw;
-
 void setDefaults();
 void readRegistry();
 void initControls(HWND hdlg);
@@ -49,7 +40,7 @@ protected:
         // recorded primitives a frame. A hundred still walks lines, terminates
         // some early on hitting an ion, and opens a strip per step the same way.
         // The default is asserted in the harness test.
-        dMaxSteps = 100;
+        state().dMaxSteps = 100;
     }
 };
 
@@ -58,13 +49,13 @@ protected:
 // out twice is what tripped the duplication gate.
 std::vector<savertest::RangedSetting> declaredRanges() {
     return {
-        savertest::Ranged("dIons", dIons, fieldlinesSettings::kIons),
-        savertest::Ranged("dStepSize", dStepSize, fieldlinesSettings::kStepSize),
-        savertest::Ranged("dMaxSteps", dMaxSteps, fieldlinesSettings::kMaxSteps),
-        savertest::Ranged("dWidth", dWidth, fieldlinesSettings::kWidth),
-        savertest::Ranged("dSpeed", dSpeed, fieldlinesSettings::kSpeed),
-        savertest::Ranged("dConstwidth", dConstwidth, fieldlinesSettings::kConstwidth),
-        savertest::Ranged("dElectric", dElectric, fieldlinesSettings::kElectric),
+        savertest::Ranged("dIons", state().dIons, fieldlinesSettings::kIons),
+        savertest::Ranged("dStepSize", state().dStepSize, fieldlinesSettings::kStepSize),
+        savertest::Ranged("dMaxSteps", state().dMaxSteps, fieldlinesSettings::kMaxSteps),
+        savertest::Ranged("dWidth", state().dWidth, fieldlinesSettings::kWidth),
+        savertest::Ranged("dSpeed", state().dSpeed, fieldlinesSettings::kSpeed),
+        savertest::Ranged("dConstwidth", state().dConstwidth, fieldlinesSettings::kConstwidth),
+        savertest::Ranged("dElectric", state().dElectric, fieldlinesSettings::kElectric),
     };
 }
 
@@ -77,10 +68,10 @@ TEST(FieldlinesHarness, SaverBodyWasActuallyCompiled) {
     // whole saver sits inside #ifdef WIN32; without it this links against an
     // empty translation unit and every other test passes vacuously.
     setDefaults();
-    EXPECT_EQ(dIons, 6);
-    EXPECT_EQ(dStepSize, 10);
-    EXPECT_EQ(dMaxSteps, 300);
-    EXPECT_EQ(dWidth, 30);
+    EXPECT_EQ(state().dIons, 6);
+    EXPECT_EQ(state().dStepSize, 10);
+    EXPECT_EQ(state().dMaxSteps, 300);
+    EXPECT_EQ(state().dWidth, 30);
 }
 
 TEST(FieldlinesHarness, DefaultsSitInsideTheDeclaredRanges) {
@@ -133,7 +124,7 @@ TEST_F(Fieldlines, PairsBeginAndEndInBothWidthModes) {
     EXPECT_TRUE(savertest::PrimitivesPaired()) << "default mode, a strip per segment";
 
     stop();
-    dConstwidth = TRUE;
+    state().dConstwidth = TRUE;
     start();
     draw();
     EXPECT_TRUE(savertest::PrimitivesPaired()) << "constant-width mode, one strip per line";
@@ -157,7 +148,7 @@ TEST_F(Fieldlines, DefaultModeSetsLineWidthOncePerStrip) {
     // fewer strips than the one-before-the-loop-plus-one-per-step maximum.
     // Hitting the maximum exactly means no line terminated early this frame,
     // which is seed-dependent and not asserted either way.
-    EXPECT_LE(t.begins, 8 * dIons * (int(dMaxSteps) + 1));
+    EXPECT_LE(t.begins, 8 * state().dIons * (int(state().dMaxSteps) + 1));
 }
 
 // --- settings change what is drawn -----------------------------------------
@@ -170,21 +161,21 @@ TEST_F(Fieldlines, DrawsEightFieldLinesPerIon) {
     // Counting strips in the default mode instead would be flaky: a line stops
     // early when it reaches an ion, so more ions can mean fewer strips, and the
     // PRNG is seeded from std::random_device since rslibs L4.
-    dConstwidth = TRUE;
-    dIons = 2;
+    state().dConstwidth = TRUE;
+    state().dIons = 2;
     start();
     draw();
-    EXPECT_EQ(countPrimitives(GL_LINE_STRIP), 8 * dIons);
+    EXPECT_EQ(countPrimitives(GL_LINE_STRIP), 8 * state().dIons);
 
     stop();
-    dIons = 5;
+    state().dIons = 5;
     start();
     draw();
-    EXPECT_EQ(countPrimitives(GL_LINE_STRIP), 8 * dIons);
+    EXPECT_EQ(countPrimitives(GL_LINE_STRIP), 8 * state().dIons);
 }
 
 TEST_F(Fieldlines, ElectricModeStillDraws) {
-    dElectric = TRUE;
+    state().dElectric = TRUE;
     start();
     draw();
 
@@ -196,24 +187,24 @@ TEST_F(Fieldlines, ElectricModeStillDraws) {
 
 TEST_F(Fieldlines, IdleProcSkipsDrawingWhenNotReady) {
     start();
-    readyToDraw = 0;
+    state().readyToDraw = 0;
     glstub::reset();
 
     idleProc();
 
     EXPECT_EQ(glstub::trace().totalVertices(), 0u);
-    readyToDraw = 1;
+    state().readyToDraw = 1;
 }
 
 TEST(FieldlinesFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
     setDefaults();
-    readyToDraw = 0;
+    state().readyToDraw = 0;
 
     screenSaverProc(testsupport::hostWindow(), WM_CREATE, 0, 0);
-    EXPECT_EQ(readyToDraw, 1);
+    EXPECT_EQ(state().readyToDraw, 1);
 
     screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
-    EXPECT_EQ(readyToDraw, 0);
+    EXPECT_EQ(state().readyToDraw, 0);
 }
 
 TEST(FieldlinesFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
@@ -248,10 +239,10 @@ TEST(FieldlinesDialogs, ConfigureDialogHandlesTheStandardMessages) {
 
 TEST(FieldlinesDialogs, ConfigureDialogRestoresDefaults) {
     setDefaults();
-    const int defaultIons = dIons;
-    dIons = 99;
+    const int defaultIons = state().dIons;
+    state().dIons = 99;
 
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
-    EXPECT_EQ(dIons, defaultIons);
+    EXPECT_EQ(state().dIons, defaultIons);
 }
