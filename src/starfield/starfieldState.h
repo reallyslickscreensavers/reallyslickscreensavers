@@ -44,7 +44,7 @@
 #include <vector>
 
 #ifdef WIN32
-#include <windows.h>
+#include <Windows.h>
 #endif
 
 #include <rsText/rsText.h>

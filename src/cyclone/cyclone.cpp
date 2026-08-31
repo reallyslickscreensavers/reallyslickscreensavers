@@ -123,7 +123,7 @@ public:
 };
 
 cyclone::cyclone(){
-	auto& s = state();
+	const auto& s = state();
 	int i;
 
 	// Initialize position stuff
@@ -185,7 +185,7 @@ cyclone::cyclone(){
 }
 
 void cyclone::update(){
-	auto& s = state();
+	const auto& s = state();
 	int i;
 	int temp;
 	float between;
@@ -391,7 +391,7 @@ void particle::init(){
 }
 
 void particle::update(){
-	auto& s = state();
+	const auto& s = state();
 	int i;
 	float scale, temp;
 	float newStep;
@@ -488,7 +488,10 @@ void draw(){
 		totalTime = 0.0f;
 		frames = 0;
 	}
-	if(kStatistics){
+	// The writer is created in initSaver, which is also what sets readyToDraw,
+	// so draw() cannot run before it exists. Checked explicitly all the same:
+	// the null is now provable from the state struct (SonarCloud cpp:S2259).
+	if(kStatistics && s.textwriter){
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
@@ -666,7 +669,7 @@ void readRegistry(){
 
 // Save all user-defined stuff
 void writeRegistry(){
-	auto& s = state();
+	const auto& s = state();
     LONG result;
 	HKEY skey;
 	DWORD val, disp;
@@ -749,7 +752,7 @@ static void enableFrameRateControls(HWND hdlg, bool enabled){
 
 
 void initControls(HWND hdlg){
-	auto& s = state();
+	const auto& s = state();
 	setSpinControl(hdlg, IDC_CYCLONES_EDIT, IDC_CYCLONES_SPIN,
 		cycloneSettings::kCyclones, s.dCyclones);
 	setSpinControl(hdlg, IDC_PARTICLES_EDIT, IDC_PARTICLES_SPIN,

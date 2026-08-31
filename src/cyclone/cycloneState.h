@@ -30,7 +30,7 @@
 #ifndef CYCLONE_STATE_H
 #define CYCLONE_STATE_H
 
-#include <windows.h>
+#include <Windows.h>
 
 #include <rsText/rsText.h>
 

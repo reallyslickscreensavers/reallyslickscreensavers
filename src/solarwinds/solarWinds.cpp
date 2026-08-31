@@ -98,7 +98,7 @@ public:
 };
 
 wind::wind(){
-	auto& s = state();
+	const auto& s = state();
 	int i;
 
 	emitters = new float*[s.dEmitters];
@@ -334,7 +334,7 @@ void draw(){
 		totalTime = 0.0f;
 		frames = 0;
 	}
-	if(kStatistics){
+	if(kStatistics && s.textwriter){
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
