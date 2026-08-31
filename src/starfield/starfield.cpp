@@ -45,32 +45,23 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "starfieldSettings.h"
+#include "starfieldState.h"
 #include "../common/saverRegistry.h"
 
 
 // Globals
 #ifdef WIN32
+// The one global the framework mandates: rsWin32Saver.h declares it extern and
+// reads it back. Everything else this module owns is in starfieldState::State.
 LPCTSTR registryPath = TEXT("Software\\Really Slick\\Starfield");
-HGLRC hglrc;
-HDC hdc;
 #endif
-int readyToDraw = 0;
-float frameTime = 0.0f;
-float aspectRatio;
 
-// Star data
-std::vector<float> starX;
-std::vector<float> starY;
-std::vector<float> starZ;
-std::vector<float> starV;  // per-star velocity multiplier
+starfieldState::State& starfieldState::state(){
+	static State s;
+	return s;
+}
 
-// text output
-std::unique_ptr<rsText> textwriter;
-
-// Parameters edited in the dialog box
-int dNumStars;
-int dSpeed;
-int dStarSize;
+using starfieldState::state;
 
 // Constants
 const float farZ = 200.0f;
@@ -80,52 +71,55 @@ const int maxStarSize = 10;  // matches STARSIZE slider and -starsize CLI range
 
 
 void initStar(int i){
-	starZ[i] = rsRandf(farZ - nearZ) + nearZ;
-	float halfH = fovHalfTan * starZ[i];  // visible half-height at this depth
-	float halfW = halfH * aspectRatio;    // visible half-width at this depth
-	starX[i] = rsRandf(halfW * 2.0f) - halfW;
-	starY[i] = rsRandf(halfH * 2.0f) - halfH;
-	starV[i] = rsRandf(3.0f) + 0.15f;  // velocity multiplier 0.15 to 3.15
+	auto& s = state();
+	s.starZ[i] = rsRandf(farZ - nearZ) + nearZ;
+	float halfH = fovHalfTan * s.starZ[i];  // visible half-height at this depth
+	float halfW = halfH * s.aspectRatio;    // visible half-width at this depth
+	s.starX[i] = rsRandf(halfW * 2.0f) - halfW;
+	s.starY[i] = rsRandf(halfH * 2.0f) - halfH;
+	s.starV[i] = rsRandf(3.0f) + 0.15f;  // velocity multiplier 0.15 to 3.15
 }
 
 
 void draw(){
+	auto& s = state();
+
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	float baseSpeed = float(dSpeed) * 0.5f;  // scaled speed
+	float baseSpeed = float(s.dSpeed) * 0.5f;  // scaled speed
 
 	// Stars are grouped by rounded point size so each size needs only one
 	// glBegin/glEnd pair per frame instead of one per star.
 	static std::array<std::vector<int>, maxStarSize + 1> sizeBuckets;  // index 0 unused
 	static std::vector<float> starBrightness;
-	if(starBrightness.size() != size_t(dNumStars))
-		starBrightness.resize(dNumStars);
+	if(starBrightness.size() != size_t(s.dNumStars))
+		starBrightness.resize(s.dNumStars);
 	for(auto& bucket : sizeBuckets)
 		bucket.clear();
 
 	// Update stars
-	for(int i = 0; i < dNumStars; i++){
+	for(int i = 0; i < s.dNumStars; i++){
 		// Move star toward viewer
-		starZ[i] -= baseSpeed * starV[i] * frameTime;
+		s.starZ[i] -= baseSpeed * s.starV[i] * s.frameTime;
 
 		// Respawn if past viewer or outside visible frustum
-		float halfH = fovHalfTan * starZ[i];
-		float halfW = halfH * aspectRatio;
-		if(starZ[i] < nearZ || starX[i] < -halfW || starX[i] > halfW
-			|| starY[i] < -halfH || starY[i] > halfH){
-			starZ[i] = farZ - rsRandf(10.0f);  // respawn near far plane
-			halfH = fovHalfTan * starZ[i];
-			halfW = halfH * aspectRatio;
-			starX[i] = rsRandf(halfW * 2.0f) - halfW;
-			starY[i] = rsRandf(halfH * 2.0f) - halfH;
-			starV[i] = rsRandf(3.0f) + 0.15f;
+		float halfH = fovHalfTan * s.starZ[i];
+		float halfW = halfH * s.aspectRatio;
+		if(s.starZ[i] < nearZ || s.starX[i] < -halfW || s.starX[i] > halfW
+			|| s.starY[i] < -halfH || s.starY[i] > halfH){
+			s.starZ[i] = farZ - rsRandf(10.0f);  // respawn near far plane
+			halfH = fovHalfTan * s.starZ[i];
+			halfW = halfH * s.aspectRatio;
+			s.starX[i] = rsRandf(halfW * 2.0f) - halfW;
+			s.starY[i] = rsRandf(halfH * 2.0f) - halfH;
+			s.starV[i] = rsRandf(3.0f) + 0.15f;
 		}
 
 		// Brightness and size based on distance (closer = brighter and bigger)
-		float brightness = 1.0f - (starZ[i] / farZ);
+		float brightness = 1.0f - (s.starZ[i] / farZ);
 		if(brightness < 0.0f) brightness = 0.0f;
 		if(brightness > 1.0f) brightness = 1.0f;
 		starBrightness[i] = brightness;
@@ -135,7 +129,7 @@ void draw(){
 		// anything that is not - NaN included - falls to the minimum instead
 		// of slipping past two ifs and indexing sizeBuckets far out of
 		// bounds. Task 12 in docs/MAINTENANCE.md has how that was reachable.
-		const float size = float(dStarSize) * brightness;
+		const float size = float(s.dStarSize) * brightness;
 		int bucket = 1;
 		if(size >= 1.0f)
 			bucket = (size <= float(maxStarSize)) ? int(size + 0.5f) : maxStarSize;
@@ -143,21 +137,21 @@ void draw(){
 	}
 
 	// Render stars, one batch per point size
-	for(int s = 1; s <= maxStarSize; s++){
-		if(sizeBuckets[s].empty()) continue;
-		glPointSize(float(s));
+	for(int bucketSize = 1; bucketSize <= maxStarSize; bucketSize++){
+		if(sizeBuckets[bucketSize].empty()) continue;
+		glPointSize(float(bucketSize));
 		glBegin(GL_POINTS);
-		for(int idx : sizeBuckets[s]){
+		for(int idx : sizeBuckets[bucketSize]){
 			float b = starBrightness[idx];
 			glColor3f(b, b, b);
-			glVertex3f(starX[idx], starY[idx], -starZ[idx]);
+			glVertex3f(s.starX[idx], s.starY[idx], -s.starZ[idx]);
 		}
 		glEnd();
 	}
 
 	// print text
 	static float totalTime = 0.0f;
-	totalTime += frameTime;
+	totalTime += s.frameTime;
 	static std::string str;
 	static int frames = 0;
 	++frames;
@@ -170,7 +164,7 @@ void draw(){
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
-		glOrtho(0.0f, 50.0f * aspectRatio, 0.0f, 50.0f, -1.0f, 1.0f);
+		glOrtho(0.0f, 50.0f * s.aspectRatio, 0.0f, 50.0f, -1.0f, 1.0f);
 
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
@@ -178,7 +172,7 @@ void draw(){
 		glTranslatef(1.0f, 48.0f, 0.0f);
 
 		glColor3f(1.0f, 0.6f, 0.0f);
-		textwriter->draw(str);
+		s.textwriter->draw(str);
 
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);
@@ -186,7 +180,7 @@ void draw(){
 	}
 
 #ifdef WIN32
-	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+	wglSwapLayerBuffers(s.hdc, WGL_SWAP_MAIN_PLANE);
 #endif
 #ifdef RS_XSCREENSAVER
 	glXSwapBuffers(xdisplay, xwindow);
@@ -195,14 +189,16 @@ void draw(){
 
 
 void idleProc(){
+	auto& s = state();
+
 	// update time
 	static rsTimer timer;
-	frameTime = float(timer.tick());
+	s.frameTime = float(timer.tick());
 
 #ifdef RS_XSCREENSAVER
-	const bool shouldDraw = (readyToDraw && !isSuspended && !checkingPassword);
+	const bool shouldDraw = (s.readyToDraw && !isSuspended && !checkingPassword);
 #else
-	const bool shouldDraw = (readyToDraw && !isSuspended);
+	const bool shouldDraw = (s.readyToDraw && !isSuspended);
 #endif
 	if(shouldDraw)
 		draw();
@@ -210,40 +206,44 @@ void idleProc(){
 
 
 void setDefaults(){
-	dNumStars = starfieldSettings::kDefaultNumStars;
-	dSpeed = starfieldSettings::kDefaultSpeed;
-	dStarSize = starfieldSettings::kDefaultStarSize;
+	auto& s = state();
+	s.dNumStars = starfieldSettings::kDefaultNumStars;
+	s.dSpeed = starfieldSettings::kDefaultSpeed;
+	s.dStarSize = starfieldSettings::kDefaultStarSize;
 	dFrameRateLimit = 0;  // unlimited
 }
 
 
 void allocateStars(){
-	starX.resize(dNumStars);
-	starY.resize(dNumStars);
-	starZ.resize(dNumStars);
-	starV.resize(dNumStars);
-	for(int i = 0; i < dNumStars; i++)
+	auto& s = state();
+	s.starX.resize(s.dNumStars);
+	s.starY.resize(s.dNumStars);
+	s.starZ.resize(s.dNumStars);
+	s.starV.resize(s.dNumStars);
+	for(int i = 0; i < s.dNumStars; i++)
 		initStar(i);
 }
 
 
 #ifdef RS_XSCREENSAVER
 void handleCommandLine(int argc, char* argv[]){
+	auto& s = state();
 	setDefaults();
-	getArgumentsValue(argc, argv, std::string("-numstars"), dNumStars,
+	getArgumentsValue(argc, argv, std::string("-numstars"), s.dNumStars,
 		starfieldSettings::kNumStars.lo, starfieldSettings::kNumStars.hi);
-	getArgumentsValue(argc, argv, std::string("-speed"), dSpeed,
+	getArgumentsValue(argc, argv, std::string("-speed"), s.dSpeed,
 		starfieldSettings::kSpeed.lo, starfieldSettings::kSpeed.hi);
-	getArgumentsValue(argc, argv, std::string("-starsize"), dStarSize,
+	getArgumentsValue(argc, argv, std::string("-starsize"), s.dStarSize,
 		starfieldSettings::kStarSize.lo, starfieldSettings::kStarSize.hi);
 }
 
 void reshape(int width, int height){
+	auto& s = state();
 	glViewport(0, 0, width, height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	aspectRatio = float(width) / float(height);
-	gluPerspective(45.0, double(aspectRatio), double(nearZ), double(farZ));
+	s.aspectRatio = float(width) / float(height);
+	gluPerspective(45.0, double(s.aspectRatio), double(nearZ), double(farZ));
 	glMatrixMode(GL_MODELVIEW);
 }
 #endif
@@ -251,19 +251,21 @@ void reshape(int width, int height){
 
 #ifdef WIN32
 void initSaver(HWND hwnd){
+	auto& s = state();
 	RECT rect;
 
 	// Window initialization
-	hdc = GetDC(hwnd);
-	setBestPixelFormat(hdc);
-	hglrc = wglCreateContext(hdc);
+	s.hdc = GetDC(hwnd);
+	setBestPixelFormat(s.hdc);
+	s.hglrc = wglCreateContext(s.hdc);
 	GetClientRect(hwnd, &rect);
-	wglMakeCurrent(hdc, hglrc);
+	wglMakeCurrent(s.hdc, s.hglrc);
 	glViewport(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
-	aspectRatio = float(rect.right - rect.left) / float(rect.bottom - rect.top);
+	s.aspectRatio = float(rect.right - rect.left) / float(rect.bottom - rect.top);
 #endif
 #ifdef RS_XSCREENSAVER
 void initSaver(){
+	auto& s = state();
 #endif
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -274,7 +276,7 @@ void initSaver(){
 	// Perspective projection
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, double(aspectRatio), double(nearZ), double(farZ));
+	gluPerspective(45.0, double(s.aspectRatio), double(nearZ), double(farZ));
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -282,41 +284,44 @@ void initSaver(){
 	allocateStars();
 
 	// Initialize text
-	textwriter = std::make_unique<rsText>();
+	s.textwriter = std::make_unique<rsText>();
 
-	readyToDraw = 1;
+	s.readyToDraw = 1;
 }
 
 
 void freeStars(){
-	starX.clear(); starX.shrink_to_fit();
-	starY.clear(); starY.shrink_to_fit();
-	starZ.clear(); starZ.shrink_to_fit();
-	starV.clear(); starV.shrink_to_fit();
+	auto& s = state();
+	s.starX.clear(); s.starX.shrink_to_fit();
+	s.starY.clear(); s.starY.shrink_to_fit();
+	s.starZ.clear(); s.starZ.shrink_to_fit();
+	s.starV.clear(); s.starV.shrink_to_fit();
 }
 
 
 #ifdef RS_XSCREENSAVER
 void cleanUp(){
 	freeStars();
-	textwriter.reset();
+	state().textwriter.reset();
 }
 #endif
 
 
 #ifdef WIN32
 void cleanUp(HWND hwnd){
+	auto& s = state();
 	freeStars();
-	textwriter.reset();
+	s.textwriter.reset();
 	// Kill device context
-	ReleaseDC(hwnd, hdc);
+	ReleaseDC(hwnd, s.hdc);
 	wglMakeCurrent(NULL, NULL);
-	wglDeleteContext(hglrc);
+	wglDeleteContext(s.hglrc);
 }
 
 
 // Initialize all user-defined stuff
 void readRegistry(){
+	auto& s = state();
 	LONG result;
 	HKEY skey;
 	DWORD val;
@@ -329,11 +334,11 @@ void readRegistry(){
 
 
 	if(rssaver::readRegistryDWORD(skey, "NumStars", val))
-		dNumStars = starfieldSettings::clampToRange(val, starfieldSettings::kNumStars);
+		s.dNumStars = starfieldSettings::clampToRange(val, starfieldSettings::kNumStars);
 	if(rssaver::readRegistryDWORD(skey, "Speed", val))
-		dSpeed = starfieldSettings::clampToRange(val, starfieldSettings::kSpeed);
+		s.dSpeed = starfieldSettings::clampToRange(val, starfieldSettings::kSpeed);
 	if(rssaver::readRegistryDWORD(skey, "StarSize", val))
-		dStarSize = starfieldSettings::clampToRange(val, starfieldSettings::kStarSize);
+		s.dStarSize = starfieldSettings::clampToRange(val, starfieldSettings::kStarSize);
 	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
@@ -343,6 +348,7 @@ void readRegistry(){
 
 // Save all user-defined stuff
 void writeRegistry(){
+	auto& s = state();
     LONG result;
 	HKEY skey;
 	DWORD val, disp;
@@ -351,11 +357,11 @@ void writeRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	val = dNumStars;
+	val = s.dNumStars;
 	RegSetValueEx(skey, "NumStars", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dSpeed;
+	val = s.dSpeed;
 	RegSetValueEx(skey, "Speed", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dStarSize;
+	val = s.dStarSize;
 	RegSetValueEx(skey, "StarSize", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
 	val = dFrameRateLimit;
 	RegSetValueEx(skey, "FrameRateLimit", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
@@ -395,30 +401,31 @@ void enableFrameRateControls(HWND hdlg, bool enabled){
 
 
 void initControls(HWND hdlg){
+	auto& s = state();
 	char cval[16];
 
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETRANGE, 0,
 		LPARAM(MAKELONG(DWORD(starfieldSettings::kNumStars.lo), DWORD(starfieldSettings::kNumStars.hi))));
-	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETPOS, 1, LPARAM(dNumStars));
+	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETPOS, 1, LPARAM(s.dNumStars));
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETLINESIZE, 0, LPARAM(100));
 	SendDlgItemMessage(hdlg, NUMSTARS, TBM_SETPAGESIZE, 0, LPARAM(500));
-	sprintf_s(cval, "%d", dNumStars);
+	sprintf_s(cval, "%d", s.dNumStars);
 	SendDlgItemMessage(hdlg, NUMSTARSTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETRANGE, 0,
 		LPARAM(MAKELONG(DWORD(starfieldSettings::kSpeed.lo), DWORD(starfieldSettings::kSpeed.hi))));
-	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(dSpeed));
+	SendDlgItemMessage(hdlg, SPEED, TBM_SETPOS, 1, LPARAM(s.dSpeed));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SPEED, TBM_SETPAGESIZE, 0, LPARAM(5));
-	sprintf_s(cval, "%d", dSpeed);
+	sprintf_s(cval, "%d", s.dSpeed);
 	SendDlgItemMessage(hdlg, SPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETRANGE, 0,
 		LPARAM(MAKELONG(DWORD(starfieldSettings::kStarSize.lo), DWORD(starfieldSettings::kStarSize.hi))));
-	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETPOS, 1, LPARAM(dStarSize));
+	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETPOS, 1, LPARAM(s.dStarSize));
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, STARSIZE, TBM_SETPAGESIZE, 0, LPARAM(1));
-	sprintf_s(cval, "%d", dStarSize);
+	sprintf_s(cval, "%d", s.dStarSize);
 	SendDlgItemMessage(hdlg, STARSIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	// dFrameRateLimit keeps its stored meaning, where 0 is unlimited
@@ -445,9 +452,9 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
     case WM_COMMAND:
         switch(LOWORD(wpm)){
         case IDOK:
-			dNumStars = SendDlgItemMessage(hdlg, NUMSTARS, TBM_GETPOS, 0, 0);
-			dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
-			dStarSize = SendDlgItemMessage(hdlg, STARSIZE, TBM_GETPOS, 0, 0);
+			state().dNumStars = SendDlgItemMessage(hdlg, NUMSTARS, TBM_GETPOS, 0, 0);
+			state().dSpeed = SendDlgItemMessage(hdlg, SPEED, TBM_GETPOS, 0, 0);
+			state().dStarSize = SendDlgItemMessage(hdlg, STARSIZE, TBM_GETPOS, 0, 0);
 			dFrameRateLimit = starfieldSettings::frameRateFromUi(
 				IsDlgButtonChecked(hdlg, FRAMERATELIMITCHECK) == BST_CHECKED,
 				int(SendDlgItemMessage(hdlg, FRAMERATELIMITSPIN, UDM_GETPOS, 0, 0)));
@@ -495,10 +502,10 @@ LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
 	case WM_CREATE:
 		readRegistry();
 		initSaver(hwnd);
-		readyToDraw = 1;
+		state().readyToDraw = 1;
 		break;
 	case WM_DESTROY:
-		readyToDraw = 0;
+		state().readyToDraw = 0;
 		cleanUp(hwnd);
 		break;
 	}

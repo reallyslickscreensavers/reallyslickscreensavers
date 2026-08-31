@@ -1225,81 +1225,167 @@ catch.
 
 # P2 — Larger, needs judgement
 
-## Task 6 · Encapsulate mutable module globals (SonarCloud `cpp:S5421`)
+## Task 6 · Encapsulate mutable module globals (SonarCloud `cpp:S5421`) — IN PROGRESS
 
-Wrap each module's private globals in a struct reached through a
-function-local static:
+**721 findings, every one at CRITICAL/HIGH impact.** The rule emits two messages —
+`Global variables should be const.` and `Global pointers should be const at every level.`
+— and they are the same defect with the same remedy. Measured on `src/hyperspace`, the
+split is 73 to 30.
+
+The pointer half is not separable. Of the 117 pointer-typed globals in `src/`, 53 are
+objects `new`'d in `initSaver` and `delete`d in `cleanUp`, 21 are GL extension entry
+points assigned in `initExtensions()`, and 30 are `HDC`/`HGLRC`/`HANDLE` values created at
+window and thread setup. None can be `const` at any level. They clear only by leaving
+namespace scope.
+
+Baseline by Sonar component, before this task started:
+
+| Component | Count | Component | Count |
+|---|---|---|---|
+| `src/skyrocket` | 116 | `src/fieldlines` | 18 |
+| `src/hyperspace` | 103 | `src/plasma` | 18 |
+| `src/microcosm` | 98 | `src/cyclone` | 17 |
+| `src/lattice` | 37 | `src/solarwinds` | 16 |
+| `src/euphoria` | 32 | `src/starfield` | 14 |
+| `src/flux` | 30 | `src/implicitDemo` | 10 |
+| `src/helios` | 27 | `tests/test_*.cpp` | 151 |
+| `src/flocks` | 23 | `tests/support/saver_shim.cpp` | 11 |
+
+`src/common` contributes zero — both shared headers are pure `constexpr`/`inline`.
+
+### The pattern
+
+One header per saver, `src/<name>/<name>State.h`, holding a `State` struct reached through
+a function-local static defined in the saver's main `.cpp`. `src/starfield/starfieldState.h`
+is the worked example.
 
 ```cpp
-namespace {
-struct SaverState {
+namespace starfieldState {
+struct State {
+    State() = default;
+    State(const State&) = delete;      // see the copy trap below
+    State& operator=(const State&) = delete;
     int readyToDraw = 0;
-    float frameTime = 0.0f;
-    float aspectRatio = 0.0f;
     /* ...module-specific state... */
 };
-SaverState& state(){ static SaverState s; return s; }
+State& state();                       // { static State s; return s; }
 }
 ```
 
-Hoist `auto& s = state();` once per function rather than calling `state()`
-inside hot loops, so the thread-safe-static guard is not hit per iteration.
+The accessor needs **external** linkage: the test suite and, in a multi-TU saver, the
+sibling translation units both call it. For those savers the state header **replaces** the
+cross-TU `extern` blocks outright (`src/skyrocket/particle.h`, `world.h`, `flare.h`,
+`smoke.h`; `src/microcosm/mirrorBox.cpp`; `src/hyperspace/starBurst.cpp` and four
+siblings). Include direction is one way: the state header includes the type headers, never
+the reverse.
 
-**Safe because** each saver is its own executable, so identically-named globals
-in different modules never collide. The framework mandates exactly one global —
-`extern LPCTSTR registryPath` in `libs/rsWin32Saver/rsWin32Saver.h`, already
-exempt as pointer-to-const. Everything else those headers declare
-(`isSuspended`, `kStatistics`, `dFrameRateLimit`, `checkingPassword`,
-`xdisplay`, `xwindow`) is framework-owned — **do not move it**.
+**This is why the pattern works at all.** `tests/support/gl_stub.cpp:34-42` and `:336`
+already hold all the stub's state behind `Trace& trace(){ static Trace instance; return
+instance; }`, and `tests/support/` is charged **zero** findings apart from the shim's
+eleven. Note that `static` alone does not help — `src/skyrocket/skyrocket.cpp:70-71` is
+already `static` and skyrocket is still charged 116. Internal linkage is not what the rule
+measures.
 
-**Two real traps:**
+### Rules for every migration
 
-- **Multi-TU modules.** `skyrocket` (`flare.h`, `particle.h`), `hyperspace`
-  (`tunnel.h`) and `microcosm` genuinely share `frameTime` / `aspectRatio`
-  *across* translation units. Those cannot become file-local; they need a
-  shared accessor or must stay as they are. Single-`.cpp` modules such as
-  `plasma` have no such constraint.
-- **`#ifdef RS_XSCREENSAVER` blocks are invisible to a Windows build.** In
-  `starfield` alone that was 8 of 97 access sites. There is **no working Linux
-  build for `src/` in this repository** — seven directories carry a stale
-  `Makefile` (`flocks`, `flux`, `hyperspace`, `implicitDemo`, `microcosm`,
-  `plasma`, `solarwinds`) but nothing builds them, and there is no CMake — so
-  those branches are never compiled by anyone, by CI or locally. Review them by
-  eye; a green Windows build proves nothing about them.
+- **Pure move, no semantic change.** No `unique_ptr` conversions, no added null-outs, no
+  wholesale `state() = State{}` in `cleanUp`. `hyperspace.cpp:104-115` documents that its
+  two deliberate nulls *are* the "already built" guard the draw path reads, and `helios`'s
+  missing nulls stay missing. A wholesale reset would also zero the settings, which now
+  live in the same struct.
+- **Leave `draw()`'s function-local statics alone.** They are invisible to Sonar, and
+  moving them changes restart behaviour.
+- **`auto& s = state();`, hoisted once per function, never inside a loop.** The
+  thread-safe-static guard is one atomic load per call.
+- **It is `auto&`, never `auto`.** The deleted copy constructor turns a dropped ampersand
+  into a compile error rather than a silent copy whose writes go nowhere. For `plasma` that
+  copy would be about 32 MB.
+- **Watch for shadowing.** `starfield`'s render loop used `for(int s = 1; ...)`, which hid
+  the hoisted reference; it was renamed to `bucketSize`. The projects build at
+  `/W3` and MSVC's shadowing warnings (C4456/C4457) are `/W4`, so nothing warns — these
+  are caught only because member access on the shadowing object fails to compile. A sweep
+  of the remaining modules found exactly two more collisions, both of which will be
+  compile errors when their migration lands: `fieldlines.cpp:267` (`static float s`) and
+  `microcosm`'s five `setScale(float s)` bodies (`gizmo.cpp:60`, `knotAndSpheres.h:52`,
+  `metaballs.h:47`, `spheresAndCapsules.h:54`, `triangleOfSpheres.h:44`). Rename the local,
+  not the hoisted reference.
+- **Keep the `d` prefix, one-line clamps and the local `HKEY skey`.** `SettingsClampWiring`
+  reads the source text.
+- **Review the `#ifdef RS_XSCREENSAVER` blocks by eye.** Nothing compiles them.
 
-**Scale:** roughly 97 access sites in `starfield`; expect more in the larger
-modules.
+### Two traps
 
-**Priority note:** this affects only the maintainability rating, which is the one
-rating still at **A**. It clears no failing gate condition. Ranked last for that
-reason.
+- **Multi-TU modules.** `skyrocket`, `hyperspace` and `microcosm` genuinely share
+  `frameTime` and `aspectRatio` across translation units, so they must be sliced by
+  variable group rather than by file — a variable has to move in every TU at once.
+- **Relocated dynamic initialisers shift the PRNG stream.** `microcosm.cpp:114`'s
+  `MirrorBox` constructor (`mirrorBox.cpp:47-49`) draws 12 values during static init, that
+  is *before* a test fixture seeds `rsRandGen()`. As a struct member it would draw after.
+  That changes production visuals too, not only a test baseline, so it has to be a stated
+  decision rather than a side effect. `rsCamera` (`microcosm.cpp:88`) touches no PRNG and
+  is safe.
 
-**What the test work added.** The saver test suites have to declare these
-globals to reach them (`extern int dFollowers;` and so on), and Sonar counts
-each declaration as a mutable global too — currently 17 findings across the
-suites and `tests/support/saver_shim.cpp`. Two things were established:
+### Progress
 
-- **Hiding the declaration in block scope does not help.** Wrapping each in an
-  accessor — `static int& svFollowers() { extern int dFollowers; return dFollowers; }` —
-  was tried and reported exactly the same count, so it was reverted. Do not
-  repeat it.
-- **The shim's eleven are unavoidable.** `rsWin32Saver.h` declares them `extern`
-  and the savers write to them, so `saver_shim.cpp` must *define* them at
-  namespace scope with those names or nothing links.
+- **Step 1 — free wins, done.** `const` on the 34 read-only texture and sound blobs, the
+  dead `simulationTime` declaration in `goo.cpp`, and four framework `extern`s in the test
+  suites replaced by an `rsWin32Saver.h` include. About 39 findings.
+- **Step 2 — `starfield` pilot, done.** `src/starfield/starfieldState.h`, and the suite
+  reaches the saver through `starfieldState::state()` instead of declaring seven `extern`s.
+  14 findings in `src/` and 7 in the suite. `starfield.cpp` is down to one namespace-scope
+  mutable, `registryPath`.
+- **Remaining:** the other twelve savers and `implicitDemo`, then the `registryPath` change
+  described below.
 
-Doing this task properly is therefore the only thing that clears them, which is
-another small argument for it beyond the rating.
+### The gate
 
-**After the full rollout that count is 79**, across the thirteen suites, and
-they are deliberately **left open**. They are `extern` *declarations*; the tests
-cannot make the savers' globals const, and the two workarounds above are already
-ruled out by measurement. No suppression file, no `NOSONAR`, no rule exclusion —
-the number honestly reports that the savers expose their settings as mutable
-globals, and it drops to zero when this task lands.
+`tests/tools/check-module-globals.cmake`, registered as the `ModuleGlobalsEncapsulated`
+ctest case, pins each saver's namespace-scope mutable count and fails on any unqualified
+use of a migrated name. Lower a number as each migration lands; never raise one. It is the
+only check that can catch a missed reference inside an `RS_XSCREENSAVER` block, and the
+only offline signal at all — this project uses SonarCloud Automatic Analysis, with no
+`sonar-project.properties` and no scanner step in CI, so nothing here reproduces locally
+and a delta is confirmed only after `main` is reanalysed.
 
-One thing to keep true: **`src/` should gain no new ones.** PR #46 briefly added
-a single global to `hyperspace` and it was removed again in `7e36902` by keying
-off pointers that already carried the state.
+The count heuristic does not need a C++ parser, because these files are uniformly
+formatted: globals sit at column 0 and end in `;`, function definitions at column 0 end in
+`{`, and prototypes end in `);` with no `=`. Verified against `plasma.cpp` and
+`lattice.cpp`, where it selects exactly their global blocks.
+
+**A defect worth knowing about while writing any of these gates:** CMake lists drop empty
+elements, so iterating `file(STRINGS)` output loses every blank line and each reported line
+number comes out short by the number of blanks above it. In `starfield.cpp` that is 59
+lines by the middle of the file. `check-module-globals.cmake` works around it with
+`read_numbered_lines`; **`check-settings-wiring.cmake` still has the bug** and mis-reports
+the line in every one of its failure messages.
+
+### What cannot be fixed here
+
+- **`tests/support/saver_shim.cpp:60-72` — 11 findings, permanent.** `rsWin32Saver.h`
+  declares them `extern` and the savers write them, so the shim must define them at
+  namespace scope with those names or nothing links. The file argues this at `:51-59`.
+  Hiding a declaration in block scope does not help: an accessor wrapping the extern was
+  tried, measured, reported the identical count, and reverted. Do not repeat it.
+- **`LPCTSTR registryPath` × 13 — needs a coordinated rslibs change.** This document
+  previously called it "already exempt as pointer-to-const"; that was wrong. `LPCTSTR` is
+  `const char*` and the rule wants `const char* const`, so all 13 are in the 721. Plain
+  `const` at namespace scope gives internal linkage and the lib's `extern` goes unresolved,
+  while a mismatched pair is MSVC C2373. It needs `extern LPCTSTR const registryPath;` in
+  rslibs and 13 matching definitions here, landing together with a submodule bump. Twelve
+  of the 13 also use a bare narrow literal rather than `TEXT(...)`; only `starfield.cpp` is
+  correct.
+
+**After the full rollout the residual is 11, not the 79 this document used to predict.**
+That older figure assumed the test suites keep their `extern` declarations. Routing them
+through `state()` costs nothing extra — the header has to exist for the multi-TU savers
+anyway — and it clears all 151.
+
+**Priority note:** this affects only the maintainability rating, which is the one rating
+still at **A**. It clears no failing gate condition.
+
+One thing to keep true: **`src/` should gain no new ones.** PR #46 briefly added a single
+global to `hyperspace` and it was removed again in `7e36902` by keying off pointers that
+already carried the state. `ModuleGlobalsEncapsulated` now enforces that automatically.
 
 ## Task 7 · `libs` submodule — DONE
 
