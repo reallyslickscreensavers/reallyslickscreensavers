@@ -105,6 +105,18 @@ examined) in `rsWin32SaverSettings.h` and dispatches through a `SaverOps` table.
   that shape rather than waiving it.
 - `readRegistry` returns early when the key does not exist, which is the case on a fresh CI runner,
   so coverage reads about five points lower in CI than on a machine that has run the savers.
+- **Module state is moving out of namespace scope**, one saver per PR (Task 6, in progress —
+  SonarCloud `cpp:S5421`, 721 findings). A migrated saver has a `src/<name>/<name>State.h` holding
+  one `State` struct behind `State& state()`, a function-local static defined in the saver's `.cpp`;
+  `src/starfield/starfieldState.h` is the worked example, and its suite reaches the saver through
+  `starfieldState::state()` rather than declaring `extern int dSpeed;`. Migrations are a **pure
+  move**: no `unique_ptr` conversions, no added null-outs, no reset in `cleanUp` — several restart
+  defects are pinned by tests asserting today's behaviour. Hoist `auto& s = state();` once per
+  function, never in a loop, and never `auto` (the copy constructor is deleted so the dropped
+  ampersand fails to compile instead of silently discarding writes). `registryPath` stays a global:
+  `rsWin32Saver.h` declares it `extern`. `tests/tools/check-module-globals.cmake`, the
+  `ModuleGlobalsEncapsulated` ctest case, pins each saver's remaining count and catches a missed
+  reference inside an `RS_XSCREENSAVER` block, which nothing compiles.
 
 ### Savers
 

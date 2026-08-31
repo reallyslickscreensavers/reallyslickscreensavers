@@ -120,6 +120,7 @@
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="starfieldSettings.h" />
+    <ClInclude Include="starfieldState.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />

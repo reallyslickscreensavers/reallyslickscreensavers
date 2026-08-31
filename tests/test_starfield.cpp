@@ -15,18 +15,15 @@
 
 #include "resource.h"
 #include "starfieldSettings.h"
+// The saver's module state, reached through its accessor rather than through
+// externs of our own. Task 6 in docs/MAINTENANCE.md: the suite declaring
+// "extern int dNumStars;" is itself a cpp:S5421 finding, and starfield is the
+// first saver to have somewhere better to reach.
+#include "starfieldState.h"
+
+using starfieldState::state;
 
 // starfield.cpp has no header; its contract with the framework is by name.
-// SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
-// the saver's own, which is Task 6 in docs/MAINTENANCE.md.
-extern int dNumStars;
-extern int dSpeed;
-extern int dStarSize;
-extern int readyToDraw;
-extern float frameTime;
-extern std::vector<float> starZ;
-extern std::vector<float> starV;
-
 void setDefaults();
 void readRegistry();
 void initControls(HWND hdlg);
@@ -49,9 +46,9 @@ protected:
 // out twice is what tripped the duplication gate.
 std::vector<savertest::RangedSetting> declaredRanges() {
     return {
-        savertest::Ranged("dNumStars", dNumStars, starfieldSettings::kNumStars),
-        savertest::Ranged("dSpeed", dSpeed, starfieldSettings::kSpeed),
-        savertest::Ranged("dStarSize", dStarSize, starfieldSettings::kStarSize),
+        savertest::Ranged("dNumStars", state().dNumStars, starfieldSettings::kNumStars),
+        savertest::Ranged("dSpeed", state().dSpeed, starfieldSettings::kSpeed),
+        savertest::Ranged("dStarSize", state().dStarSize, starfieldSettings::kStarSize),
     };
 }
 
@@ -63,9 +60,9 @@ TEST(StarfieldHarness, SaverBodyWasActuallyCompiled) {
     // Guards the WIN32-define trap: without it the saver preprocesses away and
     // every other test passes against an empty translation unit.
     setDefaults();
-    EXPECT_EQ(dNumStars, starfieldSettings::kDefaultNumStars);
-    EXPECT_EQ(dSpeed, starfieldSettings::kDefaultSpeed);
-    EXPECT_EQ(dStarSize, starfieldSettings::kDefaultStarSize);
+    EXPECT_EQ(state().dNumStars, starfieldSettings::kDefaultNumStars);
+    EXPECT_EQ(state().dSpeed, starfieldSettings::kDefaultSpeed);
+    EXPECT_EQ(state().dStarSize, starfieldSettings::kDefaultStarSize);
 }
 
 TEST(StarfieldHarness, DefaultsSitInsideTheDeclaredRanges) {
@@ -106,25 +103,25 @@ TEST_F(Starfield, DrawsEveryStarOncePerFrame) {
     // per non-empty bucket, so the block count follows how many distinct sizes
     // happen to be on screen - not one, and not one per star. The invariant
     // that does hold is that every star is drawn exactly once.
-    dNumStars = 200;
+    state().dNumStars = 200;
     start();
     draw();
 
     const int blocks = countPrimitives(GL_POINTS);
     EXPECT_GE(blocks, 1);
     EXPECT_LE(blocks, starfieldSettings::kStarSize.hi) << "at most one block per size bucket";
-    EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(dNumStars))
+    EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(state().dNumStars))
         << "one vertex per star, however they are bucketed";
 }
 
 TEST_F(Starfield, MoreStarsMeansMoreVertices) {
-    dNumStars = 150;
+    state().dNumStars = 150;
     start();
     draw();
     EXPECT_EQ(glstub::trace().totalVertices(), 150u);
 
     stop();                 // change counts only while nothing is allocated
-    dNumStars = 1500;
+    state().dNumStars = 1500;
     start();
     draw();
     EXPECT_EQ(glstub::trace().totalVertices(), 1500u);
@@ -137,11 +134,11 @@ TEST_F(Starfield, MoreStarsMeansMoreVertices) {
 // readRegistry clamps dStarSize, so this is a backstop on a raw array index
 // rather than the primary bound.
 TEST_F(Starfield, AnOversizedStarSizeStaysInsideTheSizeBuckets) {
-    dStarSize = 10000;      // stop-change-start: set before start()
+    state().dStarSize = 10000;      // stop-change-start: set before start()
     start();
     draw();
 
-    EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(dNumStars));
+    EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(state().dNumStars));
     EXPECT_LE(countPrimitives(GL_POINTS), starfieldSettings::kStarSize.hi);
 }
 
@@ -155,15 +152,15 @@ TEST_F(Starfield, AnOversizedStarSizeStaysInsideTheSizeBuckets) {
 // is emitted.
 TEST_F(Starfield, NanFrameTimeKeepsStarsInsideTheSizeBuckets) {
     start();
-    frameTime = std::numeric_limits<float>::quiet_NaN();
+    state().frameTime = std::numeric_limits<float>::quiet_NaN();
 
     draw();
 
     EXPECT_EQ(countPrimitives(GL_POINTS), 1);
     EXPECT_EQ(glstub::trace().countCalls("glPointSize"), 1);
-    EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(dNumStars));
+    EXPECT_EQ(glstub::trace().totalVertices(), static_cast<unsigned long long>(state().dNumStars));
 
-    frameTime = 0.0f;
+    state().frameTime = 0.0f;
 }
 
 // The Task 12 tripwire (docs/MAINTENANCE.md): the only test that would notice
@@ -174,8 +171,8 @@ TEST_F(Starfield, NanFrameTimeKeepsStarsInsideTheSizeBuckets) {
 // EXPECT_EQ below. Weakening it would silently discard the only regression
 // tripwire the ODR fix has.
 TEST_F(Starfield, StarLayoutRepeatsForTheSameSeed) {
-    dNumStars = 50;
-    dSpeed = starfieldSettings::kSpeed.hi;  // both set before any start(), stop-change-start
+    state().dNumStars = 50;
+    state().dSpeed = starfieldSettings::kSpeed.hi;  // both set before any start(), stop-change-start
 
     rsRandGen().seed(savertest::kTestSeed);
     // Immediately before start(): start() draws a warm-up frame it then
@@ -184,33 +181,33 @@ TEST_F(Starfield, StarLayoutRepeatsForTheSameSeed) {
     // the respawn test at starfield.cpp:124-126, and no rsRandf is drawn. That
     // is what makes both runs below enter their 40-frame loops with identical
     // generator state.
-    frameTime = 0.0f;
+    state().frameTime = 0.0f;
     start();
-    const std::vector<float> initialZ = starZ;
+    const std::vector<float> initialZ = state().starZ;
 
     for (int f = 0; f < 40; ++f) {
-        // frameTime must be set inside the loop, before each draw() - it is a
-        // global that only idleProc otherwise writes, and at zero the frame
-        // simulates nothing (see tests/test_skyrocket.cpp).
-        frameTime = 1.0f;
+        // frameTime must be set inside the loop, before each draw() - idleProc
+        // is otherwise its only writer, and at zero the frame simulates
+        // nothing (see tests/test_skyrocket.cpp).
+        state().frameTime = 1.0f;
         draw();
     }
 
-    const std::vector<float> expectedZ = starZ;
-    const std::vector<float> expectedV = starV;
+    const std::vector<float> expectedZ = state().starZ;
+    const std::vector<float> expectedV = state().starV;
     stop();
 
     rsRandGen().seed(savertest::kTestSeed);
-    frameTime = 0.0f;
+    state().frameTime = 0.0f;
     start();
 
     for (int f = 0; f < 40; ++f) {
-        frameTime = 1.0f;
+        state().frameTime = 1.0f;
         draw();
     }
 
-    EXPECT_EQ(starZ, expectedZ);
-    EXPECT_EQ(starV, expectedV);
+    EXPECT_EQ(state().starZ, expectedZ);
+    EXPECT_EQ(state().starV, expectedV);
 
     // Only the respawn block (starfield.cpp:124-131) raises starZ, via
     // farZ - rsRandf(10.0f), so counting stars whose final starZ exceeds their
@@ -220,36 +217,36 @@ TEST_F(Starfield, StarLayoutRepeatsForTheSameSeed) {
     // of them through the respawn block at least once, by arithmetic rather
     // than luck.
     int respawned = 0;
-    for (size_t i = 0; i < starZ.size(); ++i) {
-        if (starZ[i] > initialZ[i]) ++respawned;
+    for (size_t i = 0; i < state().starZ.size(); ++i) {
+        if (state().starZ[i] > initialZ[i]) ++respawned;
     }
     EXPECT_GT(respawned, 0);
 
-    frameTime = 0.0f;
+    state().frameTime = 0.0f;
 }
 
 // --- framework entry points ------------------------------------------------
 
 TEST_F(Starfield, IdleProcSkipsDrawingWhenNotReady) {
     start();
-    readyToDraw = 0;
+    state().readyToDraw = 0;
     glstub::reset();
 
     idleProc();
 
     EXPECT_EQ(glstub::trace().totalVertices(), 0u);
-    readyToDraw = 1;
+    state().readyToDraw = 1;
 }
 
 TEST(StarfieldFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
     setDefaults();
-    readyToDraw = 0;
+    state().readyToDraw = 0;
 
     screenSaverProc(testsupport::hostWindow(), WM_CREATE, 0, 0);
-    EXPECT_EQ(readyToDraw, 1);
+    EXPECT_EQ(state().readyToDraw, 1);
 
     screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
-    EXPECT_EQ(readyToDraw, 0);
+    EXPECT_EQ(state().readyToDraw, 0);
 }
 
 TEST(StarfieldFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
@@ -258,9 +255,9 @@ TEST(StarfieldFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // (starfield.cpp:332-338, below the early return at :325-326); where no
     // key exists, it holds only because setDefaults() already picked values
     // inside range, exactly like every other saver.
-    dNumStars = -1;
-    dSpeed = 100000;
-    dStarSize = -50;
+    state().dNumStars = -1;
+    state().dSpeed = 100000;
+    state().dStarSize = -50;
 
     readRegistry();
 
@@ -289,10 +286,10 @@ TEST(StarfieldDialogs, ConfigureDialogHandlesTheStandardMessages) {
 
 TEST(StarfieldDialogs, ConfigureDialogRestoresDefaults) {
     setDefaults();
-    const int defaultStars = dNumStars;
-    dNumStars = 7;
+    const int defaultStars = state().dNumStars;
+    state().dNumStars = 7;
 
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
-    EXPECT_EQ(dNumStars, defaultStars);
+    EXPECT_EQ(state().dNumStars, defaultStars);
 }

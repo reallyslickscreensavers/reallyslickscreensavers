@@ -106,10 +106,15 @@ foreach(entry ${SAVERS})
     endif()
 
     # --- Rule 5: no raw registry assignment survives.
+    #
+    # The leading [.] matters. Task 6 moves each saver's settings into a state
+    # struct, so the assignment becomes "s.dZoom = val;" and an anchored
+    # ^[ \t]*d[A-Za-z]+ pattern stops matching - the rule would fail open,
+    # never firing again while a raw assignment walked straight past it.
     set(line_no 0)
     foreach(line ${source_lines})
         math(EXPR line_no "${line_no} + 1")
-        if(line MATCHES "^[ \t]*d[A-Za-z]+ *= *val;")
+        if(line MATCHES "(^|[ \t]|[.])d[A-Za-z]+ *= *val;")
             list(APPEND FAILURES "${source}:${line_no}: raw 'dX = val;' assignment survives")
         endif()
     endforeach()

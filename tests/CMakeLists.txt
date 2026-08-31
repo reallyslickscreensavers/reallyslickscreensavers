@@ -69,6 +69,15 @@ add_test(NAME NoLegacyCPrngCalls
                  -DREPO_ROOT=${REPO_ROOT}
                  -P ${CMAKE_CURRENT_SOURCE_DIR}/tools/check-legacy-prng.cmake)
 
+# The ratchet for Task 6: each saver's namespace-scope mutable count, pinned so
+# a migrated saver cannot regrow a global and an unmigrated one cannot gain a
+# new one. It also catches a reference the migration missed inside an
+# #ifdef RS_XSCREENSAVER block, which nothing in this repository compiles.
+add_test(NAME ModuleGlobalsEncapsulated
+         COMMAND ${CMAKE_COMMAND}
+                 -DREPO_ROOT=${REPO_ROOT}
+                 -P ${CMAKE_CURRENT_SOURCE_DIR}/tools/check-module-globals.cmake)
+
 # ---------------------------------------------------------------------------
 # Saver test harness
 # ---------------------------------------------------------------------------
