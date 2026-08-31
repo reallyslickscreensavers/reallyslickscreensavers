@@ -9,6 +9,23 @@
 #
 # REPO_ROOT is passed in with -DREPO_ROOT=... by the add_test() invocation.
 
+# CMake lists drop empty elements, so iterating file(STRINGS) output loses every
+# blank line and each reported line number comes out short by the number of
+# blanks above it. Giving each blank line a single space first keeps the
+# numbering honest.
+function(read_numbered_lines path out_var)
+    file(READ "${path}" text)
+    string(REPLACE ";" "\;" text "${text}")
+    string(REPLACE "\r" "" text "${text}")
+    set(previous "")
+    while(NOT previous STREQUAL text)
+        set(previous "${text}")
+        string(REPLACE "\n\n" "\n \n" text "${text}")
+    endwhile()
+    string(REPLACE "\n" ";" lines "${text}")
+    set(${out_var} "${lines}" PARENT_SCOPE)
+endfunction()
+
 if(NOT DEFINED REPO_ROOT)
     message(FATAL_ERROR "REPO_ROOT was not passed to check-settings-wiring.cmake")
 endif()
@@ -64,7 +81,7 @@ foreach(entry ${SAVERS})
         list(APPEND FAILURES "${source}: does not exist")
         continue()
     endif()
-    file(STRINGS "${source}" source_lines)
+    read_numbered_lines("${source}" source_lines)
 
     # --- Rules 2 & 3: strict clamp-site pairing, and the per-saver count.
     set(strict_count 0)
