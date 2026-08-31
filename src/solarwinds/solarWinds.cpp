@@ -41,12 +41,12 @@
 #include <time.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include "solarWindsState.h"
 
 
 #define NUMCONSTS 9
 #define PIx2 6.28318530718f
 #define DEG2RAD 0.0174532925f
-#define LIGHTSIZE 64
 
 
 class wind;
@@ -54,28 +54,18 @@ class wind;
 
 // Global variables
 #ifdef WIN32
+// The one global the framework mandates: rsWin32Saver.h declares it extern and
+// reads it back. Everything else this module owns is in solarWindsState::State.
 LPCTSTR registryPath = ("Software\\Really Slick\\Solar Winds");
-HGLRC hglrc;
-HDC hdc;
 #endif
-float aspectRatio;
-float frameTime = 0.0f;
-int readyToDraw = 0;
-wind *winds;
-float lumdiff;
-unsigned char lightTexture[LIGHTSIZE][LIGHTSIZE];
-// text output
-rsText* textwriter;
-// Parameters edited in the dialog box
-int dWinds;
-int dEmitters;
-int dParticles;
-int dGeometry;
-int dSize;
-int dParticlespeed;
-int dEmitterspeed;
-int dWindspeed;
-int dBlur;
+
+solarWindsState::State& solarWindsState::state(){
+	static State s;
+	return s;
+}
+
+using solarWindsState::state;
+using solarWindsState::kLightSize;
 #ifdef RS_XSCREENSAVER
 enum{
 	DEFAULTS1,
@@ -108,45 +98,46 @@ public:
 };
 
 wind::wind(){
+	auto& s = state();
 	int i;
 
-	emitters = new float*[dEmitters];
-	for(i=0; i<dEmitters; i++){
+	emitters = new float*[s.dEmitters];
+	for(i=0; i<s.dEmitters; i++){
 		emitters[i] = new float[3];
 		emitters[i][0] = rsRandf(60.0f) - 30.0f;
 		emitters[i][1] = rsRandf(60.0f) - 30.0f;
 		emitters[i][2] = rsRandf(30.0f) - 15.0f;
 	}
 
-	particles = new float*[dParticles];
-	for(i=0; i<dParticles; i++){
+	particles = new float*[s.dParticles];
+	for(i=0; i<s.dParticles; i++){
 		particles[i] = new float[6];  // 3 for pos, 3 for color
 		particles[i][2] = 100.0f;  // start particles behind viewer
 	}
 
 	whichparticle = 0;
 
-	if(dGeometry == 2){  // allocate memory for lines
-		linelist = new int*[dParticles];
-		for(i=0; i<dParticles; i++){
+	if(s.dGeometry == 2){  // allocate memory for lines
+		linelist = new int*[s.dParticles];
+		for(i=0; i<s.dParticles; i++){
 			linelist[i] = new int[2];
 			linelist[i][0] = -1;
 			linelist[i][1] = -1;
 		}
-		lastparticle = new int[dEmitters];
-		for(i=0; i<dEmitters; i++)
+		lastparticle = new int[s.dEmitters];
+		for(i=0; i<s.dEmitters; i++)
 			lastparticle[i] = i;
 	}
 
 	for(i=0; i<NUMCONSTS; i++){
 		ct[i] = rsRandf(PIx2);
-		cv[i] = rsRandf(0.00005f * float(dWindspeed) * float(dWindspeed))
-			+ 0.00001f * float(dWindspeed) * float(dWindspeed);
+		cv[i] = rsRandf(0.00005f * float(s.dWindspeed) * float(s.dWindspeed))
+			+ 0.00001f * float(s.dWindspeed) * float(s.dWindspeed);
 	}
 
-	numEmitters = dEmitters;
-	numParticles = dParticles;
-	hasLineList = (dGeometry == 2);
+	numEmitters = s.dEmitters;
+	numParticles = s.dParticles;
+	hasLineList = (s.dGeometry == 2);
 }
 
 wind::~wind(){
@@ -169,13 +160,14 @@ wind::~wind(){
 }
 
 void wind::update(){
+	auto& s = state();
 	int i;
 	float x, y, z;
 	float temp;
-	static float evel = float(dEmitterspeed) * 0.01f;
-	static float pvel = float(dParticlespeed) * 0.01f;
-	static float pointsize = 0.04f * float(dSize);
-	static float linesize = 0.005f * float(dSize);
+	static float evel = float(s.dEmitterspeed) * 0.01f;
+	static float pvel = float(s.dParticlespeed) * 0.01f;
+	static float pointsize = 0.04f * float(s.dSize);
+	static float linesize = 0.005f * float(s.dSize);
 
 	// update constants
 	for(i=0; i<NUMCONSTS; i++){
@@ -186,7 +178,7 @@ void wind::update(){
 	}
 	
 	// calculate emissions
-	for(i=0; i<dEmitters; i++){
+	for(i=0; i<s.dEmitters; i++){
 		emitters[i][2] += evel;  // emitter moves toward viewer
 		if(emitters[i][2] > 15.0f){  // reset emitter
 			emitters[i][0] = rsRandf(60.0f) - 30.0f;
@@ -196,7 +188,7 @@ void wind::update(){
 		particles[whichparticle][0] = emitters[i][0];
 		particles[whichparticle][1] = emitters[i][1];
 		particles[whichparticle][2] = emitters[i][2];
-		if(dGeometry == 2){  // link particles to form lines
+		if(s.dGeometry == 2){  // link particles to form lines
 			if(linelist[whichparticle][0] >= 0)
 				linelist[linelist[whichparticle][0]][1] = -1;
 			linelist[whichparticle][0] = -1;
@@ -208,17 +200,17 @@ void wind::update(){
 			lastparticle[i] = whichparticle;
 		}
 		whichparticle++;
-		if(whichparticle >= dParticles)
+		if(whichparticle >= s.dParticles)
 			whichparticle = 0;
 	}
 
 	// calculate particle positions and colors
 	// first modify constants that affect colors
-	c[6] *= 9.0f / float(dParticlespeed);
-	c[7] *= 9.0f / float(dParticlespeed);
-	c[8] *= 9.0f / float(dParticlespeed);
+	c[6] *= 9.0f / float(s.dParticlespeed);
+	c[7] *= 9.0f / float(s.dParticlespeed);
+	c[8] *= 9.0f / float(s.dParticlespeed);
 	// then update each particle
-	for(i=0; i<dParticles; i++){
+	for(i=0; i<s.dParticles; i++){
 		// store old positions
 		x = particles[i][0];
 		y = particles[i][1];
@@ -241,9 +233,9 @@ void wind::update(){
 	}
 
 	// draw particles
-	switch(dGeometry){
+	switch(s.dGeometry){
 	case 0:  // lights
-		for(i=0; i<dParticles; i++){
+		for(i=0; i<s.dParticles; i++){
 			glColor3fv(&particles[i][3]);
 			glPushMatrix();
 				glTranslatef(particles[i][0], particles[i][1], particles[i][2]);
@@ -252,7 +244,7 @@ void wind::update(){
 		}
 		break;
 	case 1:  // points
-		for(i=0; i<dParticles; i++){
+		for(i=0; i<s.dParticles; i++){
 			temp = particles[i][2] + 40.0f;
 			if(temp < 0.01f)
 				temp = 0.01f;
@@ -264,7 +256,7 @@ void wind::update(){
 		}
 		break;
 	case 2:  // lines
-		for(i=0; i<dParticles; i++){
+		for(i=0; i<s.dParticles; i++){
 			temp = particles[i][2] + 40.0f;
 			if(temp < 0.01f)
 				temp = 0.01f;
@@ -287,9 +279,10 @@ void wind::update(){
 
 
 void draw(){
+	auto& s = state();
 	int i;
 
-	if(!dBlur)
+	if(!s.dBlur)
 		glClear(GL_COLOR_BUFFER_BIT);
 	else{
 		glMatrixMode(GL_PROJECTION);
@@ -299,14 +292,14 @@ void draw(){
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				glColor4f(0.0f, 0.0f, 0.0f, 0.5f - (float(dBlur) * 0.0049f));
+				glColor4f(0.0f, 0.0f, 0.0f, 0.5f - (float(s.dBlur) * 0.0049f));
 				glBegin(GL_TRIANGLE_STRIP);
 					glVertex3f(0.0f, 0.0f, 0.0f);
 					glVertex3f(1.0f, 0.0f, 0.0f);
 					glVertex3f(0.0f, 1.0f, 0.0f);
 					glVertex3f(1.0f, 1.0f, 0.0f);
 				glEnd();
-				if(dGeometry == 0)
+				if(s.dGeometry == 0)
 					glBlendFunc(GL_ONE, GL_ONE);
 				else
 					glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Necessary for point and line smoothing (I don't know why)
@@ -327,12 +320,12 @@ void draw(){
 	// So this may not work right on other platforms or all video cards.
 
 	// Update surfaces
-	for(i=0; i<dWinds; i++)
-		winds[i].update();
+	for(i=0; i<s.dWinds; i++)
+		s.winds[i].update();
 
 	// print text
 	static float totalTime = 0.0f;
-	totalTime += frameTime;
+	totalTime += s.frameTime;
 	static std::string str;
 	static int frames = 0;
 	++frames;
@@ -345,7 +338,7 @@ void draw(){
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
-		glOrtho(0.0f, 50.0f * aspectRatio, 0.0f, 50.0f, -1.0f, 1.0f);
+		glOrtho(0.0f, 50.0f * s.aspectRatio, 0.0f, 50.0f, -1.0f, 1.0f);
 
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
@@ -353,7 +346,7 @@ void draw(){
 		glTranslatef(1.0f, 48.0f, 0.0f);
 
 		glColor3f(1.0f, 0.6f, 0.0f);
-		textwriter->draw(str);
+		s.textwriter->draw(str);
 
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);
@@ -361,7 +354,7 @@ void draw(){
 	}
 
 #ifdef WIN32
-	wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+	wglSwapLayerBuffers(s.hdc, WGL_SWAP_MAIN_PLANE);
 #endif
 #ifdef RS_XSCREENSAVER
 	glXSwapBuffers(xdisplay, xwindow);
@@ -370,14 +363,15 @@ void draw(){
 
 
 void idleProc(){
+	auto& s = state();
 	// update time
 	static rsTimer timer;
-	frameTime = float(timer.tick());
+	s.frameTime = float(timer.tick());
 
 #ifdef RS_XSCREENSAVER
-	const bool shouldDraw = (readyToDraw && !isSuspended && !checkingPassword);
+	const bool shouldDraw = (s.readyToDraw && !isSuspended && !checkingPassword);
 #else
-	const bool shouldDraw = (readyToDraw && !isSuspended);
+	const bool shouldDraw = (s.readyToDraw && !isSuspended);
 #endif
 	if(shouldDraw)
 		draw();
@@ -385,77 +379,78 @@ void idleProc(){
 
 
 void setDefaults(int which){
+	auto& s = state();
 	switch(which){
 	case DEFAULTS1:  // Regular
-		dWinds = 1;
-		dEmitters = 30;
-		dParticles = 2000;
-		dGeometry = 0;
-		dSize = 50;
-		dWindspeed = 20;
-		dEmitterspeed = 15;
-		dParticlespeed = 10;
-		dBlur = 40;
+		s.dWinds = 1;
+		s.dEmitters = 30;
+		s.dParticles = 2000;
+		s.dGeometry = 0;
+		s.dSize = 50;
+		s.dWindspeed = 20;
+		s.dEmitterspeed = 15;
+		s.dParticlespeed = 10;
+		s.dBlur = 40;
 		dFrameRateLimit = 60;
 		break;
 	case DEFAULTS2:  // Cosmic Strings
-		dWinds = 1;
-		dEmitters = 50;
-		dParticles = 3000;
-		dGeometry = 2;
-		dSize = 20;
-		dWindspeed = 10;
-		dEmitterspeed = 10;
-		dParticlespeed = 10;
-		dBlur = 10;
+		s.dWinds = 1;
+		s.dEmitters = 50;
+		s.dParticles = 3000;
+		s.dGeometry = 2;
+		s.dSize = 20;
+		s.dWindspeed = 10;
+		s.dEmitterspeed = 10;
+		s.dParticlespeed = 10;
+		s.dBlur = 10;
 		dFrameRateLimit = 60;
 		break;
 	case DEFAULTS3:  // Cold Pricklies
-		dWinds = 1;
-		dEmitters = 300;
-		dParticles = 3000;
-		dGeometry = 2;
-		dSize = 5;
-		dWindspeed = 20;
-		dEmitterspeed = 100;
-		dParticlespeed = 15;
-		dBlur = 70;
+		s.dWinds = 1;
+		s.dEmitters = 300;
+		s.dParticles = 3000;
+		s.dGeometry = 2;
+		s.dSize = 5;
+		s.dWindspeed = 20;
+		s.dEmitterspeed = 100;
+		s.dParticlespeed = 15;
+		s.dBlur = 70;
 		dFrameRateLimit = 60;
 		break;
 	case DEFAULTS4:  // Space Fur
-		dWinds = 2;
-		dEmitters = 400;
-		dParticles = 1600;
-		dGeometry = 2;
-		dSize = 15;
-		dWindspeed = 20;
-		dEmitterspeed = 15;
-		dParticlespeed = 10;
-		dBlur = 0;
+		s.dWinds = 2;
+		s.dEmitters = 400;
+		s.dParticles = 1600;
+		s.dGeometry = 2;
+		s.dSize = 15;
+		s.dWindspeed = 20;
+		s.dEmitterspeed = 15;
+		s.dParticlespeed = 10;
+		s.dBlur = 0;
 		dFrameRateLimit = 60;
 		break;
 	case DEFAULTS5:  // Jiggly
-		dWinds = 1;
-		dEmitters = 40;
-		dParticles = 1200;
-		dGeometry = 1;
-		dSize = 20;
-		dWindspeed = 100;
-		dEmitterspeed = 20;
-		dParticlespeed = 4;
-		dBlur = 50;
+		s.dWinds = 1;
+		s.dEmitters = 40;
+		s.dParticles = 1200;
+		s.dGeometry = 1;
+		s.dSize = 20;
+		s.dWindspeed = 100;
+		s.dEmitterspeed = 20;
+		s.dParticlespeed = 4;
+		s.dBlur = 50;
 		dFrameRateLimit = 60;
 		break;
 	case DEFAULTS6:  // Undertow
-		dWinds = 1;
-		dEmitters = 400;
-		dParticles = 1200;
-		dGeometry = 0;
-		dSize = 40;
-		dWindspeed = 20;
-		dEmitterspeed = 1;
-		dParticlespeed = 100;
-		dBlur = 50;
+		s.dWinds = 1;
+		s.dEmitters = 400;
+		s.dParticles = 1200;
+		s.dGeometry = 0;
+		s.dSize = 40;
+		s.dWindspeed = 20;
+		s.dEmitterspeed = 1;
+		s.dParticlespeed = 100;
+		s.dBlur = 50;
 		dFrameRateLimit = 60;
 	}
 }
@@ -463,45 +458,49 @@ void setDefaults(int which){
 
 #ifdef RS_XSCREENSAVER
 void handleCommandLine(int argc, char* argv[]){
+	auto& s = state();
 	setDefaults(DEFAULTS1);
-	getArgumentsValue(argc, argv, std::string("-winds"), dWinds, 1, 10);
-	getArgumentsValue(argc, argv, std::string("-emitters"), dEmitters, 1, 1000);
-	getArgumentsValue(argc, argv, std::string("-perticles"), dParticles, 1, 10000);
-	getArgumentsValue(argc, argv, std::string("-geometry"), dGeometry, 0, 2);
-	getArgumentsValue(argc, argv, std::string("-size"), dSize, 1, 100);
-	getArgumentsValue(argc, argv, std::string("-windspeed"), dWindspeed, 1, 100);
-	getArgumentsValue(argc, argv, std::string("-emitterspeed"), dEmitterspeed, 1, 100);
-	getArgumentsValue(argc, argv, std::string("-particlespeed"), dParticlespeed, 1, 100);
-	getArgumentsValue(argc, argv, std::string("-blur"), dBlur, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-s.winds"), s.dWinds, 1, 10);
+	getArgumentsValue(argc, argv, std::string("-emitters"), s.dEmitters, 1, 1000);
+	getArgumentsValue(argc, argv, std::string("-perticles"), s.dParticles, 1, 10000);
+	getArgumentsValue(argc, argv, std::string("-geometry"), s.dGeometry, 0, 2);
+	getArgumentsValue(argc, argv, std::string("-size"), s.dSize, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-windspeed"), s.dWindspeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-emitterspeed"), s.dEmitterspeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-particlespeed"), s.dParticlespeed, 1, 100);
+	getArgumentsValue(argc, argv, std::string("-blur"), s.dBlur, 1, 100);
 }
 #endif
 
 
 void reshape(int width, int height){
+	auto& s = state();
 	glViewport(0, 0, width, height);
-	aspectRatio = float(width) / float(height);
+	s.aspectRatio = float(width) / float(height);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(90.0, aspectRatio, 1.0, 10000.0);
+	gluPerspective(90.0, s.aspectRatio, 1.0, 10000.0);
 }
 
 
 #ifdef WIN32
 void initSaver(HWND hwnd){
+	auto& s = state();
 	RECT rect;
 
 	// Window initialization
-	hdc = GetDC(hwnd);
-	setBestPixelFormat(hdc);
-	hglrc = wglCreateContext(hdc);
+	s.hdc = GetDC(hwnd);
+	setBestPixelFormat(s.hdc);
+	s.hglrc = wglCreateContext(s.hdc);
 	GetClientRect(hwnd, &rect);
-	wglMakeCurrent(hdc, hglrc);
+	wglMakeCurrent(s.hdc, s.hglrc);
 
 	reshape(rect.right, rect.bottom);
 #endif
 #ifdef RS_XSCREENSAVER
 void initSaver(){
+	auto& s = state();
 #endif
 	int i, j;
 	float x, y, temp;
@@ -509,23 +508,23 @@ void initSaver(){
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	if(!dGeometry)
+	if(!s.dGeometry)
 		glBlendFunc(GL_ONE, GL_ONE);
 	else
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Necessary for point and line smoothing (I don't know why)
 	glEnable(GL_BLEND);
 
-	if(!dGeometry){  // Init lights
-		for(i=0; i<LIGHTSIZE; i++){
-			for(j=0; j<LIGHTSIZE; j++){
-				x = float(i - LIGHTSIZE / 2) / float(LIGHTSIZE / 2);
-				y = float(j - LIGHTSIZE / 2) / float(LIGHTSIZE / 2);
+	if(!s.dGeometry){  // Init lights
+		for(i=0; i<kLightSize; i++){
+			for(j=0; j<kLightSize; j++){
+				x = float(i - kLightSize / 2) / float(kLightSize / 2);
+				y = float(j - kLightSize / 2) / float(kLightSize / 2);
 				temp = 1.0f - float(sqrt((x * x) + (y * y)));
 				if(temp > 1.0f)
 					temp = 1.0f;
 				if(temp < 0.0f)
 					temp = 0.0f;
-				lightTexture[i][j] = (unsigned char)(255.0f * temp);
+				s.lightTexture[i][j] = (unsigned char)(255.0f * temp);
 			}
 		}
 		glEnable(GL_TEXTURE_2D);
@@ -533,9 +532,9 @@ void initSaver(){
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, 1, LIGHTSIZE, LIGHTSIZE, 0,
-			GL_LUMINANCE, GL_UNSIGNED_BYTE, lightTexture);
-		temp = 0.02f * float(dSize);
+		glTexImage2D(GL_TEXTURE_2D, 0, 1, kLightSize, kLightSize, 0,
+			GL_LUMINANCE, GL_UNSIGNED_BYTE, s.lightTexture);
+		temp = 0.02f * float(s.dSize);
 		glNewList(1, GL_COMPILE);
 			glBindTexture(GL_TEXTURE_2D, 1);
 			glBegin(GL_TRIANGLE_STRIP);
@@ -551,47 +550,50 @@ void initSaver(){
 		glEndList();
 	}
 
-	if(dGeometry == 1){  // init point smoothing
+	if(s.dGeometry == 1){  // init point smoothing
 		glEnable(GL_POINT_SMOOTH);
 		glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
 	}
 
-	if(dGeometry == 2){  // init line smoothing
+	if(s.dGeometry == 2){  // init line smoothing
 		glEnable(GL_LINE_SMOOTH);
 		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	}
 	// Initialize surfaces
-	winds = new wind[dWinds];
+	s.winds = new wind[s.dWinds];
 
 	// Initialize text
-	textwriter = new rsText;
+	s.textwriter = new rsText;
 
-	readyToDraw = 1;
+	s.readyToDraw = 1;
 }
 
 
 #ifdef RS_XSCREENSAVER
 void cleanUp(){
+	auto& s = state();
 	// Free memory
-	delete[] winds;
+	delete[] s.winds;
 }
 #endif
 
 
 #ifdef WIN32
 void cleanUp(HWND hwnd){
+	auto& s = state();
 	// Free memory
-	delete[] winds;
+	delete[] s.winds;
 
 	// Kill device context
-	ReleaseDC(hwnd, hdc);
+	ReleaseDC(hwnd, s.hdc);
 	wglMakeCurrent(NULL, NULL);
-	wglDeleteContext(hglrc);
+	wglDeleteContext(s.hglrc);
 }
 
 
 // Initialize all user-defined stuff
 void readRegistry(){
+	auto& s = state();
 	LONG result;
 	HKEY skey;
 	DWORD val;
@@ -604,23 +606,23 @@ void readRegistry(){
 
 
 	if(rssaver::readRegistryDWORD(skey, "Winds", val))
-		dWinds = solarWindsSettings::clampToRange(val, solarWindsSettings::kWinds);
+		s.dWinds = solarWindsSettings::clampToRange(val, solarWindsSettings::kWinds);
 	if(rssaver::readRegistryDWORD(skey, "Emitters", val))
-		dEmitters = solarWindsSettings::clampToRange(val, solarWindsSettings::kEmitters);
+		s.dEmitters = solarWindsSettings::clampToRange(val, solarWindsSettings::kEmitters);
 	if(rssaver::readRegistryDWORD(skey, "Particles", val))
-		dParticles = solarWindsSettings::clampToRange(val, solarWindsSettings::kParticles);
+		s.dParticles = solarWindsSettings::clampToRange(val, solarWindsSettings::kParticles);
 	if(rssaver::readRegistryDWORD(skey, "Geometry", val))
-		dGeometry = solarWindsSettings::clampToRange(val, solarWindsSettings::kGeometry);
+		s.dGeometry = solarWindsSettings::clampToRange(val, solarWindsSettings::kGeometry);
 	if(rssaver::readRegistryDWORD(skey, "Size", val))
-		dSize = solarWindsSettings::clampToRange(val, solarWindsSettings::kSize);
+		s.dSize = solarWindsSettings::clampToRange(val, solarWindsSettings::kSize);
 	if(rssaver::readRegistryDWORD(skey, "Windspeed", val))
-		dWindspeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kWindspeed);
+		s.dWindspeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kWindspeed);
 	if(rssaver::readRegistryDWORD(skey, "Emitterspeed", val))
-		dEmitterspeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kEmitterspeed);
+		s.dEmitterspeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kEmitterspeed);
 	if(rssaver::readRegistryDWORD(skey, "Particlespeed", val))
-		dParticlespeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kParticlespeed);
+		s.dParticlespeed = solarWindsSettings::clampToRange(val, solarWindsSettings::kParticlespeed);
 	if(rssaver::readRegistryDWORD(skey, "Blur", val))
-		dBlur = solarWindsSettings::clampToRange(val, solarWindsSettings::kBlur);
+		s.dBlur = solarWindsSettings::clampToRange(val, solarWindsSettings::kBlur);
 	if(rssaver::readRegistryDWORD(skey, "FrameRateLimit", val))
 		dFrameRateLimit = rsWin32Saver::clampFrameRateLimit(val);
 
@@ -630,6 +632,7 @@ void readRegistry(){
 
 // Save all user-defined stuff
 void writeRegistry(){
+	auto& s = state();
     LONG result;
 	HKEY skey;
 	DWORD val, disp;
@@ -638,23 +641,23 @@ void writeRegistry(){
 	if(result != ERROR_SUCCESS)
 		return;
 
-	val = dWinds;
+	val = s.dWinds;
 	RegSetValueEx(skey, "Winds", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dEmitters;
+	val = s.dEmitters;
 	RegSetValueEx(skey, "Emitters", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dParticles;
+	val = s.dParticles;
 	RegSetValueEx(skey, "Particles", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dGeometry;
+	val = s.dGeometry;
 	RegSetValueEx(skey, "Geometry", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dSize;
+	val = s.dSize;
 	RegSetValueEx(skey, "Size", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dWindspeed;
+	val = s.dWindspeed;
 	RegSetValueEx(skey, "Windspeed", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dEmitterspeed;
+	val = s.dEmitterspeed;
 	RegSetValueEx(skey, "Emitterspeed", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dParticlespeed;
+	val = s.dParticlespeed;
 	RegSetValueEx(skey, "Particlespeed", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
-	val = dBlur;
+	val = s.dBlur;
 	RegSetValueEx(skey, "Blur", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
 	val = dFrameRateLimit;
 	RegSetValueEx(skey, "FrameRateLimit", 0, REG_DWORD, (CONST BYTE*)&val, sizeof(val));
@@ -687,16 +690,17 @@ INT_PTR CALLBACK aboutProc(HWND hdlg, UINT msg, WPARAM wpm, LPARAM lpm){
 
 
 void initControls(HWND hdlg){
+	auto& s = state();
 	char cval[16];
 
 	SendDlgItemMessage(hdlg, WINDS, UDM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(10), DWORD(1))));
-	SendDlgItemMessage(hdlg, WINDS, UDM_SETPOS, 0, LPARAM(dWinds));
+	SendDlgItemMessage(hdlg, WINDS, UDM_SETPOS, 0, LPARAM(s.dWinds));
 
 	SendDlgItemMessage(hdlg, EMITTERS, UDM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1000), DWORD(1))));
-	SendDlgItemMessage(hdlg, EMITTERS, UDM_SETPOS, 0, LPARAM(dEmitters));
+	SendDlgItemMessage(hdlg, EMITTERS, UDM_SETPOS, 0, LPARAM(s.dEmitters));
 
 	SendDlgItemMessage(hdlg, PARTICLES, UDM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(10000), DWORD(1))));
-	SendDlgItemMessage(hdlg, PARTICLES, UDM_SETPOS, 0, LPARAM(dParticles));
+	SendDlgItemMessage(hdlg, PARTICLES, UDM_SETPOS, 0, LPARAM(s.dParticles));
 
 	SendDlgItemMessage(hdlg, GEOMETRY, CB_DELETESTRING, WPARAM(2), 0);
 	SendDlgItemMessage(hdlg, GEOMETRY, CB_DELETESTRING, WPARAM(1), 0);
@@ -704,41 +708,41 @@ void initControls(HWND hdlg){
 	SendDlgItemMessage(hdlg, GEOMETRY, CB_ADDSTRING, 0, LPARAM("Lights"));
 	SendDlgItemMessage(hdlg, GEOMETRY, CB_ADDSTRING, 0, LPARAM("Points"));
 	SendDlgItemMessage(hdlg, GEOMETRY, CB_ADDSTRING, 0, LPARAM("Lines"));
-	SendDlgItemMessage(hdlg, GEOMETRY, CB_SETCURSEL, WPARAM(dGeometry), 0);
+	SendDlgItemMessage(hdlg, GEOMETRY, CB_SETCURSEL, WPARAM(s.dGeometry), 0);
 
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, SIZE, TBM_SETPOS, 1, LPARAM(dSize));
+	SendDlgItemMessage(hdlg, SIZE, TBM_SETPOS, 1, LPARAM(s.dSize));
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, SIZE, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf_s(cval, "%d", dSize);
+	sprintf_s(cval, "%d", s.dSize);
 	SendDlgItemMessage(hdlg, SIZETEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETPOS, 1, LPARAM(dWindspeed));
+	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETPOS, 1, LPARAM(s.dWindspeed));
 	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, WINDSPEED, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf_s(cval, "%d", dWindspeed);
+	sprintf_s(cval, "%d", s.dWindspeed);
 	SendDlgItemMessage(hdlg, WINDSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETPOS, 1, LPARAM(dEmitterspeed));
+	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETPOS, 1, LPARAM(s.dEmitterspeed));
 	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf_s(cval, "%d", dEmitterspeed);
+	sprintf_s(cval, "%d", s.dEmitterspeed);
 	SendDlgItemMessage(hdlg, EMITTERSPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(1), DWORD(100))));
-	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETPOS, 1, LPARAM(dParticlespeed));
+	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETPOS, 1, LPARAM(s.dParticlespeed));
 	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf_s(cval, "%d", dParticlespeed);
+	sprintf_s(cval, "%d", s.dParticlespeed);
 	SendDlgItemMessage(hdlg, PARTICLESPEEDTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETRANGE, 0, LPARAM(MAKELONG(DWORD(0), DWORD(100))));
-	SendDlgItemMessage(hdlg, BLUR, TBM_SETPOS, 1, LPARAM(dBlur));
+	SendDlgItemMessage(hdlg, BLUR, TBM_SETPOS, 1, LPARAM(s.dBlur));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETLINESIZE, 0, LPARAM(1));
 	SendDlgItemMessage(hdlg, BLUR, TBM_SETPAGESIZE, 0, LPARAM(10));
-	sprintf_s(cval, "%d", dBlur);
+	sprintf_s(cval, "%d", s.dBlur);
 	SendDlgItemMessage(hdlg, BLURTEXT, WM_SETTEXT, 0, LPARAM(cval));
 
 	initFrameRateLimitSlider(hdlg, FRAMERATELIMIT, FRAMERATELIMITTEXT);
@@ -747,6 +751,7 @@ void initControls(HWND hdlg){
 
 INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 										 WPARAM wpm, LPARAM lpm){
+	auto& s = state();
 	int ival;
 	char cval[16];
 
@@ -759,15 +764,15 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
     case WM_COMMAND:
         switch(LOWORD(wpm)){
         case IDOK:
-            dWinds = SendDlgItemMessage(hdlg, WINDS, UDM_GETPOS, 0, 0);
-			dEmitters = SendDlgItemMessage(hdlg, EMITTERS, UDM_GETPOS, 0, 0);
-			dParticles = SendDlgItemMessage(hdlg, PARTICLES, UDM_GETPOS, 0, 0);
-			dGeometry = SendDlgItemMessage(hdlg, GEOMETRY, CB_GETCURSEL, 0, 0);
-			dSize = SendDlgItemMessage(hdlg, SIZE, TBM_GETPOS, 0, 0);
-			dWindspeed = SendDlgItemMessage(hdlg, WINDSPEED, TBM_GETPOS, 0, 0);
-			dEmitterspeed = SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_GETPOS, 0, 0);
-			dParticlespeed = SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_GETPOS, 0, 0);
-			dBlur = SendDlgItemMessage(hdlg, BLUR, TBM_GETPOS, 0, 0);
+            s.dWinds = SendDlgItemMessage(hdlg, WINDS, UDM_GETPOS, 0, 0);
+			s.dEmitters = SendDlgItemMessage(hdlg, EMITTERS, UDM_GETPOS, 0, 0);
+			s.dParticles = SendDlgItemMessage(hdlg, PARTICLES, UDM_GETPOS, 0, 0);
+			s.dGeometry = SendDlgItemMessage(hdlg, GEOMETRY, CB_GETCURSEL, 0, 0);
+			s.dSize = SendDlgItemMessage(hdlg, SIZE, TBM_GETPOS, 0, 0);
+			s.dWindspeed = SendDlgItemMessage(hdlg, WINDSPEED, TBM_GETPOS, 0, 0);
+			s.dEmitterspeed = SendDlgItemMessage(hdlg, EMITTERSPEED, TBM_GETPOS, 0, 0);
+			s.dParticlespeed = SendDlgItemMessage(hdlg, PARTICLESPEED, TBM_GETPOS, 0, 0);
+			s.dBlur = SendDlgItemMessage(hdlg, BLUR, TBM_GETPOS, 0, 0);
 			dFrameRateLimit = SendDlgItemMessage(hdlg, FRAMERATELIMIT, TBM_GETPOS, 0, 0);
 			writeRegistry();
             // Fall through
@@ -837,16 +842,17 @@ INT_PTR CALLBACK screenSaverConfigureDialog(HWND hdlg, UINT msg,
 
 
 LONG screenSaverProc(HWND hwnd, UINT msg, WPARAM wpm, LPARAM lpm){
+	auto& s = state();
 	static unsigned long threadID;
 
 	switch(msg){
 	case WM_CREATE:
 		readRegistry();
 		initSaver(hwnd);
-		readyToDraw = 1;
+		s.readyToDraw = 1;
 		break;
 	case WM_DESTROY:
-		readyToDraw = 0;
+		s.readyToDraw = 0;
 		cleanUp(hwnd);
 		break;
 	}

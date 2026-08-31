@@ -1342,7 +1342,13 @@ measures.
   saver whose `#define`d dimensions (`TEXSIZE`, `NUMCONSTS`) had to become `constexpr` in
   the state header so the struct could declare its arrays. `plasma.cpp` is down to
   `registryPath`.
-- **Remaining:** the other eleven savers and `implicitDemo`, then the `registryPath` change
+- **Step 4 — `solarwinds`, done.** 16 findings in `src/` and 10 in the suite. Its `wind`
+  class is forward-declared in the state header, since the struct only holds a pointer to
+  it, and `wind`'s own `c`/`ct`/`cv` members are not globals despite matching plasma's
+  names — build each saver's moved-name list from its own globals, never from the last
+  saver's. `float lumdiff;` was deleted rather than moved: it is dead here, and live only
+  in `flux`, which is evidently where it was copied from.
+- **Remaining:** the other ten savers and `implicitDemo`, then the `registryPath` change
   described below.
 
 ### The gate
