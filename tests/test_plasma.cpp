@@ -16,20 +16,13 @@
 
 #include "resource.h"
 #include "plasmaSettings.h"
+// The saver's module state, reached through its accessor rather than through
+// externs of our own (Task 6 in docs/MAINTENANCE.md).
+#include "plasmaState.h"
+
+using plasmaState::state;
 
 // plasma.cpp has no header; its contract with the framework is by name.
-// SonarCloud cpp:S5421 flags these as mutable globals; they are declarations of
-// the saver's own, which is Task 6 in docs/MAINTENANCE.md.
-extern int dZoom;
-extern int dFocus;
-extern int dSpeed;
-extern int dResolution;
-extern int plasmasize;
-extern int readyToDraw;
-extern float aspectRatio;
-extern float wide;
-extern float high;
-
 void setDefaults();
 void setPlasmaSize();
 void readRegistry();
@@ -53,10 +46,10 @@ protected:
 // out twice is what tripped the duplication gate.
 std::vector<savertest::RangedSetting> declaredRanges() {
     return {
-        savertest::Ranged("dZoom", dZoom, plasmaSettings::kZoom),
-        savertest::Ranged("dFocus", dFocus, plasmaSettings::kFocus),
-        savertest::Ranged("dSpeed", dSpeed, plasmaSettings::kSpeed),
-        savertest::Ranged("dResolution", dResolution, plasmaSettings::kResolution),
+        savertest::Ranged("dZoom", state().dZoom, plasmaSettings::kZoom),
+        savertest::Ranged("dFocus", state().dFocus, plasmaSettings::kFocus),
+        savertest::Ranged("dSpeed", state().dSpeed, plasmaSettings::kSpeed),
+        savertest::Ranged("dResolution", state().dResolution, plasmaSettings::kResolution),
     };
 }
 
@@ -70,10 +63,10 @@ TEST(PlasmaHarness, SaverBodyWasActuallyCompiled) {
     // against an empty translation unit and every other test passes vacuously
     // while coverage reports zero.
     setDefaults();
-    EXPECT_EQ(dZoom, 10);
-    EXPECT_EQ(dFocus, 30);
-    EXPECT_EQ(dSpeed, 20);
-    EXPECT_EQ(dResolution, 25);
+    EXPECT_EQ(state().dZoom, 10);
+    EXPECT_EQ(state().dFocus, 30);
+    EXPECT_EQ(state().dSpeed, 20);
+    EXPECT_EQ(state().dResolution, 25);
 }
 
 TEST(PlasmaHarness, DefaultsSitInsideTheDeclaredRanges) {
@@ -87,17 +80,17 @@ TEST(PlasmaHarness, DefaultsSitInsideTheDeclaredRanges) {
 
 TEST(PlasmaSettings, PlasmaSizeScalesWithResolution) {
     setDefaults();
-    aspectRatio = 1.0f;
+    state().aspectRatio = 1.0f;
 
     // Not named `small`/`large`: Windows.h drags in rpcndr.h, which does
     // `#define small char`.
-    dResolution = 10;
+    state().dResolution = 10;
     setPlasmaSize();
-    const int coarseSize = plasmasize;
+    const int coarseSize = state().plasmasize;
 
-    dResolution = 50;
+    state().dResolution = 50;
     setPlasmaSize();
-    const int fineSize = plasmasize;
+    const int fineSize = state().plasmasize;
 
     EXPECT_GT(coarseSize, 0);
     EXPECT_GT(fineSize, coarseSize) << "a higher resolution setting must mean more samples";
@@ -105,15 +98,15 @@ TEST(PlasmaSettings, PlasmaSizeScalesWithResolution) {
 
 TEST(PlasmaSettings, ZoomDrivesTheVisibleExtent) {
     setDefaults();
-    aspectRatio = 1.0f;
+    state().aspectRatio = 1.0f;
 
-    dZoom = 5;
+    state().dZoom = 5;
     setPlasmaSize();
-    const float zoomedOut = wide;
+    const float zoomedOut = state().wide;
 
-    dZoom = 50;
+    state().dZoom = 50;
     setPlasmaSize();
-    const float zoomedIn = wide;
+    const float zoomedIn = state().wide;
 
     EXPECT_GT(zoomedOut, zoomedIn) << "wide is 30/dZoom, so a larger dZoom narrows the view";
     EXPECT_GT(zoomedIn, 0.0f);
@@ -122,13 +115,13 @@ TEST(PlasmaSettings, ZoomDrivesTheVisibleExtent) {
 TEST(PlasmaSettings, WidescreenStretchesWidthAndPortraitStretchesHeight) {
     setDefaults();
 
-    aspectRatio = 2.0f;   // landscape: height derives from width
+    state().aspectRatio = 2.0f;   // landscape: height derives from width
     setPlasmaSize();
-    EXPECT_GT(wide, high);
+    EXPECT_GT(state().wide, state().high);
 
-    aspectRatio = 0.5f;   // portrait: the other branch
+    state().aspectRatio = 0.5f;   // portrait: the other branch
     setPlasmaSize();
-    EXPECT_GT(high, wide);
+    EXPECT_GT(state().high, state().wide);
 }
 
 // --- a frame ---------------------------------------------------------------
@@ -138,10 +131,10 @@ TEST_F(Plasma, InitSaverPreparesTextureAndMarksReady) {
     initSaver(hostWindow());
 
     const glstub::Trace& t = glstub::trace();
-    EXPECT_EQ(readyToDraw, 1);
+    EXPECT_EQ(state().readyToDraw, 1);
     EXPECT_GE(t.texturesGenerated, 1) << "plasma uploads one texture at startup";
     EXPECT_GE(t.countCalls("glTexImage2D"), 1);
-    EXPECT_GT(plasmasize, 0) << "aspectRatio came from the host window, so sizing must have run";
+    EXPECT_GT(state().plasmasize, 0) << "aspectRatio came from the host window, so sizing must have run";
 
     cleanUp(hostWindow());
 }
@@ -175,13 +168,13 @@ TEST_F(Plasma, EmitsExactlyOneTexturedStripRegardlessOfResolution) {
     // single full-screen primitive. Geometry is therefore constant: resolution
     // changes the texture, never the vertex count. Pinned because it is the
     // opposite of what most savers do, and easy to "fix" by mistake.
-    dResolution = 10;
+    state().dResolution = 10;
     start();
     draw();
     EXPECT_EQ(glstub::trace().totalVertices(), 4u);
 
     stop();
-    dResolution = 40;
+    state().dResolution = 40;
     start();
     draw();
 
@@ -217,27 +210,27 @@ TEST_F(Plasma, StatisticsOverlayKeepsTheMatrixStackBalanced) {
 
 TEST_F(Plasma, IdleProcSkipsDrawingWhenNotReady) {
     start();
-    readyToDraw = 0;
+    state().readyToDraw = 0;
     glstub::reset();
 
     idleProc();
 
     EXPECT_EQ(glstub::trace().totalVertices(), 0u)
         << "idleProc must not draw before the saver is ready";
-    readyToDraw = 1;
+    state().readyToDraw = 1;
 }
 
 TEST(PlasmaFramework, ScreenSaverProcInitialisesOnCreateAndTearsDownOnDestroy) {
     setDefaults();
-    readyToDraw = 0;
+    state().readyToDraw = 0;
     glstub::reset();
 
     screenSaverProc(testsupport::hostWindow(), WM_CREATE, 0, 0);
-    EXPECT_EQ(readyToDraw, 1);
+    EXPECT_EQ(state().readyToDraw, 1);
     EXPECT_GE(glstub::trace().texturesGenerated, 1);
 
     screenSaverProc(testsupport::hostWindow(), WM_DESTROY, 0, 0);
-    EXPECT_EQ(readyToDraw, 0);
+    EXPECT_EQ(state().readyToDraw, 0);
 }
 
 TEST(PlasmaFramework, ScreenSaverProcPassesUnhandledMessagesThrough) {
@@ -254,7 +247,7 @@ TEST(PlasmaFramework, ReadRegistryLeavesEverySettingInsideItsDeclaredRange) {
     // than incidental: dZoom divides into 30.0f in setPlasmaSize.
     readRegistry();
 
-    EXPECT_NE(dZoom, 0) << "dZoom divides into 30.0f in setPlasmaSize";
+    EXPECT_NE(state().dZoom, 0) << "dZoom divides into 30.0f in setPlasmaSize";
     EXPECT_TRUE(savertest::SettingsWithinDeclaredRanges(declaredRanges()));
 }
 
@@ -280,10 +273,10 @@ TEST(PlasmaDialogs, ConfigureDialogHandlesTheStandardMessages) {
 
 TEST(PlasmaDialogs, ConfigureDialogRestoresDefaults) {
     setDefaults();
-    const int defaultZoom = dZoom;
-    dZoom = 99;
+    const int defaultZoom = state().dZoom;
+    state().dZoom = 99;
 
     screenSaverConfigureDialog(nullptr, WM_COMMAND, DEFAULTS, 0);
 
-    EXPECT_EQ(dZoom, defaultZoom) << "the Defaults button must reset the settings";
+    EXPECT_EQ(state().dZoom, defaultZoom) << "the Defaults button must reset the settings";
 }

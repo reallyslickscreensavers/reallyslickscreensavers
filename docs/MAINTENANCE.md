@@ -1300,6 +1300,10 @@ measures.
 - **It is `auto&`, never `auto`.** The deleted copy constructor turns a dropped ampersand
   into a compile error rather than a silent copy whose writes go nowhere. For `plasma` that
   copy would be about 32 MB.
+- **Watch the failure-message strings when renaming mechanically.** A search-and-replace
+  over a suite rewrites moved identifiers inside `<< "..."` prose too. `test_plasma.cpp`
+  had three such messages; `test_starfield.cpp` happened to have none. Check with
+  `grep -n '"[^"]*state()\.'` before building — the result compiles either way.
 - **Watch for shadowing.** `starfield`'s render loop used `for(int s = 1; ...)`, which hid
   the hoisted reference; it was renamed to `bucketSize`. The projects build at
   `/W3` and MSVC's shadowing warnings (C4456/C4457) are `/W4`, so nothing warns — these
@@ -1334,7 +1338,11 @@ measures.
   reaches the saver through `starfieldState::state()` instead of declaring seven `extern`s.
   14 findings in `src/` and 7 in the suite. `starfield.cpp` is down to one namespace-scope
   mutable, `registryPath`.
-- **Remaining:** the other twelve savers and `implicitDemo`, then the `registryPath` change
+- **Step 3 — `plasma`, done.** 18 findings in `src/` and 10 in the suite, and the first
+  saver whose `#define`d dimensions (`TEXSIZE`, `NUMCONSTS`) had to become `constexpr` in
+  the state header so the struct could declare its arrays. `plasma.cpp` is down to
+  `registryPath`.
+- **Remaining:** the other eleven savers and `implicitDemo`, then the `registryPath` change
   described below.
 
 ### The gate
